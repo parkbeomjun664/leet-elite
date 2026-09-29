@@ -28,8 +28,9 @@
   --color-info: #2b6cb0;
   --color-info-tint: #e8f0fa;
 
-  --radius-card: 12px;
-  --radius-control: 8px;
+  /* 관리 프로그램답게 모서리는 작게 (요구사항 8~16px 중 아래쪽) */
+  --radius-card: 8px;
+  --radius-control: 6px;
 }
 
 html {
@@ -40,6 +41,8 @@ body {
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  font-size: 14px; /* 관리 화면 기본 글씨 */
+  line-height: 1.5;
   word-break: keep-all;
   -webkit-font-smoothing: antialiased;
 }

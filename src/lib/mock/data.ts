@@ -206,29 +206,35 @@ function buildGuardians(): Guardian[] {
 
 export const guardians: Guardian[] = buildGuardians();
 
-// ── 오늘 출결 (날짜가 바뀌어도 오늘 기준으로 그럴듯하게 생성) ────
-export function mockAttendanceFor(date: string = todayKST()): Attendance[] {
-  const r = seeded(Number(date.replaceAll("-", "")));
+// ── 출결 기록 (날짜가 바뀌어도 그 날짜 기준으로 그럴듯하게 생성) ────
+/**
+ * @param nowTime 오늘을 볼 때 지금 시각 "HH:MM". 이 시각보다 뒤의 등원·하원은 아직 일어나지 않았으므로 만들지 않는다.
+ *                지난 날짜를 볼 때는 생략한다.
+ */
+export function mockAttendanceFor(date: string = todayKST(), nowTime?: string): Attendance[] {
+  const r = seeded(Number(date.replaceAll("-", ""))); // 날짜마다 항상 같은 결과
   const weekday = weekdayOf(date);
+  const happened = (time: string) => nowTime === undefined || time <= nowTime;
   const records: Attendance[] = [];
   for (const s of students) {
     if (s.status !== "enrolled") continue;
     const slot = s.schedule.find((x) => x.weekday === weekday);
     if (!slot) continue;
     const roll = r();
-    if (roll < 0.55) {
-      const checkIn = addMinutes(slot.start, Math.floor(r() * 15) - 5);
-      const leftAlready = r() > 0.5;
+    const checkIn = addMinutes(slot.start, Math.floor(r() * 15) - 5);
+    const checkOut = r() > 0.5 ? addMinutes(slot.start, slot.durationMin + Math.floor(r() * 10)) : null;
+    if (roll < 0.55 && happened(checkIn)) {
       records.push({
         studentId: s.id,
         date,
         checkInAt: checkIn,
-        checkOutAt: leftAlready ? addMinutes(slot.start, slot.durationMin + Math.floor(r() * 10)) : null,
+        checkOutAt: checkOut && happened(checkOut) ? checkOut : null,
         status: "present",
         memo: "",
       });
-    } else if (roll < 0.62) {
-      records.push({ studentId: s.id, date, checkInAt: null, checkOutAt: null, status: "absent", memo: pick(["감기", "학교 행사", "가족 여행"]) });
+    } else if (roll >= 0.55 && roll < 0.62) {
+      const reasons = ["감기", "학교 행사", "가족 여행"];
+      records.push({ studentId: s.id, date, checkInAt: null, checkOutAt: null, status: "absent", memo: reasons[Math.floor(r() * reasons.length)] });
     }
     // 나머지는 기록 없음 → 수업 시작이 지났으면 화면에서 "미등원"으로 계산
   }
