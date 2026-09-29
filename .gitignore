@@ -1,0 +1,52 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# env files — 실제 키는 절대 커밋하지 않는다. 예시 파일만 커밋
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# supabase (로컬 CLI 임시 파일)
+supabase/.temp/
+supabase/.branches/
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# misc / OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.pem
+.vscode/
+
+# 실제 학생 데이터(에듀OK 내보내기 등)는 저장소에 두지 않는다
+*.xlsx
+*.xls
+*.csv
