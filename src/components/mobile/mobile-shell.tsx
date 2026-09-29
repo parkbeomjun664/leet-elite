@@ -1,0 +1,251 @@
+"use client";
+
+// 학생·학부모용 휴대폰 화면 틀 (HOME-09, HOME-10)
+// 위: 얇은 흰 머리줄(로고 · 사용자) / 가운데: 좁은 한 줄 본문 / 아래: 고정 탭 4개
+// PC에서 열어도 같은 좁은 기둥을 가운데에 보여 준다.
+// 두 역할 첫 화면이 함께 쓰는 목록 줄(숙제·보강·메시지)도 여기에 둔다.
+
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
+import { Badge, type Tone } from "@/components/ui/badge";
+import { EmptyLine } from "@/components/ui/panel";
+import { DAY_STATUS_LABEL, type DayStatus } from "@/lib/attendance";
+import { cn } from "@/lib/cn";
+
+export type MobileTab = { label: string; href: string };
+
+type ShellProps = {
+  tabs: MobileTab[]; // 첫 번째 탭이 홈
+  userLabel: ReactNode; // 오른쪽 위 사용자 표시 ("김OO 학생")
+  children: ReactNode;
+};
+
+export function MobileShell({ tabs, userLabel, children }: ShellProps) {
+  const pathname = usePathname();
+  const home = tabs[0]?.href ?? "/";
+
+  // 홈 탭은 정확히 같을 때만, 나머지는 하위 주소까지 선택으로 본다
+  const isActive = (href: string) =>
+    href === home ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+
+  return (
+    <div className="min-h-dvh bg-bg">
+      {/* 머리줄: 로고 · 학원 이름 · 사용자 */}
+      <header className="sticky top-0 z-30 border-b border-line bg-card pt-[env(safe-area-inset-top,0px)]">
+        <div className="mx-auto flex h-14 max-w-[560px] items-center justify-between gap-3 px-4">
+          <Link href={home} className="flex min-h-11 items-center gap-1.5" aria-label="홈으로">
+            {/* 로고 PNG는 위아래 여백이 커서 음수 여백으로 글자 줄과 맞춘다 */}
+            <Image src="/brand/leet-logo.png" alt="" width={1414} height={2000} className="-my-1 h-9 w-auto mix-blend-multiply" />
+            <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>
+            <span className="text-[15px] font-semibold text-ink">영어학원</span>
+          </Link>
+          <div className="min-w-0 truncate text-[15px] text-sub">{userLabel}</div>
+        </div>
+      </header>
+
+      {/* 본문: 아래 탭에 가리지 않도록 탭 높이 + 안전 영역만큼 띄운다 */}
+      <main className="mx-auto max-w-[560px] px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">{children}</main>
+
+      {/* 아래 탭 */}
+      <nav aria-label="주 메뉴" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card pb-[env(safe-area-inset-bottom,0px)]">
+        <ul className="mx-auto grid h-16 max-w-[560px]" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+          {tabs.map((tab, i) => {
+            const active = isActive(tab.href);
+            return (
+              <li key={tab.href}>
+                <Link
+                  href={tab.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex h-full flex-col items-center justify-center gap-0.5 text-[13px]",
+                    active ? "font-bold text-brand" : "font-medium text-sub hover:text-ink",
+                  )}
+                >
+                  <TabIcon index={i} />
+                  {tab.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </div>
+  );
+}
+
+// 탭 아이콘: 선 두께가 같은 단순한 그림 (홈 · 숙제 · 출결 · 메시지 순서)
+function TabIcon({ index }: { index: number }) {
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  switch (index) {
+    case 0: // 집
+      return (
+        <svg {...common}>
+          <path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z" />
+        </svg>
+      );
+    case 1: // 공책
+      return (
+        <svg {...common}>
+          <rect x="5" y="3.5" width="14" height="17" rx="1.5" />
+          <path d="M9 8.5h6M9 12h6M9 15.5h3.5" />
+        </svg>
+      );
+    case 2: // 달력 + 체크
+      return (
+        <svg {...common}>
+          <rect x="4" y="5" width="16" height="15" rx="1.5" />
+          <path d="M4 9.5h16M8.5 3v4M15.5 3v4M9 14.5l2 2 4-4" />
+        </svg>
+      );
+    default: // 말풍선
+      return (
+        <svg {...common}>
+          <path d="M4.5 5.5h15v10h-8l-4 3.5v-3.5h-3z" />
+        </svg>
+      );
+  }
+}
+
+// ── 공통 목록 줄 ─────────────────────────────────────────
+
+function Chevron() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-sub">
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+/** 오늘 출결 상태 표시 (출결 보드와 같은 색 규칙) */
+const DAY_TONE: Record<DayStatus, Tone> = {
+  checked_in: "ok",
+  checked_out: "info",
+  absent: "brand",
+  not_arrived: "warn",
+  upcoming: "neutral",
+  no_class: "neutral",
+};
+
+export function DayStatusBadge({ status, className }: { status: DayStatus; className?: string }) {
+  return (
+    <Badge tone={DAY_TONE[status]} className={className}>
+      {DAY_STATUS_LABEL[status]}
+    </Badge>
+  );
+}
+
+export type HomeworkItem = {
+  id: string;
+  daily: boolean; // 매일 숙제 여부
+  title: string;
+  dateLabel: string; // "9/30 (수)"
+  submitted: boolean;
+  hasTeacherComment: boolean;
+};
+
+/** 숙제 목록: 한 줄 전체를 누를 수 있는 모양 (HW-06, HW-10) */
+export function HomeworkList({ items }: { items: HomeworkItem[] }) {
+  if (items.length === 0) return <EmptyLine>받은 숙제가 없습니다.</EmptyLine>;
+  return (
+    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+      {items.map((hw) => (
+        <li key={hw.id}>
+          {/* TODO(HW-06): 숙제 상세·제출 화면으로 이동 */}
+          <button type="button" className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left hover:bg-bg/60 active:bg-line-soft">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <Badge tone={hw.daily ? "info" : "neutral"}>{hw.daily ? "매일" : "일반"}</Badge>
+                <span className="truncate text-[15px] font-semibold text-ink">{hw.title}</span>
+              </div>
+              <p className="mt-1 text-[13px] text-sub tabular">
+                {hw.dateLabel}
+                {hw.hasTeacherComment && <span className="ml-2 font-semibold text-info">선생님 코멘트 있음</span>}
+              </p>
+            </div>
+            <Badge tone={hw.submitted ? "ok" : "warn"}>{hw.submitted ? "제출함" : "미제출"}</Badge>
+            <Chevron />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export type MakeupItem = {
+  id: string;
+  dateLabel: string; // "10/2 (금)"
+  timeLabel: string; // "16:00~17:30"
+  teacherNickname: string | null; // 학생·학부모에게는 닉네임만
+  reason: string;
+  isToday: boolean;
+};
+
+/** 예정된 보강 (MKP-04) */
+export function MakeupList({ items }: { items: MakeupItem[] }) {
+  if (items.length === 0) return <EmptyLine>예정된 보강이 없습니다.</EmptyLine>;
+  return (
+    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+      {items.map((m) => (
+        <li key={m.id} className="flex min-h-14 items-center gap-3 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-semibold text-ink tabular">
+              {m.dateLabel} {m.timeLabel}
+            </p>
+            <p className="mt-0.5 truncate text-[13px] text-sub">
+              {m.reason}
+              {m.teacherNickname && ` · ${m.teacherNickname} 선생님`}
+            </p>
+          </div>
+          {m.isToday && <Badge tone="brand">오늘</Badge>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export type MessageItem = {
+  id: string;
+  senderName: string; // 선생님은 닉네임
+  fromMe: boolean; // 학부모 본인이 보낸 글
+  body: string;
+  timeLabel: string; // "9/28 18:20"
+  unread: boolean;
+};
+
+/** 메시지 미리보기 (MSG-04, MSG-05). 누르면 메시지 화면으로 */
+export function MessageList({ items, href }: { items: MessageItem[]; href: string }) {
+  if (items.length === 0) return <EmptyLine>받은 메시지가 없습니다.</EmptyLine>;
+  return (
+    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+      {items.map((m) => (
+        <li key={m.id}>
+          <Link href={href} className="flex min-h-14 items-center gap-3 px-4 py-3 hover:bg-bg/60 active:bg-line-soft">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className={cn("truncate text-[15px] font-semibold", m.fromMe ? "text-sub" : "text-ink")}>
+                  {m.fromMe ? "나" : m.senderName}
+                </span>
+                <span className="shrink-0 text-[13px] text-sub tabular">{m.timeLabel}</span>
+              </div>
+              <p className={cn("mt-0.5 line-clamp-2 text-[15px]", m.unread ? "font-semibold text-ink" : "text-ink/80")}>{m.body}</p>
+            </div>
+            {m.unread && <span className="size-2 shrink-0 rounded-full bg-brand" aria-label="읽지 않음" />}
+            <Chevron />
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}

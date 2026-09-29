@@ -52,8 +52,15 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* 키보드로 이동할 때 초점 표시 */
-:focus-visible {
-  outline: 2px solid var(--color-brand);
-  outline-offset: 2px;
+/* 키보드로 이동할 때 초점 표시.
+   base 층에 넣어야 부품의 outline-none 같은 설정이 이길 수 있다 (층 밖 CSS는 항상 우선 적용됨) */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+  /* 창(패널)처럼 코드로 초점을 옮기는 요소에는 테두리를 그리지 않는다 */
+  [tabindex="-1"]:focus-visible {
+    outline: none;
+  }
 }

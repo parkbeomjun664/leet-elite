@@ -64,6 +64,47 @@ export type Guardian = {
   studentIds: string[];
 };
 
+export type Homework = {
+  id: string;
+  kind: "general" | "daily"; // 일반 · 매일
+  title: string;
+  body: string;
+  createdOn: string; // YYYY-MM-DD
+  createdBy: string; // teacher id
+  studentIds: string[];
+};
+
+export type Submission = {
+  homeworkId: string;
+  studentId: string;
+  submittedAt: string; // "YYYY-MM-DD HH:MM"
+  comment: string;
+  photoCount: number;
+  teacherComment: string | null;
+};
+
+export type Message = {
+  id: string;
+  studentId: string; // 학생별 학부모 대화방
+  from: "parent" | "teacher" | "admin";
+  senderName: string;
+  body: string;
+  sentAt: string; // "YYYY-MM-DD HH:MM"
+  read: boolean;
+  scheduledAt?: string; // 예약 발송
+};
+
+export type Makeup = {
+  id: string;
+  studentId: string;
+  teacherId: string;
+  date: string;
+  start: string;
+  durationMin: number;
+  reason: string;
+  status: "scheduled" | "done" | "cancelled";
+};
+
 export type Attendance = {
   studentId: string;
   date: string; // 한국 날짜 YYYY-MM-DD
