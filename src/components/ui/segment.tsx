@@ -9,7 +9,8 @@ export function FilterRow({ label, children }: { label: string; children: ReactN
     // 탭이 여러 줄로 넘어가도 이름표는 첫 줄에 맞춘다
     <div className="flex items-start gap-3 px-4 py-2.5">
       <span className="flex h-9 w-9 shrink-0 items-center text-sm font-semibold text-sub">{label}</span>
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">{children}</div>
+      {/* 휴대폰: 한 줄로 옆으로 밀어 보기 / 태블릿 이상: 여러 줄로 */}
+      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto sm:flex-wrap [&>*]:shrink-0">{children}</div>
     </div>
   );
 }

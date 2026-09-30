@@ -216,6 +216,9 @@ export function mockAttendanceFor(date: string = todayKST(), nowTime?: string): 
   const r = seeded(Number(date.replaceAll("-", ""))); // 날짜마다 항상 같은 결과
   const weekday = weekdayOf(date);
   const happened = (time: string) => nowTime === undefined || time <= nowTime;
+  // 지난 날짜는 수업이 다 끝났으니 대부분 등원·하원 기록이 있다. 오늘은 아직 안 온 학생이 섞여 있다
+  const past = nowTime === undefined;
+  const presentRate = past ? 0.9 : 0.55;
   const records: Attendance[] = [];
   for (const s of students) {
     if (s.status !== "enrolled") continue;
@@ -223,8 +226,8 @@ export function mockAttendanceFor(date: string = todayKST(), nowTime?: string): 
     if (!slot) continue;
     const roll = r();
     const checkIn = addMinutes(slot.start, Math.floor(r() * 15) - 5);
-    const checkOut = r() > 0.5 ? addMinutes(slot.start, slot.durationMin + Math.floor(r() * 10)) : null;
-    if (roll < 0.55 && happened(checkIn)) {
+    const checkOut = past || r() > 0.5 ? addMinutes(slot.start, slot.durationMin + Math.floor(r() * 10)) : null;
+    if (roll < presentRate && happened(checkIn)) {
       records.push({
         studentId: s.id,
         date,
@@ -233,7 +236,7 @@ export function mockAttendanceFor(date: string = todayKST(), nowTime?: string): 
         status: "present",
         memo: "",
       });
-    } else if (roll >= 0.55 && roll < 0.62) {
+    } else if (roll >= presentRate && roll < presentRate + 0.07) {
       const reasons = ["감기", "학교 행사", "가족 여행"];
       records.push({ studentId: s.id, date, checkInAt: null, checkOutAt: null, status: "absent", memo: reasons[Math.floor(r() * reasons.length)] });
     }
