@@ -1,48 +1,45 @@
-import { StudentTable, type StudentRow } from "@/components/students/student-table";
+import type { AdminStudent } from "@/components/students/admin-student-sheet";
+import { StudentTable } from "@/components/students/student-table";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/panel";
-import { WEEKDAY_KO } from "@/lib/date";
-import { classById, classes, guardiansOf, students } from "@/lib/mock/data";
-import type { ScheduleSlot } from "@/lib/mock/types";
+import { classes, guardiansOf, studentById, students } from "@/lib/mock/data";
 
-// 월요일부터 순서대로 (0=일 → 맨 뒤)
-const weekOrder = (w: number) => (w + 6) % 7;
+export default async function AdminStudents({ searchParams }: PageProps<"/admin/students">) {
+  // 바로 열기: /admin/students?edit=s003 → 그 학생 수정 창을 연 채로 시작
+  const { edit } = await searchParams;
 
-/** 수업 시간표 → "월·수 15:00" (시간이 요일마다 다르면 "화 15:00 / 목 15:10") */
-function scheduleLabel(slots: ScheduleSlot[]): string {
-  if (slots.length === 0) return "–";
-  const byStart = new Map<string, number[]>();
-  for (const s of [...slots].sort((a, b) => weekOrder(a.weekday) - weekOrder(b.weekday))) {
-    byStart.set(s.start, [...(byStart.get(s.start) ?? []), s.weekday]);
-  }
-  return [...byStart.entries()].map(([start, days]) => `${days.map((d) => WEEKDAY_KO[d]).join("·")} ${start}`).join(" / ");
-}
-
-export default function AdminStudents() {
   // 재원생 화면: 재원 + 예정만 (휴·퇴원생은 별도 화면, STU-09)
   const list = students.filter((s) => s.status === "enrolled" || s.status === "pending");
 
-  const rows: StudentRow[] = list.map((s) => {
-    const g = guardiansOf(s.id)[0] ?? null;
-    return {
-      id: s.id,
-      name: s.name,
-      schoolGrade: [s.school, s.grade].filter(Boolean).join(" ") || "–",
-      classIds: s.classIds,
-      classNames: s.classIds.map((id) => classById(id)?.name ?? "").filter(Boolean).join(", "),
-      schedule: scheduleLabel(s.schedule),
-      attendanceCode: s.attendanceCode,
-      guardianName: g?.name ?? null,
-      guardianPhone: g?.phone1 ?? null,
-      enrolledOn: s.enrolledOn,
-      memo: s.memo,
-      pending: s.status === "pending",
-    };
-  });
+  // 화면에 필요한 값만 골라 넘긴다 (직렬화 가능한 값)
+  const rows: AdminStudent[] = list.map((s) => ({
+    id: s.id,
+    name: s.name,
+    school: s.school,
+    grade: s.grade,
+    phone: s.phone,
+    status: s.status,
+    enrolledOn: s.enrolledOn,
+    leftOn: s.leftOn,
+    classIds: [...s.classIds],
+    schedule: s.schedule.map((x) => ({ ...x })),
+    attendanceCode: s.attendanceCode,
+    programs: [...s.programs],
+    memo: s.memo,
+    guardians: guardiansOf(s.id).map((g) => ({
+      id: g.id,
+      name: g.name,
+      relation: g.relation,
+      phone1: g.phone1,
+      phone2: g.phone2,
+      children: g.studentIds.map((id) => ({ id, name: studentById(id)?.name ?? "알 수 없음" })),
+    })),
+  }));
 
   const classChips = [...classes].sort((a, b) => a.sortOrder - b.sortOrder).map((c) => ({ id: c.id, name: c.name }));
-  const enrolledCount = rows.filter((r) => !r.pending).length;
+  const enrolledCount = rows.filter((r) => r.status === "enrolled").length;
   const pendingCount = rows.length - enrolledCount;
+  const initialEditId = typeof edit === "string" && rows.some((r) => r.id === edit) ? edit : null;
 
   return (
     <div className="space-y-5">
@@ -58,7 +55,7 @@ export default function AdminStudents() {
           </>
         }
       />
-      <StudentTable rows={rows} classes={classChips} />
+      <StudentTable students={rows} classes={classChips} initialEditId={initialEditId} />
     </div>
   );
 }
