@@ -159,7 +159,7 @@ erDiagram
 | kind | enum `general/daily` | 일반·매일 |
 | title | text | 오늘 날짜 사용 시 자동 입력 HW-02 |
 | body | text | |
-| starts_on, ends_on | date null | 매일 숙제 기간 HW-03 [확인] |
+| starts_on, ends_on | date null | 매일 숙제 기간 HW-03. 기간형은 시작~종료, 하루짜리는 시작=종료 (10/1 원장님 "둘 다") |
 | created_by | uuid → profiles | |
 | archived_at | timestamptz null | 제출물이 있으면 삭제 대신 보관 HW-12 |
 | created_at, updated_at | timestamptz | |
