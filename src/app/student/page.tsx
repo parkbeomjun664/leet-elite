@@ -52,18 +52,17 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
       isToday: m.date === date,
     }));
 
-  // 학원(선생님·원장님)이 보낸 메시지 최근 2개 (MSG-05)
-  const messageItems: MessageItem[] = messagesOf(student.id)
-    .filter((m) => m.from !== "parent")
+  // 학생 대화방(학원 ↔ 학생)의 최근 2개. 학부모 대화방은 학생에게 보이지 않는다 (MSG-05, 9/30 결정)
+  const messageItems: MessageItem[] = messagesOf(student.id, "student")
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt))
     .slice(0, 2)
     .map((m) => ({
       id: m.id,
       senderName: m.from === "admin" ? "원장님" : `${m.senderName} 선생님`,
-      fromMe: false,
+      fromMe: m.from === "student",
       body: m.body,
       timeLabel: `${shortDate(m.sentAt.slice(0, 10)).split(" ")[0]} ${m.sentAt.slice(11)}`,
-      unread: !m.read,
+      unread: m.from !== "student" && !m.read,
     }));
 
   return (

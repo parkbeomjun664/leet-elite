@@ -4,12 +4,16 @@ import { sortDays, studentDay } from "@/lib/attendance";
 import { formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
 import { homeworkOfStudent, messagesOf, submissionOf } from "@/lib/mock/activity";
 import { classById, classes, guardiansOf, mockAttendanceFor, studentsOfTeacher, teachers } from "@/lib/mock/data";
+import type { Message } from "@/lib/mock/types";
 
 // 가상 데이터라 매 요청마다 "지금" 기준으로 다시 계산한다
 export const dynamic = "force-dynamic";
 
 // TODO(2단계): 로그인한 선생님으로 교체
 const demoTeacher = teachers[0];
+
+// 화면에 필요한 값만 골라 넘긴다 (메시지 1건)
+const toChat = (m: Message) => ({ id: m.id, from: m.from, senderName: m.senderName, body: m.body, sentAt: m.sentAt });
 
 export default async function TeacherHome({ searchParams }: PageProps<"/teacher">) {
   // 시연용: /teacher?at=18:00 처럼 시각을 지정하면 그 시각 기준으로 보여 준다 (가상 데이터 단계에서만)
@@ -39,7 +43,10 @@ export default async function TeacherHome({ searchParams }: PageProps<"/teacher"
           const sub = submissionOf(h.id, s.id);
           return { id: h.id, kind: h.kind, title: h.title, createdOn: h.createdOn, submitted: !!sub, hasFeedback: !!sub?.teacherComment };
         }),
-        messages: messagesOf(s.id).map((m) => ({ id: m.id, from: m.from, senderName: m.senderName, body: m.body, sentAt: m.sentAt })),
+        messages: {
+          family: messagesOf(s.id, "family").map(toChat),
+          student: messagesOf(s.id, "student").map(toChat),
+        },
       },
     ]),
   );

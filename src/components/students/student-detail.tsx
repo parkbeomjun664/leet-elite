@@ -12,14 +12,17 @@ import { DAY_STATUS_LABEL, type StudentDay } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
 
 // 학생 상세 패널 (HOME-06): 선생님 첫 화면에서 학생 이름을 누르면 오른쪽에 열린다.
-// 수업 정보 · 숙제(최근 5개 + 이 학생에게 바로 숙제 등록) · 학부모 메시지(예약 발송)
+// 수업 정보 · 숙제(최근 5개 + 이 학생에게 바로 숙제 등록) · 메시지(학부모 대화방 / 학생 대화방, 예약 발송)
 
 export type StudentDetailData = {
   classNames: string[];
   guardians: { name: string; phone: string }[];
   homework: { id: string; kind: "general" | "daily"; title: string; createdOn: string; submitted: boolean; hasFeedback: boolean }[];
-  messages: { id: string; from: "parent" | "teacher" | "admin"; senderName: string; body: string; sentAt: string }[];
+  // 학생마다 대화방 두 개: family(학부모) · student(학생). 선생님·원장님은 둘 다 본다 (MSG-04, MSG-05)
+  messages: Record<"family" | "student", ChatMessage[]>;
 };
+
+type ChatMessage = { id: string; from: "parent" | "student" | "teacher" | "admin"; senderName: string; body: string; sentAt: string };
 
 type TabKey = "info" | "homework" | "message";
 
@@ -44,7 +47,7 @@ export function StudentDetail({
           items={[
             { key: "info", label: "수업 정보" },
             { key: "homework", label: "숙제", count: data.homework.length },
-            { key: "message", label: "학부모 메시지", count: data.messages.length },
+            { key: "message", label: "메시지", count: data.messages.family.length + data.messages.student.length },
           ]}
         />
       </div>
@@ -189,14 +192,38 @@ function HomeworkTab({ data, homeworkHref }: { data: StudentDetailData; homework
 
 function MessageTab({ data }: { data: StudentDetailData }) {
   const [scheduled, setScheduled] = useState(false);
+  // 학부모 대화방과 학생 대화방은 따로다. 학생은 학부모 대화를 볼 수 없다
+  const [room, setRoom] = useState<"family" | "student">("family");
+  const list = data.messages[room];
   return (
     <div className="flex min-h-full flex-col gap-4">
-      {data.messages.length === 0 ? (
+      <div className="flex gap-1 rounded-[var(--radius-control)] bg-line-soft p-1" role="group" aria-label="대화방 선택">
+        {(
+          [
+            ["family", "학부모"],
+            ["student", "학생"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={room === key}
+            onClick={() => setRoom(key)}
+            className={cn(
+              "h-9 flex-1 rounded-[var(--radius-control)] text-[15px]",
+              room === key ? "bg-card font-semibold text-ink shadow-[0_1px_2px_rgba(40,20,20,0.08)]" : "text-sub hover:text-ink",
+            )}
+          >
+            {label} <span className="text-sm tabular opacity-70">{data.messages[key].length}</span>
+          </button>
+        ))}
+      </div>
+      {list.length === 0 ? (
         <EmptyLine>아직 주고받은 메시지가 없습니다.</EmptyLine>
       ) : (
         <ul className="space-y-3">
-          {data.messages.map((m) => {
-            const mine = m.from !== "parent";
+          {list.map((m) => {
+            const mine = m.from === "teacher" || m.from === "admin";
             return (
               <li key={m.id} className={cn("flex flex-col", mine ? "items-end" : "items-start")}>
                 <span className="mb-1 text-sm text-sub">
@@ -223,7 +250,7 @@ function MessageTab({ data }: { data: StudentDetailData }) {
           // TODO(5단계): 메시지 발송·예약 발송 (MSG-02, MSG-04)
         }}
       >
-        <Textarea aria-label="메시지 내용" rows={3} placeholder="학부모님께 보낼 메시지를 입력하세요" />
+        <Textarea aria-label="메시지 내용" rows={3} placeholder={room === "family" ? "학부모님께 보낼 메시지를 입력하세요" : "학생에게 보낼 메시지를 입력하세요"} />
         <div className="flex flex-wrap items-center gap-3">
           <Checkbox label="예약 발송" checked={scheduled} onChange={(e) => setScheduled(e.target.checked)} />
           {scheduled && <Input type="datetime-local" aria-label="보낼 시각" className="w-auto" />}

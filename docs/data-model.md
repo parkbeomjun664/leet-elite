@@ -206,8 +206,8 @@ erDiagram
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
 | id | uuid PK | |
-| kind | enum `student_family/broadcast/staff` | 학생별 학부모 대화방(MSG-04) / 공지성 발송 / 선생님끼리 |
-| student_id | uuid null | student_family일 때 |
+| kind | enum `student_family/student_direct/broadcast/staff` | 학생별 학부모 대화방(MSG-04) / 학생별 학생 대화방(MSG-05) / 공지성 발송 / 선생님끼리 |
+| student_id | uuid null | student_family·student_direct일 때. 학생 한 명당 각각 한 방 (unique(kind, student_id)) |
 | title | text null | |
 
 **messages**

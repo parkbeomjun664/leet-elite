@@ -73,20 +73,34 @@ export const messages: Message[] = students.slice(0, 40).flatMap((s, i) => {
   if (i % 3 !== 0 && !DEMO_IDS.has(s.id)) return [];
   const teacher = teacherOf(s.id);
   const list: Message[] = [
-    { id: `m-${s.id}-1`, studentId: s.id, from: "teacher", senderName: teacher.nickname, body: `${s.name} 학생 오늘 단어 테스트 만점이었어요. 칭찬 많이 해 주세요.`, sentAt: `${d(-2)} 18:20`, read: true },
-    { id: `m-${s.id}-2`, studentId: s.id, from: "parent", senderName: `${s.name} 어머님`, body: "감사합니다! 집에서도 칭찬해 줄게요.", sentAt: `${d(-2)} 19:05`, read: true },
+    { id: `m-${s.id}-1`, studentId: s.id, room: "family", from: "teacher", senderName: teacher.nickname, body: `${s.name} 학생 오늘 단어 테스트 만점이었어요. 칭찬 많이 해 주세요.`, sentAt: `${d(-2)} 18:20`, read: true },
+    { id: `m-${s.id}-2`, studentId: s.id, room: "family", from: "parent", senderName: `${s.name} 어머님`, body: "감사합니다! 집에서도 칭찬해 줄게요.", sentAt: `${d(-2)} 19:05`, read: true },
   ];
   if (i % 2 === 0) {
-    list.push({ id: `m-${s.id}-3`, studentId: s.id, from: "parent", senderName: `${s.name} 어머님`, body: PARENT_NOTES[i % PARENT_NOTES.length], sentAt: `${today} 09:12`, read: false });
+    list.push({ id: `m-${s.id}-3`, studentId: s.id, room: "family", from: "parent", senderName: `${s.name} 어머님`, body: PARENT_NOTES[i % PARENT_NOTES.length], sentAt: `${today} 09:12`, read: false });
   }
   if (DEMO_IDS.has(s.id)) {
-    list.push({ id: `m-${s.id}-4`, studentId: s.id, from: "teacher", senderName: teacher.nickname, body: "이번 주 금요일에 단원 평가가 있어요. 3과 단어를 복습해 오세요.", sentAt: `${today} 13:40`, read: false });
+    list.push({ id: `m-${s.id}-4`, studentId: s.id, room: "family", from: "teacher", senderName: teacher.nickname, body: "이번 주 금요일에 단원 평가가 있어요. 3과 단어를 복습해 오세요.", sentAt: `${today} 13:40`, read: false });
   }
   return list;
 });
 
-export const messagesOf = (studentId: string) => messages.filter((m) => m.studentId === studentId);
-export const unreadCount = () => messages.filter((m) => m.from === "parent" && !m.read).length;
+// 학생 대화방 (학원 ↔ 학생, MSG-05). 시연용 학생과 앞쪽 학생 몇 명
+for (const [i, s] of students.slice(0, 12).entries()) {
+  if (i % 4 !== 0 && !DEMO_IDS.has(s.id)) continue;
+  const teacher = teacherOf(s.id);
+  messages.push(
+    { id: `ms-${s.id}-1`, studentId: s.id, room: "student", from: "teacher", senderName: teacher.nickname, body: "오늘 숙제 사진이 흐려서 잘 안 보여요. 밝은 곳에서 다시 찍어 올려 줄래요?", sentAt: `${d(-1)} 20:10`, read: true },
+    { id: `ms-${s.id}-2`, studentId: s.id, room: "student", from: "student", senderName: s.name, body: "네! 다시 올렸어요.", sentAt: `${d(-1)} 20:25`, read: true },
+    { id: `ms-${s.id}-3`, studentId: s.id, room: "student", from: "teacher", senderName: teacher.nickname, body: "확인했어요. 잘했어요. 내일 단어 시험 준비해 오세요.", sentAt: `${today} 12:05`, read: false },
+  );
+}
+
+/** room: family = 학부모 대화방(기본), student = 학생 대화방 */
+export const messagesOf = (studentId: string, room: "family" | "student" = "family") =>
+  messages.filter((m) => m.studentId === studentId && m.room === room);
+/** 원장님 홈: 안 읽은 학부모·학생 메시지 */
+export const unreadCount = () => messages.filter((m) => (m.from === "parent" || m.from === "student") && !m.read).length;
 
 // 보강: 오늘 2건 + 이번 주 몇 건
 export const makeups: Makeup[] = [

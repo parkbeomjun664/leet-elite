@@ -85,8 +85,10 @@ export type Submission = {
 
 export type Message = {
   id: string;
-  studentId: string; // 학생별 학부모 대화방
-  from: "parent" | "teacher" | "admin";
+  studentId: string;
+  // 학생마다 대화방이 두 개: family = 학원↔학부모, student = 학원↔학생 (학생은 family 방을 볼 수 없다)
+  room: "family" | "student";
+  from: "parent" | "student" | "teacher" | "admin";
   senderName: string;
   body: string;
   sentAt: string; // "YYYY-MM-DD HH:MM"

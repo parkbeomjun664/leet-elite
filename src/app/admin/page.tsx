@@ -55,7 +55,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   // 현황 계산
   const unread = unreadCount();
   const unreadList = messages
-    .filter((m) => m.from === "parent" && !m.read)
+    .filter((m) => (m.from === "parent" || m.from === "student") && !m.read)
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt));
   const todaySubs = submissions.filter((s) => s.submittedAt.startsWith(date));
   const todaySubStudents = new Set(todaySubs.map((s) => s.studentId)).size;
