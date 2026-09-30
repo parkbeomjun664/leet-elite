@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { Checkbox, Field, Input } from "@/components/ui/field";
 
 // TODO(2단계): Supabase 인증 연결. 지금은 화면 확인용
 // 입력칸은 로그인 버튼(lg, 48px)과 높이를 맞춘다. Input에 크기 옵션이 없어 여기서만 높이를 지정
@@ -32,6 +32,11 @@ export function LoginForm() {
       <Field label="비밀번호" htmlFor="password">
         <Input id="password" name="password" type="password" autoComplete="current-password" required inputSize="lg" />
       </Field>
+      {/* 자동 로그인 (AUTH-06). TODO(2단계): 체크하면 세션을 오래 유지, 해제하면 브라우저를 닫을 때 로그아웃 */}
+      <div className="flex flex-wrap items-center gap-x-3">
+        <Checkbox name="keepSignedIn" defaultChecked label="자동 로그인" className="min-h-11 font-semibold text-ink" />
+        <p className="text-sm text-sub">공용 PC에서는 체크를 해제하세요</p>
+      </div>
       <Button type="submit" variant="primary" size="lg" className="w-full">
         로그인
       </Button>

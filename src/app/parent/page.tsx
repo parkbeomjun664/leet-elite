@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Panel, SectionTitle } from "@/components/ui/panel";
 import { studentDay } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
-import { addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
+import { addDays, addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
 import { homeworkOfStudent, makeupsOf, messagesOf, submissionOf } from "@/lib/mock/activity";
 import { classById, guardians, mockAttendanceFor, studentById, teacherById } from "@/lib/mock/data";
 
@@ -48,7 +48,9 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
     .join(", ");
 
   const homeworkItems: HomeworkItem[] = homeworkOfStudent(student.id).map((hw) => {
-    const sub = submissionOf(hw.id, student.id);
+    // 지금(또는 시연 시각)보다 뒤에 낸 제출은 아직 없는 것으로 본다 (가상 데이터가 저녁 제출을 미리 만들어 둠)
+    const found = submissionOf(hw.id, student.id);
+    const sub = found && found.submittedAt <= `${date} ${now}` ? found : null;
     return {
       id: hw.id,
       daily: hw.kind === "daily",
@@ -85,6 +87,27 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
     unread: m.from !== "parent" && !m.read,
   }));
 
+  // 새 알림 (맨 위 줄): 오늘 등원·하원, 안 읽은 학원 메시지, 새 선생님 코멘트. 최근 것부터 3개
+  // TODO(NOTI): 읽음 기록이 생기면 "읽지 않은 알림"만 보여 준다. 지금 코멘트는 어제·오늘 제출분 기준
+  const nowKey = `${date} ${now}`;
+  const alerts: AlertItem[] = [];
+  if (day.record?.checkOutAt) alerts.push({ key: "out", sortKey: `${date} ${day.record.checkOutAt}`, tone: "info", text: `${student.name} 학생 하원했습니다`, time: day.record.checkOutAt });
+  if (day.record?.checkInAt) alerts.push({ key: "in", sortKey: `${date} ${day.record.checkInAt}`, tone: "ok", text: `${student.name} 학생 등원했습니다`, time: day.record.checkInAt });
+  const unreadFromAcademy = allMessages.filter((m) => m.from !== "parent" && !m.read);
+  if (unreadFromAcademy.length > 0) {
+    alerts.push({ key: "msg", sortKey: unreadFromAcademy[0].sentAt, tone: "brand", text: `새 메시지 ${unreadFromAcademy.length}건`, href: "/parent/messages" });
+  }
+  const newComments = homeworkOfStudent(student.id)
+    .map((hw) => submissionOf(hw.id, student.id))
+    .filter((sub) => sub?.teacherComment && sub.submittedAt >= addDays(date, -1) && sub.submittedAt <= nowKey)
+    .map((sub) => sub!.submittedAt)
+    .sort()
+    .reverse();
+  if (newComments.length > 0) {
+    alerts.push({ key: "comment", sortKey: newComments[0], tone: "info", text: `선생님 코멘트 ${newComments.length}건`, href: "/parent/homework" });
+  }
+  alerts.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+
   return (
     <div className="space-y-6">
       {/* 자녀 선택 + 자녀 정보 */}
@@ -94,6 +117,7 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
           <h1 className="text-xl leading-tight font-bold">{student.name}</h1>
           <p className="mt-1 text-[15px] text-sub">{[student.school, student.grade, classLine].filter(Boolean).join(" · ")}</p>
         </div>
+        <NewAlerts items={alerts.slice(0, 3)} />
       </section>
 
       {/* 오늘 등원·하원 (ATT-08) */}
@@ -197,5 +221,48 @@ function TimeCell({ label, time }: { label: string; time: string | null }) {
       <dt className="text-[13px] text-sub">{label}</dt>
       <dd className={cn("text-[22px] leading-tight font-bold tabular", time ? "text-ink" : "text-sub")}>{time ?? "–"}</dd>
     </div>
+  );
+}
+
+type AlertItem = { key: string; sortKey: string; tone: "ok" | "info" | "brand"; text: string; time?: string; href?: string };
+
+const DOT: Record<AlertItem["tone"], string> = { ok: "bg-ok", info: "bg-info", brand: "bg-brand" };
+
+// 새 알림 줄: 한 줄에 하나. 누를 곳이 있으면 오른쪽에 화살표
+function NewAlerts({ items }: { items: AlertItem[] }) {
+  if (items.length === 0) {
+    return <p className="rounded-[var(--radius-card)] border border-line bg-card px-4 py-3 text-[15px] text-sub">새 알림이 없습니다</p>;
+  }
+  return (
+    <section aria-label="새 알림" className="overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+      <h2 className="border-b border-line-soft px-4 py-2 text-sm font-semibold text-sub">새 알림</h2>
+      <ul className="divide-y divide-line-soft">
+        {items.map((a) => {
+          const body = (
+            <>
+              <span className={cn("size-2 shrink-0 rounded-full", DOT[a.tone])} aria-hidden />
+              <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{a.text}</span>
+              {a.time && <span className="shrink-0 text-[15px] text-sub tabular">{a.time}</span>}
+              {a.href && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-sub">
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              )}
+            </>
+          );
+          return (
+            <li key={a.key}>
+              {a.href ? (
+                <Link href={a.href} className="flex min-h-12 items-center gap-3 px-4 py-2.5 hover:bg-bg/60 active:bg-line-soft">
+                  {body}
+                </Link>
+              ) : (
+                <div className="flex min-h-12 items-center gap-3 px-4 py-2.5">{body}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

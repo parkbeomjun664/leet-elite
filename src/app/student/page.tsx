@@ -1,5 +1,7 @@
 import { DayStatusBadge, HomeworkList, MakeupList, MessageList, type HomeworkItem, type MakeupItem, type MessageItem } from "@/components/mobile/mobile-shell";
-import { Panel, SectionTitle } from "@/components/ui/panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyLine, Panel, SectionTitle } from "@/components/ui/panel";
 import { studentDay } from "@/lib/attendance";
 import { addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
 import { homeworkOfStudent, makeupsOf, messagesOf, submissionOf } from "@/lib/mock/activity";
@@ -27,7 +29,9 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
   const className = student.classIds.map((id) => classById(id)?.name).filter(Boolean).join(" · ");
 
   const homeworkItems: HomeworkItem[] = homeworkOfStudent(student.id).map((hw) => {
-    const sub = submissionOf(hw.id, student.id);
+    // 지금(또는 시연 시각)보다 뒤에 낸 제출은 아직 없는 것으로 본다 (가상 데이터가 저녁 제출을 미리 만들어 둠)
+    const found = submissionOf(hw.id, student.id);
+    const sub = found && found.submittedAt <= `${date} ${now}` ? found : null;
     return {
       id: hw.id,
       daily: hw.kind === "daily",
@@ -37,7 +41,9 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
       hasTeacherComment: Boolean(sub?.teacherComment),
     };
   });
-  const pending = homeworkItems.filter((h) => !h.submitted).length;
+  // 안 낸 숙제는 맨 위 "오늘 할 숙제"로, 낸 숙제는 아래 목록으로 나눈다
+  const pendingItems = homeworkItems.filter((h) => !h.submitted);
+  const submittedItems = homeworkItems.filter((h) => h.submitted);
 
   // 예정된 보강만 (오늘 것은 끝나기 전까지 보여 준다)
   const makeupItems: MakeupItem[] = makeupsOf(student.id)
@@ -78,6 +84,42 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
         )}
       </section>
 
+      {/* 오늘 할 숙제 (HW-06): 미제출을 가장 먼저, 제출 버튼을 크게 */}
+      {pendingItems.length > 0 ? (
+        <Panel
+          title={
+            <span className="flex items-baseline gap-2">
+              오늘 할 숙제<span className="text-[15px] font-semibold text-brand tabular">{pendingItems.length}</span>
+            </span>
+          }
+          className="border-brand/40"
+        >
+          <ul className="divide-y divide-line-soft">
+            {pendingItems.map((hw) => (
+              <li key={hw.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Badge tone={hw.daily ? "info" : "neutral"}>{hw.daily ? "매일" : "일반"}</Badge>
+                    <span className="min-w-0 truncate text-base font-bold text-ink">{hw.title}</span>
+                  </div>
+                  <p className="mt-1 text-[13px] text-sub tabular">{hw.dateLabel}에 받은 숙제</p>
+                </div>
+                {/* TODO(HW-06): 사진·글을 올리는 제출 화면으로 이동 */}
+                <Button variant="primary" size="lg" className="w-full">
+                  제출하기
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : (
+        homeworkItems.length > 0 && (
+          <p className="rounded-[var(--radius-card)] border border-ok/30 bg-ok-tint px-4 py-3 text-[15px] font-semibold text-ok">
+            오늘 할 숙제를 모두 냈어요
+          </p>
+        )
+      )}
+
       {/* 오늘 수업·출결 (ATT-08) */}
       <Panel title="오늘" actions={<span className="text-[15px] text-sub">{formatDateKo(date).slice(6)}</span>}>
         {day.slot ? (
@@ -113,12 +155,10 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
         )}
       </Panel>
 
-      {/* 숙제 (HW-06, HW-10) */}
+      {/* 제출한 숙제 (HW-10: 선생님 코멘트 확인) */}
       <section>
-        <SectionTitle count={homeworkItems.length} actions={pending > 0 && <span className="text-[15px] font-semibold text-warn">미제출 {pending}</span>}>
-          숙제
-        </SectionTitle>
-        <HomeworkList items={homeworkItems} />
+        <SectionTitle count={submittedItems.length}>제출한 숙제</SectionTitle>
+        {submittedItems.length > 0 ? <HomeworkList items={submittedItems} /> : <EmptyLine>아직 제출한 숙제가 없습니다.</EmptyLine>}
       </section>
 
       {/* 보강 일정 (MKP-04) */}

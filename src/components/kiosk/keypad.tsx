@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useEffectEvent, useMemo, useState, useSyncExternalStore, type ComponentProps } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 import { formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
 
@@ -21,6 +21,68 @@ type Result =
 
 type Entry = { count: number; lastAt: number };
 
+// ── 소리 (KIOSK-03 보조) ───────────────────────────────────
+// 소리 파일 없이 Web Audio로 짧은 음을 만든다. 브라우저는 사용자가 누르기 전에는 소리를 막으므로
+// 첫 키를 누를 때 AudioContext를 만든다.
+type Sound = "ok" | "notice" | "error";
+const VOLUME = 0.12; // 너무 크지 않게
+
+function playSound(ctx: AudioContext, sound: Sound) {
+  // 음 하나: 시작(초 뒤), 높이(Hz), 길이(초), 파형
+  const tone = (at: number, freq: number, dur: number, type: OscillatorType = "sine") => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const t = ctx.currentTime + at;
+    osc.type = type;
+    osc.frequency.value = freq;
+    // 딸깍 소리가 나지 않게 짧게 커졌다가 줄어든다
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(type === "square" ? VOLUME / 2 : VOLUME, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  };
+  if (sound === "ok") {
+    // 성공: 올라가는 두 음
+    tone(0, 880, 0.13);
+    tone(0.14, 1320, 0.18);
+  } else if (sound === "notice") {
+    // 이미 처리됨: 가운데 음 하나
+    tone(0, 660, 0.22);
+  } else {
+    // 오류: 낮은 '삐-'
+    tone(0, 150, 0.4, "square");
+  }
+}
+
+// 소리 켜짐/꺼짐은 이 태블릿에만 기억한다 (localStorage, 기본 켜짐)
+const SOUND_KEY = "kiosk-sound";
+const soundListeners = new Set<() => void>();
+function readSoundOn() {
+  try {
+    return localStorage.getItem(SOUND_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+function writeSoundOn(on: boolean) {
+  try {
+    localStorage.setItem(SOUND_KEY, on ? "on" : "off");
+  } catch {
+    // 저장이 막힌 브라우저에서는 바뀌지 않는다
+  }
+  soundListeners.forEach((l) => l());
+}
+function subscribeSound(onChange: () => void) {
+  soundListeners.add(onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    soundListeners.delete(onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
 // 1초마다 시계를 다시 그린다. 서버에서는 빈 값이라 첫 화면에서 시간이 어긋나지 않는다
 function subscribeClock(onChange: () => void) {
   const t = setInterval(onChange, 1000);
@@ -29,6 +91,12 @@ function subscribeClock(onChange: () => void) {
 
 export function KioskKeypad({ students }: { students: KioskStudent[] }) {
   const byCode = useMemo(() => new Map(students.map((s) => [s.code, s])), [students]);
+  // 더 긴 번호의 앞자리인 번호들 (예: 10024가 있으면 1002). 이 번호에서는 바로 처리하지 않고 확인을 기다린다
+  const longerPrefixes = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of students) for (let i = MIN_LEN; i < s.code.length; i++) set.add(s.code.slice(0, i));
+    return set;
+  }, [students]);
 
   const time = useSyncExternalStore(subscribeClock, () => nowTimeKST(), () => "");
   const date = useSyncExternalStore(subscribeClock, () => todayKST(), () => "");
@@ -37,54 +105,102 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
   const [result, setResult] = useState<Result | null>(null);
   // 오늘 누른 기록 (날짜:학생ID → 횟수·마지막 시각). 시제품이라 새로고침하면 사라진다
   // TODO(3단계): kiosk_check(code)가 DB의 오늘 출결 기록으로 등원·하원을 판단한다
-  const [log, setLog] = useState<Record<string, Entry>>({});
+  const log = useRef<Record<string, Entry>>({});
+
+  // 빠르게 연달아 누를 때 화면이 다시 그려지기 전의 값을 읽지 않도록, 입력·결과 여부를 ref에도 같이 둔다
+  const input = useRef("");
+  const showing = useRef(false);
+  function changeDigits(v: string) {
+    input.current = v;
+    setDigits(v);
+  }
+  function changeResult(r: Result | null) {
+    showing.current = r !== null;
+    setResult(r);
+  }
+
+  const soundOn = useSyncExternalStore(subscribeSound, readSoundOn, () => true);
+  const audio = useRef<AudioContext | null>(null);
+
+  // 키를 누를 때마다 부른다 (처음 한 번 AudioContext 생성, 태블릿이 멈춰 둔 경우 다시 켜기)
+  function wakeAudio() {
+    if (!("AudioContext" in window)) return;
+    try {
+      audio.current ??= new AudioContext();
+      if (audio.current.state === "suspended") void audio.current.resume();
+    } catch {
+      audio.current = null;
+    }
+  }
+
+  function show(next: Result) {
+    changeResult(next);
+    if (!soundOn || !audio.current) return;
+    const sound: Sound = next.kind === "in" || next.kind === "out" ? "ok" : next.kind === "unknown" ? "error" : "notice";
+    try {
+      playSound(audio.current, sound);
+    } catch {
+      // 소리가 안 나도 출결 처리는 그대로
+    }
+  }
 
   // 결과는 몇 초 뒤 자동으로 처음 화면으로 (KIOSK-03)
   useEffect(() => {
     if (!result) return;
-    const t = setTimeout(() => setResult(null), RESULT_MS);
+    const t = setTimeout(() => changeResult(null), RESULT_MS);
     return () => clearTimeout(t);
   }, [result]);
 
   function pressDigit(d: string) {
+    wakeAudio();
     // 결과 화면에서 바로 다음 학생이 누르면 결과를 닫고 새로 입력
-    if (result) {
-      setResult(null);
-      setDigits(d);
+    const prev = showing.current ? "" : input.current;
+    if (showing.current) changeResult(null);
+    if (prev.length >= MAX_LEN) return;
+    const next = prev + d;
+
+    // 바로 처리: 번호로 학생이 한 명만 정해지면(더 긴 번호의 앞자리가 아니면) 확인 없이 처리. 6자리가 차도 처리
+    if ((byCode.has(next) && !longerPrefixes.has(next)) || next.length === MAX_LEN) {
+      processCode(next);
       return;
     }
-    setDigits((prev) => (prev.length >= MAX_LEN ? prev : prev + d));
+    changeDigits(next);
   }
 
   function erase() {
-    setResult(null);
-    setDigits((prev) => prev.slice(0, -1));
+    wakeAudio();
+    changeResult(null);
+    changeDigits(input.current.slice(0, -1));
   }
 
   function submit() {
-    if (digits.length < MIN_LEN) return;
-    const code = digits;
-    setDigits("");
+    wakeAudio();
+    if (input.current.length < MIN_LEN) return;
+    processCode(input.current);
+  }
+
+  function processCode(code: string) {
+    changeDigits("");
 
     const student = byCode.get(code);
     if (!student) {
-      setResult({ kind: "unknown" });
+      show({ kind: "unknown" });
       return;
     }
 
     const now = Date.now();
     const key = `${todayKST()}:${student.id}`;
-    const prev = log[key];
+    const prev = log.current[key];
     if (prev && now - prev.lastAt < REPEAT_BLOCK_MS) {
-      setResult({ kind: "recent", name: student.name });
+      show({ kind: "recent", name: student.name });
       return;
     }
 
     const count = (prev?.count ?? 0) + 1;
-    setLog((l) => ({ ...l, [key]: { count, lastAt: now } }));
-    if (count === 1) setResult({ kind: "in", name: student.name, time: nowTimeKST() });
-    else if (count === 2) setResult({ kind: "out", name: student.name, time: nowTimeKST() });
-    else setResult({ kind: "done", name: student.name });
+    log.current[key] = { count, lastAt: now };
+    if (count === 1) show({ kind: "in", name: student.name, time: nowTimeKST() });
+    else if (count === 2) show({ kind: "out", name: student.name, time: nowTimeKST() });
+    else show({ kind: "done", name: student.name });
   }
 
   // 태블릿에 키보드를 연결해도 쓸 수 있게: 숫자, Backspace, Enter, Esc(모두 지우기)
@@ -94,8 +210,8 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     else if (e.key === "Backspace") erase();
     else if (e.key === "Enter") submit();
     else if (e.key === "Escape") {
-      setResult(null);
-      setDigits("");
+      changeResult(null);
+      changeDigits("");
     } else return;
     // 초점이 있는 버튼이 Enter로 한 번 더 눌리지 않게
     e.preventDefault();
@@ -106,6 +222,9 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  // 다른 번호의 앞자리라서 기다리는 중 (예: 1002를 눌렀는데 10024도 있음)
+  const waiting = byCode.has(digits) && longerPrefixes.has(digits);
 
   const slots = Math.min(MAX_LEN, Math.max(MIN_LEN, digits.length + (digits.length < MAX_LEN ? 1 : 0)));
 
@@ -123,9 +242,29 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
               LEET영어학원 <span className="font-semibold text-white/80">출결</span>
             </p>
           </div>
-          <div className="flex shrink-0 flex-col items-end leading-tight sm:flex-row sm:items-baseline sm:gap-3">
-            <span className="text-[13px] text-white/80 sm:text-[15px]">{date ? formatDateKo(date) : " "}</span>
-            <span className="text-xl font-bold tabular md:text-[28px]">{time || " "}</span>
+          <div className="flex shrink-0 items-center gap-3 md:gap-5">
+            {/* 소리 켜짐/꺼짐. 태블릿 음량도 켜 두어야 들린다 */}
+            <button
+              type="button"
+              onClick={() => {
+                wakeAudio();
+                writeSoundOn(!soundOn);
+              }}
+              aria-pressed={soundOn}
+              aria-label={soundOn ? "소리 켜짐 (누르면 끄기)" : "소리 꺼짐 (누르면 켜기)"}
+              title="태블릿 음량도 켜 두세요"
+              className={cn(
+                "flex h-10 items-center gap-1.5 rounded-[var(--radius-control)] border px-3 text-[15px] font-semibold transition-colors hover:bg-white/10",
+                soundOn ? "border-white/40 text-white" : "border-white/25 text-white/70",
+              )}
+            >
+              <SpeakerIcon on={soundOn} />
+              <span className="hidden sm:inline">{soundOn ? "소리 켜짐" : "소리 꺼짐"}</span>
+            </button>
+            <div className="flex flex-col items-end leading-tight sm:flex-row sm:items-baseline sm:gap-3">
+              <span className="text-[13px] text-white/80 sm:text-[15px]">{date ? formatDateKo(date) : " "}</span>
+              <span className="text-xl font-bold tabular md:text-[28px]">{time || " "}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -167,7 +306,17 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
                   })}
                 </div>
                 <p className="mt-5 text-[15px] text-sub md:text-base">
-                  번호 {MIN_LEN}~{MAX_LEN}자리를 누르고 <b className="font-bold text-ink">확인</b>을 눌러 주세요
+                  {waiting ? (
+                    <>
+                      번호가 더 있으면 이어서 누르고, 끝났으면 <b className="font-bold text-ink">확인</b>을 눌러 주세요
+                    </>
+                  ) : digits.length >= MIN_LEN ? (
+                    <>
+                      번호를 다 눌렀으면 <b className="font-bold text-ink">확인</b>을 눌러 주세요
+                    </>
+                  ) : (
+                    <>번호를 누르면 바로 처리됩니다</>
+                  )}
                 </p>
               </>
             )}
@@ -200,6 +349,16 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
         <p className="text-center text-[15px] text-sub md:landscape:hidden">번호를 잊었으면 선생님께 말씀해 주세요.</p>
       </main>
     </div>
+  );
+}
+
+/** 스피커 그림 (꺼짐이면 X 표시) */
+function SpeakerIcon({ on }: { on: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+      {on ? <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" /> : <path d="m16 9.5 5 5m0-5-5 5" />}
+    </svg>
   );
 }
 
