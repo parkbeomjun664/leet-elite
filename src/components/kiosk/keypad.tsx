@@ -117,7 +117,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-[var(--radius-control)] bg-card md:size-11">
               {/* 원본 PNG가 흰 배경이라 흰 네모 위에서 곱하기 합성 */}
-              <Image src="/brand/leet-logo.png" alt="" width={1414} height={2000} priority className="h-9 w-auto mix-blend-multiply md:h-10" />
+              <Image src="/brand/leet-mark.png" alt="" width={407} height={512} priority className="h-7 w-auto md:h-8" />
             </span>
             <p className="truncate text-lg font-bold md:text-xl">
               LEET영어학원 <span className="font-semibold text-white/80">출결</span>

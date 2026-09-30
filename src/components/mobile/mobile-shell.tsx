@@ -36,8 +36,8 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
       <header className="sticky top-0 z-30 border-b border-line bg-card pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex h-14 max-w-[560px] items-center justify-between gap-3 px-4">
           <Link href={home} className="flex min-h-11 items-center gap-1.5" aria-label="홈으로">
-            {/* 로고 PNG는 위아래 여백이 커서 음수 여백으로 글자 줄과 맞춘다 */}
-            <Image src="/brand/leet-logo.png" alt="" width={1414} height={2000} className="-my-1 h-9 w-auto mix-blend-multiply" />
+            {/* 여백을 잘라 낸 투명 로고 (scripts/make-icons.mjs 로 생성) */}
+            <Image src="/brand/leet-mark.png" alt="" width={407} height={512} className="h-7 w-auto" />
             <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>
             <span className="text-[15px] font-semibold text-ink">영어학원</span>
           </Link>

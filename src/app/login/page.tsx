@@ -10,7 +10,7 @@ const KAKAO_CHANNEL_URL = "http://pf.kakao.com/_zayZX/chat";
 function LogoMark({ className }: { className: string }) {
   return (
     <span className={`grid shrink-0 place-items-center overflow-hidden rounded-[var(--radius-card)] bg-card ${className}`}>
-      <Image src="/brand/leet-logo.png" alt="" width={1414} height={2000} priority className="h-[88%] w-auto mix-blend-multiply" />
+      <Image src="/brand/leet-mark.png" alt="" width={407} height={512} priority className="h-[70%] w-auto" />
     </span>
   );
 }
