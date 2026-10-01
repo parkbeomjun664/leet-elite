@@ -38,7 +38,8 @@ html {
 }
 
 body {
-  background: var(--color-bg);
+  /* 10/1: 흰 배경으로 깔끔하게 (원장님은 단순하고 한눈에 들어오는 화면을 선호). --color-bg는 입력칸·표 머리 같은 옅은 칸에만 쓴다 */
+  background: var(--color-card);
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-size: 14px; /* 관리 화면 기본 글씨 */

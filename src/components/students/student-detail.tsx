@@ -79,7 +79,7 @@ function TodaySection({ day, onOpenAttendance }: { day: StudentDay; onOpenAttend
   const { slot, record, status } = day;
   return (
     <section className="px-5 py-4">
-      <div className="flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-line bg-bg/60 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
         <div className="text-[15px] tabular">
           <p className="flex items-center gap-2 font-semibold">
             오늘 {slot ? `${slot.start} ~ ${addMinutes(slot.start, slot.durationMin)}` : "수업 없음"}

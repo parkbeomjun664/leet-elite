@@ -11,66 +11,67 @@ type Props = {
   userName: string;
 };
 
-// 에듀OK와 같은 3단 구조: 로고 줄 → 버건디 메뉴 바 → 하위 메뉴 줄
+// 흰 한 줄 메뉴: 로고 · 메뉴 · 사용자 (10/1: 버건디 메뉴 바 대신 가볍게)
+// PC(lg 이상)는 한 줄, 좁은 화면은 메뉴를 둘째 줄에서 옆으로 밀어 본다. 하위 메뉴는 그 아래 줄
 export function TopBar({ nav, roleLabel, userName }: Props) {
   const pathname = usePathname();
   const current = activeItem(nav, pathname);
   const home = nav[0];
 
-  return (
-    <header className="sticky top-0 z-30">
-      {/* 1단: 로고 · 사용자 */}
-      <div className="border-b border-line bg-card">
-        <div className="mx-auto flex h-12 max-w-[1280px] items-center justify-between px-4">
-          <Link href={home.href} className="flex items-center gap-2" aria-label="홈으로">
-            {/* 여백을 잘라 낸 투명 로고 (scripts/make-icons.mjs 로 생성) */}
-            <Image src="/brand/leet-mark.png" alt="" width={407} height={512} className="h-7 w-auto" />
-            <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>
-            <span className="text-[15px] font-semibold text-ink">영어학원</span>
-            <span className="ml-1 hidden border-l border-line pl-2.5 text-sm text-sub sm:inline">리트 엘리트</span>
-          </Link>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="hidden text-sub sm:inline">
-              <b className="font-semibold text-ink">{userName}</b> {roleLabel}
-            </span>
-            {/* TODO(2단계): Supabase 로그아웃 연결 */}
+  const menu = (
+    <ul className="flex h-full overflow-x-auto">
+      {nav.map((item) => {
+        const active = current?.href === item.href;
+        return (
+          <li key={item.href} className="shrink-0">
             <Link
-              href="/login"
-              className="flex h-8 items-center rounded-[var(--radius-control)] border border-line px-3 text-sub hover:border-ink/30 hover:text-ink"
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={`relative flex h-full items-center px-3.5 text-[15px] whitespace-nowrap transition-colors ${
+                active ? "font-bold text-brand" : "font-medium text-ink/70 hover:text-ink"
+              }`}
             >
-              로그아웃
+              {item.label}
+              {active && <span className="absolute inset-x-3.5 bottom-0 h-0.5 rounded-full bg-brand" />}
             </Link>
-          </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  return (
+    <header className="sticky top-0 z-30 border-b border-line bg-card">
+      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-6 px-4">
+        <Link href={home.href} className="flex shrink-0 items-center gap-2" aria-label="홈으로">
+          {/* 여백을 잘라 낸 투명 로고 (scripts/make-icons.mjs 로 생성) */}
+          <Image src="/brand/leet-mark.png" alt="" width={407} height={512} className="h-7 w-auto" />
+          <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>
+          <span className="text-[15px] font-semibold text-ink">영어학원</span>
+        </Link>
+        <nav aria-label="주 메뉴" className="hidden h-full min-w-0 flex-1 lg:block">
+          {menu}
+        </nav>
+        <div className="ml-auto flex shrink-0 items-center gap-3 text-sm">
+          <span className="hidden text-sub sm:inline">
+            <b className="font-semibold text-ink">{userName}</b> {roleLabel}
+          </span>
+          {/* TODO(2단계): Supabase 로그아웃 연결 */}
+          <Link href="/login" className="text-sub hover:text-ink">
+            로그아웃
+          </Link>
         </div>
       </div>
 
-      {/* 2단: 큰 메뉴 (버건디 바) */}
-      {/* PC: 에듀OK처럼 가운데 정렬 + 같은 칸 너비. 좁은 화면: 왼쪽부터 옆으로 밀어 보기 */}
-      <nav aria-label="주 메뉴" className="bg-brand-dark">
-        <ul className="mx-auto flex max-w-[1280px] overflow-x-auto md:justify-center">
-          {nav.map((item) => {
-            const active = current?.href === item.href;
-            return (
-              <li key={item.href} className="shrink-0">
-                <Link
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex h-12 items-center justify-center px-4 text-base font-semibold whitespace-nowrap transition-colors md:min-w-[128px] lg:min-w-[144px] ${
-                    active ? "bg-brand text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      {/* 좁은 화면: 메뉴 둘째 줄 */}
+      <nav aria-label="주 메뉴" className="h-12 border-t border-line-soft px-1 lg:hidden">
+        {menu}
       </nav>
 
-      {/* 3단: 하위 메뉴 */}
+      {/* 하위 메뉴 (예: 학생관리 → 재원생 · 휴·퇴원생) */}
       {current?.children && (
-        <nav aria-label={`${current.label} 하위 메뉴`} className="border-b border-line bg-card">
-          <ul className="mx-auto flex max-w-[1280px] overflow-x-auto md:justify-center">
+        <nav aria-label={`${current.label} 하위 메뉴`} className="border-t border-line-soft bg-card">
+          <ul className="mx-auto flex max-w-[1280px] overflow-x-auto px-1">
             {current.children.map((child) => {
               const active = isActive(pathname, child.href, true);
               return (
@@ -79,11 +80,11 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
                     href={child.href}
                     aria-current={active ? "page" : undefined}
                     className={`relative flex h-11 items-center px-4 text-[15px] whitespace-nowrap ${
-                      active ? "font-bold text-brand" : "text-sub hover:text-ink"
+                      active ? "font-semibold text-ink" : "text-sub hover:text-ink"
                     }`}
                   >
                     {child.label}
-                    {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-brand" />}
+                    {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-ink" />}
                   </Link>
                 </li>
               );
