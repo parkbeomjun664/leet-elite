@@ -18,6 +18,9 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
+// 로그인 실패는 이유와 상관없이 이 문장 하나만 보여 준다 (아이디가 있는지 없는지 드러나지 않게, AUTH-09)
+export const LOGIN_ERROR = "아이디 또는 비밀번호가 올바르지 않습니다.";
+
 export function LoginForm() {
   const [message, setMessage] = useState("");
   // 눈 아이콘을 누르고 있는 동안만 비밀번호를 보여 준다 (떼면 다시 가림)
@@ -29,6 +32,7 @@ export function LoginForm() {
     <form
       onSubmit={(e) => {
         e.preventDefault();
+        // TODO(2단계): 서버에서 로그인 확인. 실패하면 setMessage(LOGIN_ERROR), 너무 많이 틀리면 잠시 막음 (AUTH-10)
         setMessage("로그인 기능은 곧 연결됩니다.");
       }}
     >
@@ -87,9 +91,10 @@ export function LoginForm() {
         </div>
       </div>
 
-      {/* 로그인 상태 유지 (AUTH-06). TODO(2단계): 체크하면 세션을 오래 유지, 해제하면 브라우저를 닫을 때 로그아웃 */}
+      {/* 로그인 상태 유지 (AUTH-06). 기본은 꺼짐: 공용 PC·태블릿에서 다음 사람이 그대로 로그인되지 않게
+          TODO(2단계): 체크하면 세션을 오래 유지, 해제하면 브라우저를 닫을 때 로그아웃 */}
       <label className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 text-[15px] text-ink/80">
-        <input type="checkbox" name="keepSignedIn" defaultChecked className="size-[18px] accent-[var(--color-brand)]" />
+        <input type="checkbox" name="keepSignedIn" className="size-[18px] accent-[var(--color-brand)]" />
         로그인 상태 유지
       </label>
 

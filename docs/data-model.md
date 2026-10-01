@@ -47,6 +47,16 @@ erDiagram
 | must_change_password | bool default true | AUTH-03 |
 | created_at, updated_at | timestamptz | |
 
+**login_attempts** — 로그인 시도 기록 AUTH-10 (서버 함수만 읽고 씀, 어떤 역할도 직접 접근 못 함)
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| login_id | text PK | 입력한 아이디 (없는 아이디도 똑같이 기록해서 계정 여부가 드러나지 않게) |
+| fail_count | int | 연속 실패 횟수. 성공하면 0 |
+| locked_until | timestamptz null | 5번 실패 시 지금+10분 |
+| updated_at | timestamptz | |
+
+- 로그인은 서버(Next.js 서버 함수)가 받아서: ① 잠금 확인 ② 아이디 → 내부 이메일 변환 ③ Supabase 로그인 ④ 실패면 fail_count+1. IP 기준 제한은 Supabase Auth의 요청 제한 설정을 함께 쓴다 (값은 2단계에 확인)
+
 **teachers** — 선생님 부가 정보 TCH-01
 | 컬럼 | 타입 | 설명 |
 |---|---|---|
