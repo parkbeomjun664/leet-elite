@@ -1,4 +1,5 @@
-// 화면 개발·시연용 가상 학원 데이터. 실제 학생 정보는 쓰지 않는다.
+// 화면 개발·시연용 가상 학원 데이터. 저장소에는 실제 학생 정보를 넣지 않는다.
+// (범준님 컴퓨터에 ../_private 명단 파일이 있으면 그 명단으로 학생·보호자를 만든다 → real-roster.ts)
 // 이름·학교·전화번호는 모두 만들어 낸 값이며, 전화번호는 010-5550-xxxx 대역만 사용한다.
 //
 // 에듀OK 명단에서 확인한 실제 운영 패턴을 일부러 넣었다 (docs/reference-analysis.md):
@@ -10,6 +11,7 @@
 
 import type { Attendance, ClassRoom, Guardian, ScheduleSlot, Student, Teacher } from "./types";
 import { addMinutes, todayKST, weekdayOf } from "../date";
+import { loadRealRoster, parseRosterName, weekdaysFromMemo, type RosterRow } from "./real-roster";
 
 // 같은 입력이면 항상 같은 결과를 내는 난수 (새로고침해도 데이터가 바뀌지 않도록)
 function seeded(seed: number) {
@@ -112,27 +114,63 @@ function buildStudents(): Student[] {
   return list;
 }
 
-const students: Student[] = buildStudents();
+// ── 실제 명단 (있으면) ─────────────────────────────────────
+// 이름·학교·학년·상태·전화·입학일·메모는 명단 그대로. 수업 요일은 메모 맨 앞의 요일("월수금")이 있으면 그것, 없으면 반 요일
+// 수업 시간·담당 선생님·출결 코드는 명단에 없어서 반 기본값으로 채운다
+const roster = loadRealRoster();
+/** 실제 명단으로 보는 중인지 (화면 위에 표시해서 캡처·공유 실수를 막는다) */
+export const usingRealData = roster !== null;
+
+function studentsFromRoster(rows: RosterRow[]): Student[] {
+  const today = todayKST();
+  return rows.map((r, i) => {
+    const p = parseRosterName(r.name);
+    const classRoom = classes.find((c) => c.name === r.cls) ?? classes[0];
+    const plan = plans.find((x) => x.classId === classRoom.id)!;
+    const days = weekdaysFromMemo(r.memo) ?? classRoom.weekdays;
+    const start = plan.times[i % plan.times.length];
+    return {
+      id: `s${String(i + 1).padStart(3, "0")}`,
+      name: p.name,
+      school: p.school,
+      grade: p.grade,
+      phone: r.phone && r.phone.replace(/D/g, "").length >= 10 ? r.phone : null,
+      // 입학일이 아직 안 왔으면 "예정"
+      status: p.status === "enrolled" && r.enrolledOn > today ? "pending" : p.status,
+      enrolledOn: r.enrolledOn,
+      leftOn: r.leftOn,
+      attendanceCode: "",
+      programs: [],
+      memo: r.memo,
+      classIds: [classRoom.id],
+      schedule: days.map((weekday) => ({ weekday, start, durationMin: plan.duration })),
+    };
+  });
+}
+
+const students: Student[] = roster ? studentsFromRoster(roster) : buildStudents();
 
 // ── 에듀OK에서 본 까다로운 경우를 일부러 만든다 ─────────────
 const byId = (id: string) => students.find((s) => s.id === id)!;
 
-// 1) 휴대폰이 없는 학생 → 로그인 아이디를 따로 정해야 함
-byId("s001").phone = null;
-byId("s001").memo = "휴대폰 없음 (보호자 번호로 연락)";
+if (!roster) {
+  // 1) 휴대폰이 없는 학생 → 로그인 아이디를 따로 정해야 함
+  byId("s001").phone = null;
+  byId("s001").memo = "휴대폰 없음 (보호자 번호로 연락)";
 
-// 2) 쌍둥이가 같은 학생 번호를 씀 → 전화번호를 로그인 아이디로 쓸 수 없음
-//    출결 코드는 겹치면 안 되므로 동생은 다른 코드를 받는다
-byId("s004").phone = byId("s003").phone;
-// 쌍둥이 이름은 다른 학생과 겹치지 않게 드문 성으로 고정 (동명이인 예시는 따로 만들지 않는다)
-byId("s003").name = "표승현";
-byId("s004").name = "표준현";
-byId("s003").memo = "쌍둥이 (같은 번호 사용)";
-byId("s004").memo = "쌍둥이 (같은 번호 사용, 출결 코드 따로 지정)";
+  // 2) 쌍둥이가 같은 학생 번호를 씀 → 전화번호를 로그인 아이디로 쓸 수 없음
+  //    출결 코드는 겹치면 안 되므로 동생은 다른 코드를 받는다
+  byId("s004").phone = byId("s003").phone;
+  // 쌍둥이 이름은 다른 학생과 겹치지 않게 드문 성으로 고정 (동명이인 예시는 따로 만들지 않는다)
+  byId("s003").name = "표승현";
+  byId("s004").name = "표준현";
+  byId("s003").memo = "쌍둥이 (같은 번호 사용)";
+  byId("s004").memo = "쌍둥이 (같은 번호 사용, 출결 코드 따로 지정)";
 
-// 3) 전화 뒷 4자리가 다른 학생과 겹침 → 뒤에 등록한 학생은 원장님이 다른 코드를 지정
-byId("s030").phone = "010-5551-1020";
-byId("s020").phone = "010-5559-1020";
+  // 3) 전화 뒷 4자리가 다른 학생과 겹침 → 뒤에 등록한 학생은 원장님이 다른 코드를 지정
+  byId("s030").phone = "010-5551-1020";
+  byId("s020").phone = "010-5559-1020";
+}
 
 // 출결 코드: 전화 뒷 4자리가 기본, 이미 쓰는 코드면 5자리로 바꿔 겹치지 않게 (원장님이 수동으로 지정하는 상황을 흉내)
 {
@@ -145,24 +183,26 @@ byId("s020").phone = "010-5559-1020";
   }
 }
 
-// 4) 여러 반에 속한 학생 (고등-코어 + 주말 고등-포커스)
-byId("s057").classIds.push("c9");
-byId("s057").schedule.push({ weekday: 6, start: "10:00", durationMin: 180 });
+if (!roster) {
+  // 4) 여러 반에 속한 학생 (고등-코어 + 주말 고등-포커스)
+  byId("s057").classIds.push("c9");
+  byId("s057").schedule.push({ weekday: 6, start: "10:00", durationMin: 180 });
 
-// 5) 휴원·퇴원·예정
-byId("s012").status = "on_leave";
-byId("s012").leftOn = "2026-09-10";
-byId("s040").status = "withdrawn";
-byId("s040").leftOn = "2026-07-13";
-byId("s055").status = "withdrawn";
-byId("s055").leftOn = "2026-08-31";
-byId("s061").status = "pending";
-byId("s061").enrolledOn = "2026-10-06";
-byId("s061").memo = "10/6 시작";
+  // 5) 휴원·퇴원·예정
+  byId("s012").status = "on_leave";
+  byId("s012").leftOn = "2026-09-10";
+  byId("s040").status = "withdrawn";
+  byId("s040").leftOn = "2026-07-13";
+  byId("s055").status = "withdrawn";
+  byId("s055").leftOn = "2026-08-31";
+  byId("s061").status = "pending";
+  byId("s061").enrolledOn = "2026-10-06";
+  byId("s061").memo = "10/6 시작";
 
-// 6) OB 멤버 할인 메모
-for (const s of students.filter((s) => s.classIds.some((c) => ["c1", "c2", "c3"].includes(c))).slice(0, 5)) {
-  s.memo = s.memo || "OB 멤버: -2만원";
+  // 6) OB 멤버 할인 메모
+  for (const s of students.filter((s) => s.classIds.some((c) => ["c1", "c2", "c3"].includes(c))).slice(0, 5)) {
+    s.memo = s.memo || "OB 멤버: -2만원";
+}
 }
 
 export { students };
@@ -205,7 +245,29 @@ function buildGuardians(): Guardian[] {
   return list;
 }
 
-export const guardians: Guardian[] = buildGuardians();
+// 실제 명단: 보호자 전화가 같으면 한 보호자로 묶는다 (형제·쌍둥이)
+function guardiansFromRoster(rows: RosterRow[], list: Student[]): Guardian[] {
+  const byPhone = new Map<string, Guardian>();
+  rows.forEach((r, i) => {
+    const key = r.gPhone1.replace(/D/g, "");
+    const found = byPhone.get(key);
+    if (found) {
+      found.studentIds.push(list[i].id);
+      return;
+    }
+    byPhone.set(key, {
+      id: `g${String(byPhone.size + 1).padStart(3, "0")}`,
+      name: r.guardian,
+      relation: /아빠|(부)/.test(r.guardian) ? "father" : /맘|엄마/.test(r.guardian) ? "mother" : null,
+      phone1: r.gPhone1,
+      phone2: r.gPhone2,
+      studentIds: [list[i].id],
+    });
+  });
+  return [...byPhone.values()];
+}
+
+export const guardians: Guardian[] = roster ? guardiansFromRoster(roster, students) : buildGuardians();
 
 // ── 출결 기록 (날짜가 바뀌어도 그 날짜 기준으로 그럴듯하게 생성) ────
 /**

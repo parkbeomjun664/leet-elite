@@ -50,3 +50,7 @@ desktop.ini
 *.xlsx
 *.xls
 *.csv
+
+# 실제 학생 명단은 저장소 밖(../_private)에 둔다. 혹시 안으로 복사돼도 올라가지 않게
+_private/
+*eduok-students*.json
