@@ -11,6 +11,7 @@ export type KioskStudent = { id: string; code: string; name: string };
 const MIN_LEN = 4;
 const MAX_LEN = 6;
 const RESULT_MS = 4000; // 결과를 보여 주는 시간
+const IDLE_CLEAR_MS = 10000; // 누르다 만 번호를 지우기까지 시간
 const REPEAT_BLOCK_MS = 60_000; // 같은 코드를 1분 안에 다시 누르면 기록하지 않음 (KIOSK-04)
 
 type Result =
@@ -124,9 +125,11 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
 
   // 키를 누를 때마다 부른다 (처음 한 번 AudioContext 생성, 태블릿이 멈춰 둔 경우 다시 켜기)
   function wakeAudio() {
-    if (!("AudioContext" in window)) return;
+    // 옛 아이패드(사파리)는 webkitAudioContext라는 이름을 쓴다
+    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
     try {
-      audio.current ??= new AudioContext();
+      audio.current ??= new Ctx();
       if (audio.current.state === "suspended") void audio.current.resume();
     } catch {
       audio.current = null;
@@ -150,6 +153,13 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     const t = setTimeout(() => changeResult(null), RESULT_MS);
     return () => clearTimeout(t);
   }, [result]);
+
+  // 누르다 만 번호는 잠시 뒤 지운다. 다음 학생 번호가 뒤에 붙지 않게
+  useEffect(() => {
+    if (!digits || result) return;
+    const t = setTimeout(() => changeDigits(""), IDLE_CLEAR_MS);
+    return () => clearTimeout(t);
+  }, [digits, result]);
 
   function pressDigit(d: string) {
     wakeAudio();
@@ -205,7 +215,8 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
 
   // 태블릿에 키보드를 연결해도 쓸 수 있게: 숫자, Backspace, Enter, Esc(모두 지우기)
   const onKey = useEffectEvent((e: KeyboardEvent) => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // 키를 누르고 있어 같은 숫자가 반복 입력되는 것은 무시
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
     if (/^[0-9]$/.test(e.key)) pressDigit(e.key);
     else if (e.key === "Backspace") erase();
     else if (e.key === "Enter") submit();

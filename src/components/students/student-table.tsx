@@ -59,6 +59,9 @@ export function StudentTable({
       .filter((r) => !q || r.name.includes(q) || (r.school ?? "").includes(q) || (r.grade ?? "").includes(q));
   }, [active, classId, query]);
 
+  // 휴·퇴원으로 바뀌어 목록에서 빠진 학생은 선택에서도 뺀다
+  const selectedCount = active.filter((r) => selected.has(r.id)).length;
+
   const allVisibleSelected = visible.length > 0 && visible.every((r) => selected.has(r.id));
   const someVisibleSelected = visible.some((r) => selected.has(r.id));
 
@@ -86,7 +89,7 @@ export function StudentTable({
   const editing = rows.find((r) => r.id === editId) ?? null;
 
   return (
-    <div className={cn("space-y-3", selected.size > 0 && "pb-20")}>
+    <div className={cn("space-y-3", selectedCount > 0 && "pb-20")}>
       {/* 필터 */}
       <div className="divide-y divide-line-soft rounded-[var(--radius-card)] border border-line bg-card">
         <FilterRow label="반">
@@ -204,11 +207,11 @@ export function StudentTable({
       )}
 
       {/* 선택한 학생 일괄 처리 (에듀OK 하단 버튼 줄) */}
-      {selected.size > 0 && (
+      {selectedCount > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 backdrop-blur">
           <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-2 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
             <span className="mr-2 text-[15px]">
-              선택한 학생 <b className="tabular">{selected.size}</b>명
+              선택한 학생 <b className="tabular">{selectedCount}</b>명
             </span>
             {/* TODO: 반 일괄 변경 (CLS), 선택한 학생에게 메시지 (MSG-01) */}
             <Button variant="primary">반 변경</Button>

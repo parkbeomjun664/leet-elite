@@ -1,7 +1,7 @@
 import { AttendanceBoard } from "@/components/attendance/attendance-board";
 import type { StudentDetailData } from "@/components/students/student-detail";
 import { sortDays, studentDay } from "@/lib/attendance";
-import { addDays, formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
+import { addDays, addMinutes, formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
 import { homeworkOfStudent, makeupsOf, messagesOf, submissionOf } from "@/lib/mock/activity";
 import { classById, classes, guardiansOf, mockAttendanceFor, studentsOfTeacher, teacherById, teachers } from "@/lib/mock/data";
 import type { Message } from "@/lib/mock/types";
@@ -23,6 +23,8 @@ export default async function TeacherHome({ searchParams }: PageProps<"/teacher"
   const date = todayKST();
   const now = demoTime ?? nowTimeKST();
   const records = mockAttendanceFor(date, now);
+  // 지금(또는 시연 시각)보다 뒤에 낸 제출은 아직 없는 것으로 본다 (학생·학부모 화면과 같은 규칙)
+  const nowKey = `${date} ${now}`;
 
   // 선생님은 담당 반 학생만 본다 (HOME-07). 재원생만
   const myStudents = studentsOfTeacher(demoTeacher.id).filter((s) => s.status === "enrolled");
@@ -44,14 +46,17 @@ export default async function TeacherHome({ searchParams }: PageProps<"/teacher"
         classNames: s.classIds.map((id) => classById(id)?.name).filter((n): n is string => !!n),
         guardians: guardiansOf(s.id).map((g) => ({ name: g.name, phone: g.phone1 })),
         homework: homeworkOfStudent(s.id).map((h) => {
-          const sub = submissionOf(h.id, s.id);
+          const found = submissionOf(h.id, s.id);
+          const sub = found && found.submittedAt <= nowKey ? found : null;
           return { id: h.id, kind: h.kind, title: h.title, createdOn: h.createdOn, submitted: !!sub, hasFeedback: !!sub?.teacherComment };
         }),
         messages: {
           family: messagesOf(s.id, "family").map(toChat),
           student: messagesOf(s.id, "student").map(toChat),
         },
+        // 입학 전 날짜는 빼고 보여 준다
         recentAttendance: pastDates
+          .filter((d) => d >= s.enrolledOn)
           .map((d) => ({ date: d, day: studentDay(s, pastRecords.get(d) ?? [], d, null) }))
           .filter(({ day }) => day.status !== "no_class")
           .map(({ date: d, day }) => ({
@@ -61,7 +66,7 @@ export default async function TeacherHome({ searchParams }: PageProps<"/teacher"
             checkOutAt: day.record?.checkOutAt ?? null,
           })),
         makeups: makeupsOf(s.id)
-          .filter((m) => m.status === "scheduled" && m.date >= date)
+          .filter((m) => m.status === "scheduled" && (m.date > date || (m.date === date && addMinutes(m.start, m.durationMin) > now)))
           .map((m) => ({ id: m.id, date: m.date, start: m.start, durationMin: m.durationMin, reason: m.reason, teacher: teacherById(m.teacherId)?.nickname ?? "담당 미정" })),
       },
     ]),
@@ -72,6 +77,7 @@ export default async function TeacherHome({ searchParams }: PageProps<"/teacher"
       date={date}
       dateLabel={formatDateKo(date)}
       nowTime={now}
+      demo={demoTime !== null}
       classes={myClasses}
       days={days}
       details={details}

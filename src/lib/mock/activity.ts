@@ -32,14 +32,14 @@ export const homework: Homework[] = classes.flatMap((c, ci) =>
   })),
 );
 
-// 숙제마다 대상 학생의 60~85%가 제출
+// 숙제마다 대상 학생의 60~85%가 제출. 제출 시각은 13~22시에 퍼지게 (오후 시연에서도 제출이 보이도록)
 export const submissions: Submission[] = homework.flatMap((hw, hi) =>
   hw.studentIds
     .filter((_, si) => (si * 7 + hi * 3) % 10 < 7)
     .map((studentId, si) => ({
       homeworkId: hw.id,
       studentId,
-      submittedAt: `${addDays(hw.createdOn, si % 2)} ${String(19 + (si % 4)).padStart(2, "0")}:${String((si * 13) % 60).padStart(2, "0")}`,
+      submittedAt: `${addDays(hw.createdOn, si % 2)} ${String(13 + ((si * 3) % 10)).padStart(2, "0")}:${String((si * 13) % 60).padStart(2, "0")}`,
       comment: si % 3 === 0 ? "어려운 단어 표시해 뒀어요!" : "",
       photoCount: 1 + (si % 4),
       teacherComment: si % 2 === 0 ? "잘했어요. 틀린 문제 다시 확인해 보세요." : null,

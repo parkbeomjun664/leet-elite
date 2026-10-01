@@ -17,3 +17,19 @@ export function useMedia(query: string): boolean {
     () => false,
   );
 }
+
+/**
+ * useMedia와 같지만, 서버와 첫 화면(hydration)에서는 null(아직 모름)을 돌려준다.
+ * PC에서 휴대폰용 창이 한 순간 떴다 사라지는 것을 막을 때 쓴다.
+ */
+export function useMediaReady(query: string): boolean | null {
+  return useSyncExternalStore<boolean | null>(
+    (onChange) => {
+      const mql = window.matchMedia(query);
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(query).matches,
+    () => null,
+  );
+}

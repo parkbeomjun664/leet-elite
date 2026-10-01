@@ -10,9 +10,9 @@ import { FilterRow, Segment } from "@/components/ui/segment";
 import { Sheet } from "@/components/ui/sheet";
 import { DAY_STATUS_LABEL, sortDays, studentDay, type DayStatus, type StudentDay } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
-import { addMinutes } from "@/lib/date";
+import { addMinutes, nowTimeKST } from "@/lib/date";
 import type { Attendance } from "@/lib/mock/types";
-import { useMedia } from "@/lib/use-media";
+import { useMediaReady } from "@/lib/use-media";
 
 // 선생님 첫 화면 (HOME-03~08). 원장님 원문 구조:
 // PC  = 왼쪽 학생 목록(오늘 등원 → 등원 전 → 수업 없음) / 오른쪽 학생 상세가 항상 보이는 좌우 분할
@@ -24,6 +24,7 @@ type Props = {
   date: string; // YYYY-MM-DD
   dateLabel: string; // "2026년 10월 1일 (목)"
   nowTime: string; // "HH:MM"
+  demo?: boolean; // 시연 시각(?at=)으로 보는 중이면 true → 버튼을 눌러도 그 시각으로 기록
   classes: ClassChip[];
   days: StudentDay[];
   details: Record<string, StudentDetailData>;
@@ -52,8 +53,10 @@ const STATUS_FILTERS: { key: "all" | DayStatus; label: string }[] = [
 
 const LEGEND: DayStatus[] = ["checked_in", "checked_out", "not_arrived", "absent", "upcoming"];
 
-export function AttendanceBoard({ date, dateLabel, nowTime, classes, days: initialDays, details, homeworkHref, initialOpen = null }: Props) {
-  const isDesktop = useMedia("(min-width: 1024px)");
+export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classes, days: initialDays, details, homeworkHref, initialOpen = null }: Props) {
+  // null = 아직 모름(첫 화면). 이때는 휴대폰용 창을 띄우지 않는다
+  const media = useMediaReady("(min-width: 1024px)");
+  const isDesktop = media === true;
   const [classId, setClassId] = useState<string>("all");
   const [status, setStatus] = useState<"all" | DayStatus>("all");
   const [query, setQuery] = useState("");
@@ -87,6 +90,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, classes, days: initi
   const arrived = visible.filter((d) => d.status === "checked_in" || d.status === "checked_out");
   const expected = visible.filter((d) => d.status === "not_arrived" || d.status === "upcoming" || d.status === "absent");
   const others = visible.filter((d) => d.status === "no_class");
+  const filtering = status !== "all" || query.trim() !== "";
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -116,7 +120,8 @@ export function AttendanceBoard({ date, dateLabel, nowTime, classes, days: initi
         studentId: d.student.id,
         date,
         checkInAt: d.record?.checkInAt ?? null,
-        checkOutAt: nowTime,
+        // 화면을 열어 둔 채 나중에 눌러도 "누른 시각"으로 기록한다
+        checkOutAt: demo ? nowTime : nowTimeKST(),
         status: "present",
         memo: d.record?.memo ?? "",
       }),
@@ -185,8 +190,24 @@ export function AttendanceBoard({ date, dateLabel, nowTime, classes, days: initi
           ))}
         </ul>
 
-        <TileSection title="오늘 등원" items={arrived} empty="아직 등원한 학생이 없습니다." {...tileProps} />
-        <TileSection title="오늘 수업 · 등원 전" items={expected} empty="오늘 수업 학생이 모두 등원했습니다." {...tileProps} />
+        {filtering ? (
+          // 상태·이름으로 거른 중: 해당하는 칸만 보여 준다
+          <>
+            {arrived.length > 0 && <TileSection title="오늘 등원" items={arrived} {...tileProps} />}
+            {expected.length > 0 && <TileSection title="오늘 수업 · 등원 전" items={expected} {...tileProps} />}
+            {visible.length === 0 && <EmptyLine>조건에 맞는 학생이 없습니다.</EmptyLine>}
+          </>
+        ) : (
+          <>
+            <TileSection title="오늘 등원" items={arrived} empty="아직 등원한 학생이 없습니다." {...tileProps} />
+            <TileSection
+              title="오늘 수업 · 등원 전"
+              items={expected}
+              empty={arrived.length > 0 ? "오늘 수업 학생이 모두 등원했습니다." : "오늘 수업이 있는 학생이 없습니다."}
+              {...tileProps}
+            />
+          </>
+        )}
 
         {/* 오늘 수업 없는 학생: 접어 두고 필요할 때 펼친다 (보강·결석 처리용) */}
         {others.length > 0 && (
@@ -240,7 +261,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, classes, days: initi
       </aside>
 
       {/* 휴대폰: 학생 상세 창 */}
-      {!isDesktop && detailSheet && focusDay && (
+      {media === false && detailSheet && focusDay && (
         <Sheet open onClose={() => setDetailSheet(false)} title={focusDay.student.name} subtitle={detailSubtitle(focusDay)}>
           <StudentDetail
             key={focusDay.student.id}

@@ -67,13 +67,15 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   const date = todayKST();
   const now = demoTime ?? nowTimeKST();
   const records = mockAttendanceFor(date, now);
+  // 지금(또는 시연 시각)보다 뒤에 낸 제출은 아직 없는 것으로 본다 (가상 데이터가 저녁 제출을 미리 만들어 둠)
+  const nowKey = `${date} ${now}`;
 
   // 현황 계산
   const unread = unreadCount();
   const unreadList = messages
     .filter((m) => (m.from === "parent" || m.from === "student") && !m.read)
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt));
-  const todaySubs = submissions.filter((s) => s.submittedAt.startsWith(date));
+  const todaySubs = submissions.filter((s) => s.submittedAt.startsWith(date) && s.submittedAt <= nowKey);
   const todaySubStudents = new Set(todaySubs.map((s) => s.studentId)).size;
   const todayMakeups = makeups
     .filter((m) => m.date === date && m.status !== "cancelled")
@@ -92,7 +94,11 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   const weekStart = addDays(date, -1);
   const recentHomework = homework.filter((h) => h.createdOn >= weekStart && h.createdOn <= date);
   const missingHw = enrolled.filter((s) =>
-    recentHomework.some((h) => h.studentIds.includes(s.id) && !submissionOf(h.id, s.id)),
+    recentHomework.some((h) => {
+      if (!h.studentIds.includes(s.id)) return false;
+      const sub = submissionOf(h.id, s.id);
+      return !sub || sub.submittedAt > nowKey;
+    }),
   );
 
   // 선생님 출근 현황 (TCH-04)
@@ -120,7 +126,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
     {
       label: "오늘 보강",
       value: todayMakeups.length,
-      unit: "명",
+      unit: "건",
       detail: makeupNames.length > 0 ? makeupNames.join(", ") : "오늘 보강 없음",
       href: "/admin/makeups",
     },

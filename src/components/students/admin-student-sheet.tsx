@@ -77,7 +77,8 @@ export function AdminStudentSheet({
 
   // 출결 코드 확인 (STU-02): 4~6자리 숫자, 재원·예정 학생끼리 겹치지 않게
   const code = form.attendanceCode.trim();
-  const codeOwner = others.find(
+  // 휴·퇴원으로 바꾸는 학생은 코드를 쓰지 않으므로 겹쳐도 괜찮다
+  const codeOwner = showLeftOn ? undefined : others.find(
     (o) => (o.status === "enrolled" || o.status === "pending") && o.attendanceCode === code,
   );
   const codeError = !/^\d{4,6}$/.test(code)
@@ -87,6 +88,8 @@ export function AdminStudentSheet({
     : codeOwner
       ? `${codeOwner.name} 학생이 이미 쓰는 코드입니다`
       : undefined;
+  // 요일별 수업 시간: 시작 시각과 수업 시간(분)이 모두 있어야 한다
+  const scheduleError = form.schedule.some((s) => !s.start || !(s.durationMin > 0)) ? "시작 시각과 수업 시간(분)을 모두 입력해 주세요" : undefined;
   const nameError = tried && !form.name.trim() ? "이름을 입력해 주세요" : undefined;
   const leftOnError = tried && showLeftOn && !form.leftOn ? "날짜를 입력해 주세요" : undefined;
 
@@ -98,7 +101,7 @@ export function AdminStudentSheet({
   function submit(e: FormEvent) {
     e.preventDefault();
     setTried(true);
-    if (!form.name.trim() || !/^\d{4,6}$/.test(code) || codeOwner || (showLeftOn && !form.leftOn)) return;
+    if (!form.name.trim() || !/^\d{4,6}$/.test(code) || codeOwner || scheduleError || (showLeftOn && !form.leftOn)) return;
     // TODO(DB 연결): 서버에 저장 (휴·퇴원이면 계정 비활성화 여부도 묻기, STU-09)
     onSave({
       ...form,
@@ -141,7 +144,7 @@ export function AdminStudentSheet({
                 inputMode="tel"
                 value={form.phone ?? ""}
                 onChange={(e) => set("phone", e.target.value)}
-                placeholder="010-0000-0000"
+                placeholder="휴대폰 번호"
                 className="tabular"
               />
             </Field>
@@ -244,6 +247,7 @@ export function AdminStudentSheet({
                 ))}
               </ul>
             )}
+            {scheduleError && <p className="mt-2 text-sm text-brand">{scheduleError}</p>}
             <Button
               size="sm"
               className="mt-2"
@@ -259,7 +263,7 @@ export function AdminStudentSheet({
 
         {/* 출결 코드 · 사용 프로그램 · 메모 */}
         <Section title="출결 · 프로그램 · 메모">
-          <Field label="출결 코드" htmlFor="as-code" required error={codeError} hint="키패드에서 누르는 번호. 기본은 학생 휴대폰 뒷 4자리">
+          <Field label="출결 코드" htmlFor="as-code" required error={codeError} hint="키패드에서 누르는 번호. 에듀OK 번호 그대로, 새 학생은 휴대폰 뒷 4자리">
             <div className="max-w-40">
               <Input
                 id="as-code"

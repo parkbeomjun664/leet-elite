@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Badge, type Tone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Radio, Textarea } from "@/components/ui/field";
@@ -278,6 +278,8 @@ function HomeworkSection({ data, homeworkHref }: { data: StudentDetailData; home
 function HomeworkFormSection() {
   const [useToday, setUseToday] = useState(true);
   const [sent, setSent] = useState(false);
+  // 같은 화면에 상세가 두 번 그려질 수 있어서(PC 칸·휴대폰 창) 입력칸 id를 겹치지 않게 만든다
+  const uid = useId();
   return (
     <Section title="이 학생에게 숙제 등록">
       {sent ? (
@@ -300,12 +302,12 @@ function HomeworkFormSection() {
             <Radio name="hw-kind" label="일반 숙제" defaultChecked />
             <Radio name="hw-kind" label="매일 숙제" />
           </div>
-          <Field label="제목" htmlFor="hw-title" hint={useToday ? "비워 두면 오늘 날짜가 제목이 됩니다" : undefined}>
-            <Input id="hw-title" placeholder={useToday ? "예: 10/1 숙제" : "숙제 제목"} />
+          <Field label="제목" htmlFor={`${uid}-title`} hint={useToday ? "비워 두면 오늘 날짜가 제목이 됩니다" : undefined}>
+            <Input id={`${uid}-title`} placeholder={useToday ? "예: 10/1 숙제" : "숙제 제목"} />
           </Field>
           <Checkbox label="오늘 날짜 사용" checked={useToday} onChange={(e) => setUseToday(e.target.checked)} />
-          <Field label="내용" htmlFor="hw-body" required>
-            <Textarea id="hw-body" rows={3} required placeholder="예: 워크북 p.24~27 풀고 채점까지 사진으로 올리기" />
+          <Field label="내용" htmlFor={`${uid}-body`} required>
+            <Textarea id={`${uid}-body`} rows={3} required placeholder="예: 워크북 p.24~27 풀고 채점까지 사진으로 올리기" />
           </Field>
           <Button type="submit" variant="primary" className="w-full">
             숙제 등록
