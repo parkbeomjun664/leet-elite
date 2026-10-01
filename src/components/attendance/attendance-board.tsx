@@ -280,7 +280,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
                 <h2 className="text-lg font-bold">{focusDay.student.name}</h2>
                 <p className="mt-0.5 text-[15px] text-sub">{detailSubtitle(focusDay)}</p>
               </header>
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-y-auto bg-bg/70">
                 <StudentDetail
                   key={focusDay.student.id}
                   day={focusDay}

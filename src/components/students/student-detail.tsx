@@ -5,7 +5,7 @@ import { useId, useState, type ReactNode } from "react";
 import { Badge, type Tone } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Radio, Textarea } from "@/components/ui/field";
-import { EmptyLine, InfoList } from "@/components/ui/panel";
+import { InfoList } from "@/components/ui/panel";
 import { addMinutes, WEEKDAY_KO, weekdayOf } from "@/lib/date";
 import { DAY_STATUS_LABEL, type DayStatus, type StudentDay } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
@@ -50,7 +50,8 @@ export function StudentDetail({
   onOpenAttendance: () => void;
 }) {
   return (
-    <div className="divide-y divide-line-soft">
+    // 연한 회색 바탕 위에 구역마다 흰 카드 (구역 경계가 한눈에 보이게, 10/1)
+    <div className="space-y-3 bg-bg/70 p-3">
       <TodaySection day={day} onOpenAttendance={onOpenAttendance} />
       <InfoSection day={day} data={data} />
       <RecentAttendanceSection items={data.recentAttendance} />
@@ -62,23 +63,28 @@ export function StudentDetail({
   );
 }
 
-/** 구역 하나: 제목 + (오른쪽 링크) + 내용 */
+/** 구역 하나 = 흰 카드: 제목 줄(아래 선) + 내용 */
 function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
-    <section className="px-5 py-5">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-base font-bold">{title}</h3>
+    <section className="overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+      <div className="flex min-h-12 items-center justify-between gap-2 border-b border-line-soft px-4 py-2.5">
+        <h3 className="text-[15px] font-bold">{title}</h3>
         {aside}
       </div>
-      {children}
+      <div className="px-4 py-3.5">{children}</div>
     </section>
   );
+}
+
+/** 카드 안의 "없음" 한 줄 (카드에 이미 테두리가 있어서 선 없이) */
+function Empty({ children }: { children: ReactNode }) {
+  return <p className="text-[15px] text-sub">{children}</p>;
 }
 
 function TodaySection({ day, onOpenAttendance }: { day: StudentDay; onOpenAttendance: () => void }) {
   const { slot, record, status } = day;
   return (
-    <section className="px-5 py-4">
+    <section className="rounded-[var(--radius-card)] border border-line bg-card px-4 py-3.5">
       <div className="flex items-center justify-between gap-3">
         <div className="text-[15px] tabular">
           <p className="flex items-center gap-2 font-semibold">
@@ -197,11 +203,11 @@ function RecentAttendanceSection({ items }: { items: StudentDetailData["recentAt
       }
     >
       {items.length === 0 ? (
-        <EmptyLine>최근 2주 동안 수업이 없었습니다.</EmptyLine>
+        <Empty>최근 2주 동안 수업이 없었습니다.</Empty>
       ) : (
-        <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+        <ul className="-my-1.5 divide-y divide-line-soft">
           {items.map((i) => (
-            <li key={i.date} className="flex items-center justify-between gap-2 border-b border-line-soft py-2 text-[15px] tabular">
+            <li key={i.date} className="grid grid-cols-[80px_1fr_auto] items-center gap-2 py-2 text-[15px] tabular">
               <span>
                 {Number(i.date.slice(5, 7))}/{Number(i.date.slice(8))} ({WEEKDAY_KO[weekdayOf(i.date)]})
               </span>
@@ -221,7 +227,7 @@ function MakeupSection({ items }: { items: StudentDetailData["makeups"] }) {
   return (
     <Section title="보강 일정">
       {items.length === 0 ? (
-        <EmptyLine>예정된 보강이 없습니다.</EmptyLine>
+        <Empty>예정된 보강이 없습니다.</Empty>
       ) : (
         <ul className="space-y-2">
           {items.map((m) => (
@@ -252,9 +258,9 @@ function HomeworkSection({ data, homeworkHref }: { data: StudentDetailData; home
       }
     >
       {recent.length === 0 ? (
-        <EmptyLine>올린 숙제가 없습니다.</EmptyLine>
+        <Empty>올린 숙제가 없습니다.</Empty>
       ) : (
-        <ul className="divide-y divide-line-soft border-y border-line-soft">
+        <ul className="-my-1 divide-y divide-line-soft">
           {recent.map((h) => (
             <li key={h.id} className="flex items-center gap-2.5 py-2.5">
               <Badge tone={h.kind === "daily" ? "info" : "neutral"}>{h.kind === "daily" ? "매일" : "일반"}</Badge>
@@ -349,7 +355,7 @@ function MessageSection({ data }: { data: StudentDetailData }) {
         </div>
 
         {list.length === 0 ? (
-          <EmptyLine>아직 주고받은 메시지가 없습니다.</EmptyLine>
+          <Empty>아직 주고받은 메시지가 없습니다.</Empty>
         ) : (
           <ul className="space-y-3">
             {list.map((m) => {
