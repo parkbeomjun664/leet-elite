@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 import { formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
+import { longerPrefixesOf, shouldSubmitNow } from "@/lib/kiosk";
 
 /** 키패드에 넘기는 학생 정보. 코드로 찾는 데 필요한 것만 (전화번호 등은 넘기지 않는다) */
 export type KioskStudent = { id: string; code: string; name: string };
@@ -93,11 +94,7 @@ function subscribeClock(onChange: () => void) {
 export function KioskKeypad({ students }: { students: KioskStudent[] }) {
   const byCode = useMemo(() => new Map(students.map((s) => [s.code, s])), [students]);
   // 더 긴 번호의 앞자리인 번호들 (예: 10024가 있으면 1002). 이 번호에서는 바로 처리하지 않고 확인을 기다린다
-  const longerPrefixes = useMemo(() => {
-    const set = new Set<string>();
-    for (const s of students) for (let i = MIN_LEN; i < s.code.length; i++) set.add(s.code.slice(0, i));
-    return set;
-  }, [students]);
+  const longerPrefixes = useMemo(() => longerPrefixesOf(students.map((s) => s.code)), [students]);
 
   const time = useSyncExternalStore(subscribeClock, () => nowTimeKST(), () => "");
   const date = useSyncExternalStore(subscribeClock, () => todayKST(), () => "");
@@ -170,7 +167,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     const next = prev + d;
 
     // 바로 처리: 번호로 학생이 한 명만 정해지면(더 긴 번호의 앞자리가 아니면) 확인 없이 처리. 6자리가 차도 처리
-    if ((byCode.has(next) && !longerPrefixes.has(next)) || next.length === MAX_LEN) {
+    if (shouldSubmitNow(next, byCode, longerPrefixes)) {
       processCode(next);
       return;
     }
