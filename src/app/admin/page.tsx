@@ -176,15 +176,15 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title={<span className="tabular">{formatDateKo(date)}</span>}
         description={`원장님, 오늘 학원 현황입니다. (${now} 기준)`}
       />
 
       {/* 현황 카드 7개: 누르면 해당 화면으로 이동. 4개 + 3개 두 줄, 두 줄 모두 같은 폭 */}
-      <section aria-label="오늘 현황" className="space-y-2 sm:space-y-3">
-        <ul className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+      <section aria-label="오늘 현황" className="space-y-3">
+        <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {cards.map((c) => (
             <li key={c.label}>
               <StatusCard card={c} />
@@ -192,7 +192,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           ))}
         </ul>
         {/* 휴대폰·태블릿(2칸)에서는 첫 카드를 한 줄 전체로 써서 혼자 남는 카드가 없게 */}
-        <ul className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
+        <ul className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {statusCards.map((c, i) => (
             <li key={c.label} className={cn(i === 0 && "col-span-2 lg:col-span-1")}>
               <StatusCard card={c} />
@@ -203,19 +203,19 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
 
       {/* 바로가기 메뉴 3줄 (HOME-02) */}
       <section aria-label="바로가기">
-        <h2 className="mb-2.5 text-base font-bold">바로가기</h2>
-        <div className="grid grid-cols-3 gap-2">
+        <h2 className="mb-3 text-[15px] font-semibold">바로가기</h2>
+        <div className="grid grid-cols-3 gap-1">
           {MENU_ROWS.flat().map((m) => (
             <Link
               key={m.label}
               href={hrefOf(m.navLabel)}
-              className="flex min-h-14 items-center justify-between gap-2 rounded-[var(--radius-card)] border border-line bg-card px-3 py-3 sm:px-4 transition-colors hover:border-brand/50 hover:bg-brand-tint/40"
+              className="flex min-h-14 items-center justify-between gap-2 rounded-[var(--radius-card)] px-3 py-3 transition-colors hover:bg-bg sm:px-4"
             >
               <span className="min-w-0">
-                <span className="block text-base font-bold">{m.label}</span>
-                <span className="hidden truncate text-sm text-sub sm:block">{m.desc}</span>
+                <span className="block text-sm font-semibold">{m.label}</span>
+                <span className="mt-0.5 hidden truncate text-[13px] text-sub sm:block">{m.desc}</span>
               </span>
-              <span className="hidden text-lg text-sub sm:inline" aria-hidden>
+              <span className="hidden text-sub/60 sm:inline" aria-hidden>
                 ›
               </span>
             </Link>
@@ -228,7 +228,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         <Panel
           title={
             <>
-              오늘 보강 <span className="ml-1 text-[15px] font-semibold text-sub tabular">{todayMakeups.length}</span>
+              오늘 보강 <span className="ml-1 text-[13px] font-medium text-sub tabular">{todayMakeups.length}</span>
             </>
           }
           actions={
@@ -253,7 +253,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                       {m.start}~{end}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="text-base font-bold">{s?.name ?? "알 수 없음"}</span>
+                      <span className="text-sm font-semibold">{s?.name ?? "알 수 없음"}</span>
                       <span className="ml-2 text-sm text-sub">{[s?.school, s?.grade].filter(Boolean).join(" ")}</span>
                       <span className="block truncate text-sm text-sub">
                         {m.reason}
@@ -271,7 +271,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         <Panel
           title={
             <>
-              읽지 않은 학부모 메시지 <span className="ml-1 text-[15px] font-semibold text-sub tabular">{unreadList.length}</span>
+              읽지 않은 학부모 메시지 <span className="ml-1 text-[13px] font-medium text-sub tabular">{unreadList.length}</span>
             </>
           }
           actions={
@@ -296,7 +296,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                         {day === date ? time : `${day.slice(5).replace("-", "/")} ${time}`}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="text-base font-bold">{s?.name ?? "알 수 없음"}</span>
+                        <span className="text-sm font-semibold">{s?.name ?? "알 수 없음"}</span>
                         <span className="ml-2 text-sm text-sub">{m.senderName}</span>
                         <span className="block truncate text-[15px]">{m.body.split("\n")[0]}</span>
                       </span>
@@ -322,20 +322,20 @@ function StatusCard({ card: c }: { card: Card }) {
   return (
     <Link
       href={c.href}
-      className="block h-full rounded-[var(--radius-card)] border border-line bg-card px-3 py-3 transition-colors hover:border-ink/30 sm:px-4 sm:py-3.5"
+      className="block h-full rounded-[var(--radius-card)] bg-bg px-4 py-4 transition-colors hover:bg-line-soft"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[15px] text-sub">{c.label}</span>
+        <span className="text-[13px] text-sub">{c.label}</span>
         <span className="text-sub" aria-hidden>
           ›
         </span>
       </div>
-      <p className={cn("mt-1 text-[28px] leading-tight font-bold tabular", c.tone ?? "text-ink")}>
+      <p className={cn("mt-2 text-2xl leading-tight font-semibold tabular", c.tone ?? "text-ink")}>
         {c.value}
-        {c.total !== undefined && <span className="ml-1 text-xl font-semibold text-sub">/ {c.total}</span>}
-        <span className="ml-1 text-base font-semibold text-sub">{c.unit}</span>
+        {c.total !== undefined && <span className="ml-1 text-base font-medium text-sub">/ {c.total}</span>}
+        <span className="ml-0.5 text-sm font-medium text-sub">{c.unit}</span>
       </p>
-      <p className="mt-1 truncate text-sm text-sub">{c.detail}</p>
+      <p className="mt-1 truncate text-[13px] text-sub/80">{c.detail}</p>
     </Link>
   );
 }

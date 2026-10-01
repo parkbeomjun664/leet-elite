@@ -91,7 +91,7 @@ export function StudentTable({
   return (
     <div className={cn("space-y-3", selectedCount > 0 && "pb-20")}>
       {/* 필터 */}
-      <div className="divide-y divide-line-soft rounded-[var(--radius-card)] border border-line bg-card">
+      <div className="divide-y divide-line-soft rounded-[var(--radius-card)] bg-bg">
         <FilterRow label="반">
           <Segment active={classId === "all"} onClick={() => setClassId("all")} count={active.length}>
             전체

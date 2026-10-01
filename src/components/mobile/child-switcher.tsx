@@ -21,7 +21,8 @@ export function ChildSwitcher({ items, selectedId }: { items: { id: string; name
   };
 
   return (
-    <nav aria-label="자녀 선택" className="grid gap-1 rounded-[var(--radius-card)] border border-line bg-card p-1" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+    // 밑줄 탭 (10/2: 검정 알약 버튼 대신)
+    <nav aria-label="자녀 선택" className="grid border-b border-line" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
       {items.map((child) => {
         const active = child.id === selectedId;
         return (
@@ -32,8 +33,8 @@ export function ChildSwitcher({ items, selectedId }: { items: { id: string; name
             scroll={false}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex h-11 items-center justify-center truncate rounded-[var(--radius-control)] px-3 text-[17px] transition-colors",
-              active ? "bg-ink font-bold text-white" : "font-medium text-sub hover:bg-line-soft hover:text-ink",
+              "relative -mb-px flex h-11 items-center justify-center truncate border-b-2 px-3 text-base transition-colors",
+              active ? "border-ink font-semibold text-ink" : "border-transparent font-medium text-sub hover:text-ink",
             )}
           >
             {child.name}

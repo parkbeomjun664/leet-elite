@@ -50,8 +50,8 @@ export function StudentDetail({
   onOpenAttendance: () => void;
 }) {
   return (
-    // 연한 회색 바탕 위에 구역마다 흰 카드 (구역 경계가 한눈에 보이게, 10/1)
-    <div className="space-y-3 bg-bg/70 p-3">
+    // 흰 바탕, 구역 사이는 얇은 구분선만 (박스 없이, 10/2)
+    <div className="divide-y divide-line-soft">
       <TodaySection day={day} onOpenAttendance={onOpenAttendance} />
       <InfoSection day={day} data={data} />
       <RecentAttendanceSection items={data.recentAttendance} />
@@ -63,28 +63,28 @@ export function StudentDetail({
   );
 }
 
-/** 구역 하나 = 흰 카드: 제목 줄(아래 선) + 내용 */
+/** 구역 하나: 작은 회색 제목 + 내용. 구역 사이는 바깥의 구분선으로 나눈다 */
 function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
   return (
-    <section className="overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
-      <div className="flex min-h-12 items-center justify-between gap-2 border-b border-line-soft px-4 py-2.5">
-        <h3 className="text-[15px] font-bold">{title}</h3>
+    <section className="px-5 py-5">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="text-[13px] font-semibold text-sub">{title}</h3>
         {aside}
       </div>
-      <div className="px-4 py-3.5">{children}</div>
+      {children}
     </section>
   );
 }
 
-/** 카드 안의 "없음" 한 줄 (카드에 이미 테두리가 있어서 선 없이) */
+/** 구역 안의 "없음" 한 줄 */
 function Empty({ children }: { children: ReactNode }) {
-  return <p className="text-[15px] text-sub">{children}</p>;
+  return <p className="text-sm text-sub">{children}</p>;
 }
 
 function TodaySection({ day, onOpenAttendance }: { day: StudentDay; onOpenAttendance: () => void }) {
   const { slot, record, status } = day;
   return (
-    <section className="rounded-[var(--radius-card)] border border-line bg-card px-4 py-3.5">
+    <section className="px-5 py-4">
       <div className="flex items-center justify-between gap-3">
         <div className="text-[15px] tabular">
           <p className="flex items-center gap-2 font-semibold">
@@ -96,7 +96,7 @@ function TodaySection({ day, onOpenAttendance }: { day: StudentDay; onOpenAttend
             {record?.memo && ` · ${record.memo}`}
           </p>
         </div>
-        <Button variant="primary" onClick={onOpenAttendance}>
+        <Button size="sm" variant="primary" onClick={onOpenAttendance}>
           출결 입력
         </Button>
       </div>
@@ -155,18 +155,29 @@ function ProgramEditor({ initial }: { initial: string[] }) {
   const dirty = draft.slice().sort().join() !== saved.slice().sort().join();
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-        {PROGRAMS.map((p) => (
-          <Checkbox
-            key={p}
-            label={p}
-            checked={draft.includes(p)}
-            onChange={(e) => {
-              setMessage("");
-              setDraft((prev) => (e.target.checked ? [...prev, p] : prev.filter((x) => x !== p)));
-            }}
-          />
-        ))}
+      {/* 배지 모양 토글: 누르면 켜짐(브랜드 옅은 바탕) / 꺼짐(회색) */}
+      <div className="flex flex-wrap gap-1.5">
+        {PROGRAMS.map((p) => {
+          const on = draft.includes(p);
+          return (
+            <button
+              key={p}
+              type="button"
+              aria-pressed={on}
+              onClick={() => {
+                setMessage("");
+                setDraft((prev) => (on ? prev.filter((x) => x !== p) : [...prev, p]));
+              }}
+              className={cn(
+                "h-[22px] rounded-[4px] px-1.5 text-xs font-semibold transition-colors",
+                on ? "bg-brand/10 text-brand" : "bg-ink/[0.04] text-sub/70 hover:text-sub",
+              )}
+            >
+              {on ? "✓ " : ""}
+              {p}
+            </button>
+          );
+        })}
       </div>
       {(dirty || message) && (
         <div className="flex items-center gap-2">
@@ -368,7 +379,7 @@ function MessageSection({ data }: { data: StudentDetailData }) {
                   <p
                     className={cn(
                       "max-w-[85%] rounded-[var(--radius-card)] px-3.5 py-2.5 text-[15px] leading-relaxed",
-                      mine ? "bg-brand-tint text-ink" : "border border-line bg-card",
+                      mine ? "bg-brand-tint text-ink" : "bg-bg",
                     )}
                   >
                     {m.body}

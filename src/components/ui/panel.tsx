@@ -16,10 +16,11 @@ export function Panel({
   bodyClassName?: string;
 }) {
   return (
-    <section className={cn("rounded-[var(--radius-card)] border border-line bg-card", className)}>
+    // 테두리 없이 흰 바탕 + 아주 옅은 그림자로 구분 (10/2)
+    <section className={cn("rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]", className)}>
       {(title || actions) && (
-        <header className="flex min-h-12 items-center justify-between gap-3 border-b border-line-soft px-4 py-2">
-          {title && <h2 className="text-base font-bold">{title}</h2>}
+        <header className="flex min-h-12 items-center justify-between gap-3 border-b border-line-soft px-4 py-2.5">
+          {title && <h2 className="text-[15px] font-semibold">{title}</h2>}
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </header>
       )}
@@ -44,10 +45,10 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
 /** 구역 제목 + 개수 */
 export function SectionTitle({ children, count, actions }: { children: ReactNode; count?: number; actions?: ReactNode }) {
   return (
-    <div className="mb-2.5 flex items-center justify-between gap-2">
-      <h2 className="flex items-baseline gap-2 text-base font-bold">
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <h2 className="flex items-baseline gap-2 text-[15px] font-semibold">
         {children}
-        {count !== undefined && <span className="text-[15px] font-semibold text-sub tabular">{count}</span>}
+        {count !== undefined && <span className="text-[13px] font-medium text-sub tabular">{count}</span>}
       </h2>
       {actions}
     </div>

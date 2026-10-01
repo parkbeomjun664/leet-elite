@@ -46,7 +46,7 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
       </header>
 
       {/* 본문: 아래 탭에 가리지 않도록 탭 높이 + 안전 영역만큼 띄운다 */}
-      <main className="mx-auto max-w-[560px] px-4 pt-4 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">{children}</main>
+      <main className="mx-auto max-w-[560px] px-4 pt-5 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">{children}</main>
 
       {/* 아래 탭 */}
       <nav aria-label="주 메뉴" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card pb-[env(safe-area-inset-bottom,0px)]">
@@ -59,8 +59,8 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
                   href={tab.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex h-full flex-col items-center justify-center gap-0.5 text-[13px]",
-                    active ? "font-bold text-brand" : "font-medium text-sub hover:text-ink",
+                    "flex h-full flex-col items-center justify-center gap-1 text-[11px]",
+                    active ? "font-semibold text-brand" : "font-medium text-sub hover:text-ink",
                   )}
                 >
                   <TabIcon index={i} />
@@ -78,8 +78,8 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
 // 탭 아이콘: 선 두께가 같은 단순한 그림 (홈 · 숙제 · 출결 · 메시지 순서)
 function TabIcon({ index }: { index: number }) {
   const common = {
-    width: 22,
-    height: 22,
+    width: 20,
+    height: 20,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
@@ -159,7 +159,7 @@ export type HomeworkItem = {
 export function HomeworkList({ items }: { items: HomeworkItem[] }) {
   if (items.length === 0) return <EmptyLine>받은 숙제가 없습니다.</EmptyLine>;
   return (
-    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
       {items.map((hw) => (
         <li key={hw.id}>
           {/* TODO(HW-06): 숙제 상세·제출 화면으로 이동 */}
@@ -196,7 +196,7 @@ export type MakeupItem = {
 export function MakeupList({ items }: { items: MakeupItem[] }) {
   if (items.length === 0) return <EmptyLine>예정된 보강이 없습니다.</EmptyLine>;
   return (
-    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
       {items.map((m) => (
         <li key={m.id} className="flex min-h-14 items-center gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">
@@ -228,7 +228,7 @@ export type MessageItem = {
 export function MessageList({ items, href }: { items: MessageItem[]; href: string }) {
   if (items.length === 0) return <EmptyLine>받은 메시지가 없습니다.</EmptyLine>;
   return (
-    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
       {items.map((m) => (
         <li key={m.id}>
           <Link href={href} className="flex min-h-14 items-center gap-3 px-4 py-3 hover:bg-bg/60 active:bg-line-soft">

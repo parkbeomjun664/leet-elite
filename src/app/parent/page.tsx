@@ -161,7 +161,7 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
       {/* 이번 주 시간표 */}
       <section>
         <SectionTitle>이번 주 수업</SectionTitle>
-        <ol className="grid grid-cols-6 overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+        <ol className="grid grid-cols-6 overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
           {WEEK.map((wd) => {
             const slot = student.schedule.find((s) => s.weekday === wd);
             const isToday = wd === today;
@@ -231,10 +231,10 @@ const DOT: Record<AlertItem["tone"], string> = { ok: "bg-ok", info: "bg-info", b
 // 새 알림 줄: 한 줄에 하나. 누를 곳이 있으면 오른쪽에 화살표
 function NewAlerts({ items }: { items: AlertItem[] }) {
   if (items.length === 0) {
-    return <p className="rounded-[var(--radius-card)] border border-line bg-card px-4 py-3 text-[15px] text-sub">새 알림이 없습니다</p>;
+    return <p className="rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] px-4 py-3 text-[15px] text-sub">새 알림이 없습니다</p>;
   }
   return (
-    <section aria-label="새 알림" className="overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+    <section aria-label="새 알림" className="overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
       <h2 className="border-b border-line-soft px-4 py-2 text-sm font-semibold text-sub">새 알림</h2>
       <ul className="divide-y divide-line-soft">
         {items.map((a) => {

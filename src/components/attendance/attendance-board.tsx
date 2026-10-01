@@ -188,8 +188,8 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
                 onClick={() => setStatus(active && f.key !== "all" ? "all" : f.key)}
                 className={cn("relative py-3 text-center transition-colors", active ? "bg-bg" : "hover:bg-bg/50")}
               >
-                <span className={cn("block text-[24px] leading-tight font-bold tabular sm:text-[26px]", f.color)}>{count(f.key)}</span>
-                <span className={cn("text-[13px] whitespace-nowrap sm:text-sm", active ? "font-bold text-ink" : "text-sub")}>{f.label}</span>
+                <span className={cn("block text-2xl leading-tight font-semibold tabular", f.color)}>{count(f.key)}</span>
+                <span className={cn("text-[13px] whitespace-nowrap", active ? "font-semibold text-ink" : "text-sub")}>{f.label}</span>
                 {active && <span className="absolute inset-x-0 bottom-0 h-[3px] bg-ink" />}
               </button>
             );
@@ -273,14 +273,14 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
       {/* ── 오른쪽: 학생 상세 (PC에서만, 스크롤해도 따라옴) ── */}
       <aside className="hidden lg:block">
         {/* 상단 메뉴(64px, 고정) 바로 아래에 붙고, 화면 높이만큼 채운다 (오른쪽이 비어 보이지 않게) */}
-        <div className="sticky top-[88px] flex h-[calc(100dvh-112px)] flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+        <div className="sticky top-[88px] flex h-[calc(100dvh-112px)] flex-col overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.05)]">
           {focusDay ? (
             <>
-              <header className="border-b border-line px-5 py-4">
-                <h2 className="text-lg font-bold">{focusDay.student.name}</h2>
-                <p className="mt-0.5 text-[15px] text-sub">{detailSubtitle(focusDay)}</p>
+              <header className="border-b border-line-soft px-5 py-4">
+                <h2 className="text-lg font-semibold">{focusDay.student.name}</h2>
+                <p className="mt-0.5 text-[13px] text-sub">{detailSubtitle(focusDay)}</p>
               </header>
-              <div className="min-h-0 flex-1 overflow-y-auto bg-bg/70">
+              <div className="min-h-0 flex-1 overflow-y-auto">
                 <StudentDetail
                   key={focusDay.student.id}
                   day={focusDay}
@@ -423,8 +423,8 @@ function Tile({ day, selecting, selected, focusId, onToggle, onOpen, onAttendanc
   return (
     <li
       className={cn(
-        "rounded-[var(--radius-card)] border bg-card px-4 py-3 transition-colors",
-        checked || focused ? "border-ink/60" : "border-line hover:border-ink/25",
+        "rounded-[var(--radius-card)] px-4 py-3 transition-colors",
+        checked || focused ? "bg-brand/[0.06] shadow-[inset_0_0_0_1px_rgba(183,47,52,0.25)]" : "bg-bg hover:bg-line-soft",
       )}
     >
       <div className="flex items-center gap-2">
@@ -476,7 +476,7 @@ function TileButton({ onClick, children }: { onClick: () => void; children: Reac
     <button
       type="button"
       onClick={onClick}
-      className="h-7 shrink-0 rounded-[var(--radius-control)] border border-line px-2.5 text-[13px] font-semibold text-ink/80 hover:border-ink/40 hover:text-ink"
+      className="h-7 shrink-0 rounded-[var(--radius-control)] bg-card px-2.5 text-[13px] font-semibold text-ink/80 shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:text-ink"
     >
       {children}
     </button>

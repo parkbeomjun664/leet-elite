@@ -13,12 +13,13 @@
   --color-brand: #b72f34;
   --color-brand-dark: #92262a;
   --color-brand-tint: #fbecee;
-  --color-bg: #f6f4f3;
+  /* 회색 3단계 (10/2 디자인 정리): 바탕 #FAFAFA · 구분선 #EEEEEE/#E5E5E5 · 보조 글씨 #767676 · 본문 #1A1A1A */
+  --color-bg: #fafafa;
   --color-card: #ffffff;
-  --color-line: #e5dedc;
-  --color-line-soft: #efeae8;
-  --color-ink: #252525;
-  --color-sub: #74696a;
+  --color-line: #e5e5e5;
+  --color-line-soft: #eeeeee;
+  --color-ink: #1a1a1a;
+  --color-sub: #767676;
 
   /* 상태 색: 출결·제출 등 상태 표시에만 사용 (브랜드 색과 구분) */
   --color-ok: #2f7d5b;

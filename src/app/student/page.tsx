@@ -114,7 +114,7 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
         </Panel>
       ) : (
         homeworkItems.length > 0 && (
-          <p className="rounded-[var(--radius-card)] border border-ok/30 bg-ok-tint px-4 py-3 text-[15px] font-semibold text-ok">
+          <p className="rounded-[var(--radius-card)] bg-ink/[0.04] px-4 py-3.5 text-sm font-medium text-ink">
             오늘 할 숙제를 모두 냈어요
           </p>
         )
