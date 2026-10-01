@@ -45,6 +45,7 @@ const STATUS_COLOR: Record<DayStatus, string> = {
 // 위쪽 숫자 = 상태 필터 (숫자를 누르면 그 학생들만)
 const STATUS_FILTERS: { key: "all" | DayStatus; label: string; color: string }[] = [
   { key: "all", label: "오늘 수업", color: "text-ink" },
+  { key: "upcoming", label: "수업 전", color: "text-ink/60" },
   { key: "not_arrived", label: "미등원", color: "text-warn" },
   { key: "checked_in", label: "등원", color: "text-ok" },
   { key: "checked_out", label: "하원", color: "text-info" },
@@ -80,6 +81,14 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
   // 휴대폰에서 연 상세 창, 그리고 출결 입력 창 (둘 다 창으로 뜸)
   const [detailSheet, setDetailSheet] = useState(initialOpen?.mode === "detail");
   const [attendanceFor, setAttendanceFor] = useState<string | null>(initialOpen?.mode === "attendance" ? initialOpen.studentId : null);
+  // 출결 창을 연 시각: 창의 등원·하원 시각에 미리 넣는다 (화면을 연 시각이 아니라 버튼을 누른 시각)
+  const [openedAt, setOpenedAt] = useState(nowTime);
+  // 지금 시각. 시연(?at=) 중이면 시연 시각
+  const now = () => (demo ? nowTime : nowTimeKST());
+  const openAttendance = (id: string) => {
+    setOpenedAt(now());
+    setAttendanceFor(id);
+  };
 
   const inClass = classId === "all" ? days : days.filter((d) => d.student.classIds.includes(classId));
   // "오늘 수업"은 오늘 수업이 있는 학생 수 (수업 없는 학생 제외)
@@ -103,19 +112,37 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
 
   const saveRecord = (rec: Attendance) => setEdits((prev) => ({ ...prev, [rec.studentId]: rec }));
 
-  const focusDay = days.find((d) => d.student.id === focusId);
+  // 여러 명 한 번에 처리 (ATT-04): 등원은 아직 안 온 학생만, 하원은 등원한 학생만 바뀐다
+  const chosen = days.filter((d) => selected.has(d.student.id));
+  const bulk = (kind: "in" | "out" | "absent") => {
+    const t = now();
+    for (const d of chosen) {
+      const memo = d.record?.memo ?? "";
+      if (kind === "in" && !d.record?.checkInAt) {
+        saveRecord({ studentId: d.student.id, date, checkInAt: t, checkOutAt: null, status: "present", memo });
+      } else if (kind === "out" && d.record?.checkInAt && !d.record.checkOutAt) {
+        saveRecord({ studentId: d.student.id, date, checkInAt: d.record.checkInAt, checkOutAt: t, status: "present", memo });
+      } else if (kind === "absent") {
+        saveRecord({ studentId: d.student.id, date, checkInAt: null, checkOutAt: null, status: "absent", memo });
+      }
+    }
+    setSelected(new Set());
+  };
+
+  // 오른쪽 칸 학생: 고른 학생 → 없으면 지금 목록의 첫 학생 (빈 칸으로 두지 않는다)
+  const focusDay = days.find((d) => d.student.id === focusId) ?? visible.find((d) => d.slot) ?? visible[0];
   const attendanceDay = days.find((d) => d.student.id === attendanceFor);
 
   const tileProps: TileHandlers = {
     selecting,
     selected,
-    focusId: isDesktop ? focusId : null,
+    focusId: isDesktop ? (focusDay?.student.id ?? null) : null,
     onToggle: toggle,
     onOpen: (id) => {
       setFocusId(id);
       if (!isDesktop) setDetailSheet(true);
     },
-    onAttendance: (id) => setAttendanceFor(id),
+    onAttendance: openAttendance,
     // 등원한 학생을 지금 시각으로 바로 하원 처리 (키패드를 안 찍고 간 학생)
     onCheckOut: (d) =>
       saveRecord({
@@ -123,7 +150,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
         date,
         checkInAt: d.record?.checkInAt ?? null,
         // 화면을 열어 둔 채 나중에 눌러도 "누른 시각"으로 기록한다
-        checkOutAt: demo ? nowTime : nowTimeKST(),
+        checkOutAt: now(),
         status: "present",
         memo: d.record?.memo ?? "",
       }),
@@ -133,7 +160,8 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
     [d.student.school, d.student.grade, details[d.student.id]?.classNames.join(", ")].filter(Boolean).join(" · ");
 
   return (
-    <div className="grid gap-6 pb-20 lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_500px]">
+    // 아래 여백은 일괄 처리 줄이 떠 있을 때만
+    <div className={cn("grid gap-6 lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_500px]", selecting && "pb-24")}>
       {/* ── 왼쪽: 목록 ── */}
       <div className="min-w-0 space-y-5">
         {/* 날짜 */}
@@ -148,7 +176,8 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
         </div>
 
         {/* 오늘 숫자 = 상태 필터. 누른 숫자의 학생만 보여 준다 */}
-        <div role="group" aria-label="상태로 보기" className="grid grid-cols-5 border-y border-line">
+        {/* 지금 보고 있는 칸은 회색 바탕 + 굵은 밑줄. 한 번 더 누르면 "오늘 수업"(전체)으로 */}
+        <div role="group" aria-label="상태로 보기" className="grid grid-cols-6 border-y border-line">
           {STATUS_FILTERS.map((f) => {
             const active = status === f.key;
             return (
@@ -157,11 +186,11 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
                 type="button"
                 aria-pressed={active}
                 onClick={() => setStatus(active && f.key !== "all" ? "all" : f.key)}
-                className={cn("relative py-3 text-center transition-colors hover:bg-bg/60", active && "bg-bg/60")}
+                className={cn("relative py-3 text-center transition-colors", active ? "bg-bg" : "hover:bg-bg/50")}
               >
-                <span className={cn("block text-[26px] leading-tight font-bold tabular", f.color)}>{count(f.key)}</span>
-                <span className={cn("text-sm", active ? "font-semibold text-ink" : "text-sub")}>{f.label}</span>
-                {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-ink" />}
+                <span className={cn("block text-[24px] leading-tight font-bold tabular sm:text-[26px]", f.color)}>{count(f.key)}</span>
+                <span className={cn("text-[13px] whitespace-nowrap sm:text-sm", active ? "font-bold text-ink" : "text-sub")}>{f.label}</span>
+                {active && <span className="absolute inset-x-0 bottom-0 h-[3px] bg-ink" />}
               </button>
             );
           })}
@@ -169,11 +198,12 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
 
         {/* 반 · 이름 검색 (한 줄) */}
         <div className="flex flex-wrap items-center gap-x-1 gap-y-2">
-          <Chip active={classId === "all"} onClick={() => setClassId("all")}>
+          {/* 반 이름 옆 숫자 = 그 반 학생 수 */}
+          <Chip active={classId === "all"} onClick={() => setClassId("all")} count={days.length}>
             전체 반
           </Chip>
           {classes.map((c) => (
-            <Chip key={c.id} active={classId === c.id} onClick={() => setClassId(c.id)}>
+            <Chip key={c.id} active={classId === c.id} onClick={() => setClassId(c.id)} count={days.filter((d) => d.student.classIds.includes(c.id)).length}>
               {c.name}
             </Chip>
           ))}
@@ -203,12 +233,13 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
             {visible.length === 0 && <EmptyLine>조건에 맞는 학생이 없습니다.</EmptyLine>}
           </>
         ) : (
+          // 원장님 원문 순서: 오늘 등원 → 등원 전 → 수업 없음. 비어 있는 칸은 한 줄로 줄인다
           <>
-            <TileSection title="오늘 등원" items={arrived} empty="아직 등원한 학생이 없습니다." {...tileProps} />
+            <TileSection title="오늘 등원" items={arrived} empty="아직 없습니다" {...tileProps} />
             <TileSection
               title="오늘 수업 · 등원 전"
               items={expected}
-              empty={arrived.length > 0 ? "오늘 수업 학생이 모두 등원했습니다." : "오늘 수업이 있는 학생이 없습니다."}
+              empty={arrived.length > 0 ? "모두 등원했습니다" : "오늘 수업이 있는 학생이 없습니다"}
               {...tileProps}
             />
           </>
@@ -241,8 +272,8 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
 
       {/* ── 오른쪽: 학생 상세 (PC에서만, 스크롤해도 따라옴) ── */}
       <aside className="hidden lg:block">
-        {/* 상단 메뉴(96px, 고정) 바로 아래에 붙는다 */}
-        <div className="sticky top-[88px] flex max-h-[calc(100dvh-104px)] flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+        {/* 상단 메뉴(64px, 고정) 바로 아래에 붙고, 화면 높이만큼 채운다 (오른쪽이 비어 보이지 않게) */}
+        <div className="sticky top-[88px] flex h-[calc(100dvh-112px)] flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
           {focusDay ? (
             <>
               <header className="border-b border-line px-5 py-4">
@@ -255,12 +286,12 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
                   day={focusDay}
                   data={details[focusDay.student.id]}
                   homeworkHref={homeworkHref}
-                  onOpenAttendance={() => setAttendanceFor(focusDay.student.id)}
+                  onOpenAttendance={() => openAttendance(focusDay.student.id)}
                 />
               </div>
             </>
           ) : (
-            <p className="px-5 py-10 text-center text-[15px] text-sub">왼쪽에서 학생 이름을 누르면 수업 정보·숙제·메시지가 여기에 보입니다.</p>
+            <p className="m-auto px-5 text-center text-[15px] text-sub">왼쪽에서 학생 이름을 누르면 수업 정보·숙제·메시지가 여기에 보입니다.</p>
           )}
         </div>
       </aside>
@@ -273,7 +304,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
             day={focusDay}
             data={details[focusDay.student.id]}
             homeworkHref={homeworkHref}
-            onOpenAttendance={() => setAttendanceFor(focusDay.student.id)}
+            onOpenAttendance={() => openAttendance(focusDay.student.id)}
           />
         </Sheet>
       )}
@@ -291,7 +322,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
             <AttendanceForm
               studentId={attendanceDay.student.id}
               date={date}
-              nowTime={nowTime}
+              nowTime={openedAt}
               record={attendanceDay.record}
               onCancel={() => setAttendanceFor(null)}
               onSave={(rec) => {
@@ -303,19 +334,45 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
         </Sheet>
       )}
 
-      {/* 선택한 학생 일괄 처리 (에듀OK 하단 버튼 줄) */}
-      {selected.size > 0 && (
+      {/* 여러 명 선택 중: 아래 줄에서 한 번에 처리 (ATT-04) */}
+      {selecting && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 backdrop-blur">
           <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-2 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
-            <span className="mr-2 text-[15px]">
-              선택한 학생 <b className="tabular">{selected.size}</b>명
+            <span className="mr-1 text-[15px]">
+              {chosen.length > 0 ? (
+                <>
+                  <b className="tabular">{chosen.length}</b>명 선택
+                </>
+              ) : (
+                <span className="text-sub">학생 칸의 체크를 눌러 고르세요</span>
+              )}
             </span>
-            {/* TODO: 일괄 등원·하원, 메시지 연결 (ATT-04, MSG-01) */}
-            <Button variant="primary">등원 처리</Button>
-            <Button>하원 처리</Button>
-            <Button>메시지 보내기</Button>
-            <button type="button" onClick={() => setSelected(new Set())} className="ml-auto text-sm text-sub hover:text-ink">
-              선택 해제
+            <button
+              type="button"
+              onClick={() => setSelected(new Set(visible.filter((d) => d.slot).map((d) => d.student.id)))}
+              className="mr-2 text-sm text-sub underline underline-offset-2 hover:text-ink"
+            >
+              오늘 수업 학생 모두
+            </button>
+            <Button variant="primary" disabled={chosen.length === 0} onClick={() => bulk("in")}>
+              등원 처리
+            </Button>
+            <Button disabled={chosen.length === 0} onClick={() => bulk("out")}>
+              하원 처리
+            </Button>
+            <Button disabled={chosen.length === 0} onClick={() => bulk("absent")}>
+              결석 처리
+            </Button>
+            {/* TODO(5단계): 선택한 학생에게 메시지 (MSG-01) */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelecting(false);
+                setSelected(new Set());
+              }}
+              className="ml-auto text-sm text-sub hover:text-ink"
+            >
+              선택 끝내기
             </button>
           </div>
         </div>
@@ -335,18 +392,24 @@ type TileHandlers = {
 };
 
 function TileSection({ title, items, empty, ...handlers }: { title: string; items: StudentDay[]; empty?: string } & TileHandlers) {
+  // 비어 있으면 제목 한 줄로 줄인다: "오늘 등원 0 · 아직 없습니다"
+  if (items.length === 0) {
+    return (
+      <p className="flex items-baseline gap-2 text-[15px]">
+        <span className="font-bold text-ink">{title}</span>
+        <span className="font-semibold text-sub tabular">0</span>
+        {empty && <span className="text-sub">· {empty}</span>}
+      </p>
+    );
+  }
   return (
     <section aria-label={title}>
       <SectionTitle count={items.length}>{title}</SectionTitle>
-      {items.length === 0 ? (
-        <EmptyLine>{empty}</EmptyLine>
-      ) : (
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {items.map((d) => (
-            <Tile key={d.student.id} day={d} {...handlers} />
-          ))}
-        </ul>
-      )}
+      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {items.map((d) => (
+          <Tile key={d.student.id} day={d} {...handlers} />
+        ))}
+      </ul>
     </section>
   );
 }
@@ -420,7 +483,7 @@ function TileButton({ onClick, children }: { onClick: () => void; children: Reac
   );
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({ active, onClick, count, children }: { active: boolean; onClick: () => void; count?: number; children: React.ReactNode }) {
   return (
     <button
       type="button"
@@ -429,6 +492,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       className={cn("h-8 rounded-[var(--radius-control)] px-3 text-sm transition-colors", active ? "bg-ink font-semibold text-white" : "text-ink/70 hover:bg-bg")}
     >
       {children}
+      {count !== undefined && <span className={cn("ml-1 tabular", active ? "text-white/70" : "text-sub")}>({count})</span>}
     </button>
   );
 }
