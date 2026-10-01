@@ -1,46 +1,75 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox, Field, Input } from "@/components/ui/field";
+import { cn } from "@/lib/cn";
 
 // TODO(2단계): Supabase 인증 연결. 지금은 화면 확인용
-// 입력칸은 로그인 버튼(lg, 48px)과 높이를 맞춘다. Input에 크기 옵션이 없어 여기서만 높이를 지정
+// 로그인 화면만의 입력칸: 테두리 없이 연한 바탕을 채우고, 누르면 흰 바탕 + 버건디 테두리 (토스·당근식)
+const field =
+  "h-[52px] w-full rounded-[var(--radius-card)] border border-transparent bg-bg px-4 text-base text-ink placeholder:text-sub/80 transition-colors focus:border-brand focus:bg-card focus:outline-none";
+
 export function LoginForm() {
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form
-      className="space-y-5"
       onSubmit={(e) => {
         e.preventDefault();
         setMessage("로그인 기능은 곧 연결됩니다.");
       }}
     >
-      <Field label="아이디" htmlFor="login-id" hint="휴대폰 번호(- 없이) 또는 학원이 정해 준 아이디">
-        <Input
-          id="login-id"
-          name="loginId"
-          autoComplete="username"
-          autoCapitalize="none"
-          spellCheck={false}
-          placeholder="휴대폰 번호 또는 아이디"
-          required
-          inputSize="lg"
-        />
-      </Field>
-      <Field label="비밀번호" htmlFor="password">
-        <Input id="password" name="password" type="password" autoComplete="current-password" required inputSize="lg" />
-      </Field>
-      {/* 자동 로그인 (AUTH-06). TODO(2단계): 체크하면 세션을 오래 유지, 해제하면 브라우저를 닫을 때 로그아웃 */}
-      <div className="flex flex-wrap items-center gap-x-3">
-        <Checkbox name="keepSignedIn" defaultChecked label="자동 로그인" className="min-h-11 font-semibold text-ink" />
-        <p className="text-sm text-sub">공용 PC에서는 체크를 해제하세요</p>
+      <div className="space-y-2.5">
+        <label className="block">
+          <span className="sr-only">아이디</span>
+          <input
+            name="loginId"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            inputMode="text"
+            placeholder="휴대폰 번호 또는 아이디"
+            required
+            className={field}
+          />
+        </label>
+        <div className="relative">
+          <label className="block">
+            <span className="sr-only">비밀번호</span>
+            <input
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="비밀번호"
+              required
+              className={cn(field, "pr-16")}
+            />
+          </label>
+          {/* 휴대폰에서 비밀번호를 잘못 누르기 쉬워서 보기 버튼을 둔다 */}
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-2 my-auto h-9 rounded-[var(--radius-control)] px-2.5 text-sm font-semibold text-sub hover:text-ink"
+          >
+            {showPassword ? "숨기기" : "보기"}
+          </button>
+        </div>
       </div>
-      <Button type="submit" variant="primary" size="lg" className="w-full">
+
+      {/* 로그인 상태 유지 (AUTH-06). TODO(2단계): 체크하면 세션을 오래 유지, 해제하면 브라우저를 닫을 때 로그아웃 */}
+      <label className="mt-4 inline-flex min-h-11 cursor-pointer items-center gap-2 text-[15px] text-ink/80">
+        <input type="checkbox" name="keepSignedIn" defaultChecked className="size-[18px] accent-[var(--color-brand)]" />
+        로그인 상태 유지
+      </label>
+
+      <button
+        type="submit"
+        className="mt-3 h-[52px] w-full rounded-[var(--radius-card)] bg-brand text-base font-bold text-white transition-colors hover:bg-brand-dark active:bg-brand-dark"
+      >
         로그인
-      </Button>
-      <p role="status" aria-live="polite" className="text-sm text-brand empty:hidden">
+      </button>
+      <p role="status" aria-live="polite" className="mt-3 text-sm text-brand empty:hidden">
         {message}
       </p>
     </form>
