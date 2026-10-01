@@ -72,7 +72,7 @@ erDiagram
 | status | enum `enrolled/on_leave/withdrawn/pending` | 재원·휴원·퇴원·예정 |
 | enrolled_on | date | 입학일 (미래일 수 있음 = 예정) |
 | left_on | date null | 휴·퇴원일 |
-| attendance_code | text (4~6자리) | 출결 코드. 전화 뒷4자리 기본, **재원생끼리 unique** (부분 unique 인덱스: status in (enrolled, pending)) STU-02, KIOSK-02 |
+| attendance_code | text (4~6자리) | 출결 코드. 이관 학생은 에듀OK 번호 그대로(10/1), 새 학생은 전화 뒷4자리 기본, **재원생끼리 unique** (부분 unique 인덱스: status in (enrolled, pending)) STU-02, KIOSK-02 |
 | programs | text[] | 클래스카드, 클래스5, 오토보카 STU-03 |
 | memo | text | |
 | created_at, updated_at | timestamptz | |
@@ -285,4 +285,6 @@ type: `homework_submitted`, `feedback_added`, `message`, `check_in`, `check_out`
 - 이름 칸의 "홍길동(고림중3)", "홍길동 초6", "홍길동.고진중3" → name / school / grade 분리
 - 상태 접두어 (재)/(휴)/(퇴) → status
 - 보호자 칸 + 휴대전화1·2 → guardians. 같은 번호의 보호자는 1명으로 합치고 자녀를 여러 명 연결
+- 에듀OK 출결 인증번호 → attendance_code (그대로, 겹치면 원장님께 알림)
+- 이관은 처음 한 번만. 이후 등록·반 변경·퇴원은 에듀OK와 새 앱에 각각 입력 (자동 연동 없음, 10/1)
 - 메모의 시간표("월수 2h" 등)는 자동 변환이 어려우므로 원장님과 함께 확인하며 입력
