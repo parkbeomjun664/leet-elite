@@ -280,7 +280,8 @@ export function mockAttendanceFor(date: string = todayKST(), nowTime?: string): 
   const happened = (time: string) => nowTime === undefined || time <= nowTime;
   // 지난 날짜는 수업이 다 끝났으니 대부분 등원·하원 기록이 있다. 오늘은 아직 안 온 학생이 섞여 있다
   const past = nowTime === undefined;
-  const presentRate = past ? 0.9 : 0.55;
+  // 오늘도 실제 학원처럼 대부분 온다 (아직 수업 시작 전인 학생은 위 happened()로 빠진다). 일부만 결석·미등원
+  const presentRate = past ? 0.9 : 0.88;
   const records: Attendance[] = [];
   for (const s of students) {
     if (s.status !== "enrolled") continue;
