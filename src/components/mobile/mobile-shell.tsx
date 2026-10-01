@@ -31,7 +31,7 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
     href === home ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <div className="min-h-dvh bg-bg">
+    <div className="min-h-dvh bg-bg/50">
       {/* 머리줄: 로고 · 학원 이름 · 사용자 */}
       <header className="sticky top-0 z-30 border-b border-line bg-card pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex h-14 max-w-[560px] items-center justify-between gap-3 px-4">
