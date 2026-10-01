@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 // TODO(2단계): Supabase 인증 연결. 지금은 화면 확인용
 // 로그인 화면만의 입력칸: 흰 바탕 + 연한 테두리, 누르면 버건디 테두리와 옅은 버건디 테두리 빛
 const field =
-  "h-[52px] w-full rounded-[var(--radius-card)] border border-line bg-card px-4 text-base text-ink placeholder:text-sub/70 transition-[border-color,box-shadow] focus:border-brand focus:shadow-[0_0_0_3px_var(--color-brand-tint)] focus:outline-none";
+  "h-[52px] w-full rounded-[var(--radius-card)] border border-line bg-card px-4 text-base text-ink placeholder:text-sub/70 transition-[border-color,box-shadow] aria-invalid:border-brand focus:border-brand focus:shadow-[0_0_0_3px_var(--color-brand-tint)] focus:outline-none";
 
 function EyeIcon({ open }: { open: boolean }) {
   return (
@@ -23,6 +23,8 @@ export const LOGIN_ERROR = "아이디 또는 비밀번호가 올바르지 않습
 
 export function LoginForm() {
   const [message, setMessage] = useState("");
+  // 빈칸 안내: 브라우저 기본 말풍선("이 입력란을 작성하세요") 대신 입력칸 아래에 문장으로 보여 준다
+  const [missing, setMissing] = useState<"id" | "password" | null>(null);
   // 눈 아이콘을 누르고 있는 동안만 비밀번호를 보여 준다 (떼면 다시 가림)
   const [peek, setPeek] = useState(false);
   const show = () => setPeek(true);
@@ -30,8 +32,26 @@ export function LoginForm() {
 
   return (
     <form
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
+        const form = e.currentTarget;
+        const id = form.elements.namedItem("loginId") as HTMLInputElement;
+        const pw = form.elements.namedItem("password") as HTMLInputElement;
+        // 비어 있는 첫 칸으로 커서를 옮기고 안내한다
+        if (!id.value.trim()) {
+          setMissing("id");
+          setMessage("");
+          id.focus();
+          return;
+        }
+        if (!pw.value) {
+          setMissing("password");
+          setMessage("");
+          pw.focus();
+          return;
+        }
+        setMissing(null);
         // TODO(2단계): 서버에서 로그인 확인. 실패하면 setMessage(LOGIN_ERROR), 너무 많이 틀리면 잠시 막음 (AUTH-10)
         setMessage("로그인 기능은 곧 연결됩니다.");
       }}
@@ -46,6 +66,9 @@ export function LoginForm() {
             spellCheck={false}
             placeholder="휴대폰 번호 또는 아이디"
             required
+            aria-invalid={missing === "id"}
+            aria-describedby="login-hint"
+            onInput={() => missing === "id" && setMissing(null)}
             className={field}
           />
         </label>
@@ -58,6 +81,9 @@ export function LoginForm() {
               autoComplete="current-password"
               placeholder="비밀번호"
               required
+              aria-invalid={missing === "password"}
+              aria-describedby="login-hint"
+              onInput={() => missing === "password" && setMissing(null)}
               className={cn(field, "pr-14")}
             />
           </label>
@@ -90,6 +116,10 @@ export function LoginForm() {
           </button>
         </div>
       </div>
+
+      <p id="login-hint" role="alert" className="mt-2 text-sm text-brand empty:hidden">
+        {missing === "id" ? "아이디를 입력해 주세요." : missing === "password" ? "비밀번호를 입력해 주세요." : ""}
+      </p>
 
       {/* 로그인 상태 유지 (AUTH-06). 기본은 꺼짐: 공용 PC·태블릿에서 다음 사람이 그대로 로그인되지 않게
           TODO(2단계): 체크하면 세션을 오래 유지, 해제하면 브라우저를 닫을 때 로그아웃 */}
