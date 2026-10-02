@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 
@@ -39,7 +40,12 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
+// 시연용 계정 (10/2, 원장님 시연). 실제 로그인(Supabase) 연결 때 지운다. 가상 데이터만 보이는 시연 화면으로 들어간다
+const DEMO_ID = "1234";
+const DEMO_PASSWORD = "1234";
+
 export function LoginForm() {
+  const router = useRouter();
   const [message, setMessage] = useState("");
   // 칸마다 따로 에러를 둔다. 입력하는 동안은 띄우지 않고, 칸을 벗어날 때(blur)나 [로그인]을 누를 때만 확인
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
@@ -69,8 +75,12 @@ export function LoginForm() {
           (next.id ? idInput : pwInput).focus();
           return;
         }
-        // TODO(2단계): 서버에서 로그인 확인. 실패하면 setMessage(LOGIN_ERROR), 너무 많이 틀리면 잠시 막음 (AUTH-10)
-        setMessage("로그인 기능은 곧 연결됩니다.");
+        // TODO(2단계): 서버에서 로그인 확인. 너무 많이 틀리면 잠시 막음 (AUTH-10)
+        if (idInput.value.trim() === DEMO_ID && pwInput.value === DEMO_PASSWORD) {
+          router.push("/demo");
+          return;
+        }
+        setMessage(LOGIN_ERROR);
       }}
     >
       <div>
