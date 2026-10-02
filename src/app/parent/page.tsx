@@ -10,6 +10,7 @@ import {
   type MakeupItem,
   type MessageItem,
 } from "@/components/mobile/mobile-shell";
+import { MCARD, MCARD_LIST, ROW_DIVIDER } from "@/components/mobile/styles";
 import { Badge } from "@/components/ui/badge";
 import { studentDay, type DayStatus } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
@@ -123,7 +124,7 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
       <ChildSwitcher items={children.map((s) => ({ id: s.id, name: s.name }))} selectedId={student.id} />
 
       {/* 오늘 등원·하원 (ATT-08): 화면에서 유일한 강조 블록 */}
-      <section aria-label="오늘 등원·하원" className="rounded-[var(--radius-card)] bg-wash px-5 py-6">
+      <section aria-label="오늘 등원·하원" className="rounded-[12px] bg-wash p-5">
         <div className="flex items-center justify-between gap-3">
           <p className="text-[13px] text-hint">
             {student.name} · 오늘 {formatDateKo(date).slice(6)}
@@ -150,7 +151,7 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
 
       {/* 이번 주 수업 + 보강 */}
       <MobileSection title={`이번 주 수업 · ${classLine}`}>
-        <ol className="grid grid-cols-6 text-center">
+        <ol className={cn(MCARD, "grid grid-cols-6 px-3 py-3 text-center")}>
           {WEEK.map((wd) => {
             const slot = student.schedule.find((s) => s.weekday === wd);
             const isToday = wd === today;
@@ -167,7 +168,7 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
           })}
         </ol>
         {makeupItems.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-3">
             <MakeupList items={makeupItems} />
           </div>
         )}
@@ -221,7 +222,7 @@ function NewAlerts({ items }: { items: AlertItem[] }) {
   if (items.length === 0) return null;
   return (
     <MobileSection title="새 알림">
-      <ul className="-mx-5 divide-y divide-line-soft border-y border-line-soft">
+      <ul className={MCARD_LIST}>
         {items.map((a) => {
           const body = (
             <>
@@ -236,13 +237,13 @@ function NewAlerts({ items }: { items: AlertItem[] }) {
             </>
           );
           return (
-            <li key={a.key}>
+            <li key={a.key} className={ROW_DIVIDER}>
               {a.href ? (
-                <Link href={a.href} className="flex min-h-14 items-center gap-3 px-5 py-3 active:bg-bg">
+                <Link href={a.href} className="flex min-h-14 items-center gap-3 px-5 py-4 active:bg-mpage">
                   {body}
                 </Link>
               ) : (
-                <div className="flex min-h-14 items-center gap-3 px-5 py-3">{body}</div>
+                <div className="flex min-h-14 items-center gap-3 px-5 py-4">{body}</div>
               )}
             </li>
           );

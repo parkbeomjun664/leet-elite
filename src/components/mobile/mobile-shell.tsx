@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { Badge, type Tone } from "@/components/ui/badge";
 import { DAY_STATUS_LABEL, type DayStatus } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
+import { MCARD, MCARD_LIST, ROW_DIVIDER } from "./styles";
 
 export type MobileTab = { label: string; href: string };
 
@@ -30,7 +31,7 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
     href === home ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <div className="min-h-dvh bg-card">
+    <div className="min-h-dvh bg-mpage">
       {/* 머리줄: 로고 · 학원 이름 · 사용자 */}
       <header className="sticky top-0 z-30 border-b border-line-soft bg-card pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex h-14 max-w-[560px] items-center justify-between gap-3 px-4">
@@ -119,12 +120,13 @@ function TabIcon({ index }: { index: number }) {
 
 // ── 공통 목록 줄 ─────────────────────────────────────────
 
-/** 휴대폰 화면의 구역: 작은 회색 제목 + 내용. 구역 사이 28px (10/2 재디자인) */
+// 휴대폰 화면 구분 규칙 (10/2 보완): 테두리 없이 ① 회색 페이지 바탕 위 흰 카드 ② 여백 단차 ③ 카드 밖 제목
+/** 휴대폰 화면의 구역: 카드 바깥 위쪽 제목(카드와 8px) + 카드. 구역 사이 28px */
 export function MobileSection({ title, actions, children }: { title: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
     <section>
-      <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
-        <h2 className="text-[13px] font-medium text-hint">{title}</h2>
+      <div className="mb-2 flex min-h-7 items-center justify-between gap-2 px-1">
+        <h2 className="text-sm font-semibold text-ink/80">{title}</h2>
         {actions}
       </div>
       {children}
@@ -134,7 +136,7 @@ export function MobileSection({ title, actions, children }: { title: ReactNode; 
 
 /** 목록이 비었을 때 한 줄 */
 export function MobileEmpty({ children }: { children: ReactNode }) {
-  return <p className="py-3 text-[15px] text-hint">{children}</p>;
+  return <p className={cn(MCARD, "text-[15px] text-hint")}>{children}</p>;
 }
 
 function Chevron() {
@@ -176,11 +178,11 @@ export type HomeworkItem = {
 export function HomeworkList({ items }: { items: HomeworkItem[] }) {
   if (items.length === 0) return <MobileEmpty>받은 숙제가 없습니다.</MobileEmpty>;
   return (
-    <ul className="-mx-5 divide-y divide-line-soft border-y border-line-soft">
+    <ul className={MCARD_LIST}>
       {items.map((hw) => (
-        <li key={hw.id}>
+        <li key={hw.id} className={ROW_DIVIDER}>
           {/* TODO(HW-06): 숙제 상세·제출 화면으로 이동 */}
-          <button type="button" className="flex min-h-14 w-full items-center gap-3 px-5 py-3.5 text-left active:bg-bg">
+          <button type="button" className="flex min-h-14 w-full items-center gap-3 px-5 py-4 text-left active:bg-mpage">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="truncate text-[15px] font-medium text-ink">{hw.title}</span>
@@ -212,9 +214,9 @@ export type MakeupItem = {
 export function MakeupList({ items }: { items: MakeupItem[] }) {
   if (items.length === 0) return <MobileEmpty>예정된 보강이 없습니다.</MobileEmpty>;
   return (
-    <ul className="-mx-5 divide-y divide-line-soft border-y border-line-soft">
+    <ul className={MCARD_LIST}>
       {items.map((m) => (
-        <li key={m.id} className="flex min-h-14 items-center gap-3 px-5 py-3.5">
+        <li key={m.id} className={cn(ROW_DIVIDER, "flex min-h-14 items-center gap-3 px-5 py-4")}>
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-medium text-ink tabular">
               {m.dateLabel} {m.timeLabel}
@@ -244,10 +246,10 @@ export type MessageItem = {
 export function MessageList({ items, href }: { items: MessageItem[]; href: string }) {
   if (items.length === 0) return <MobileEmpty>받은 메시지가 없습니다.</MobileEmpty>;
   return (
-    <ul className="-mx-5 divide-y divide-line-soft border-y border-line-soft">
+    <ul className={MCARD_LIST}>
       {items.map((m) => (
-        <li key={m.id}>
-          <Link href={href} className="flex min-h-14 items-center gap-3 px-5 py-3.5 active:bg-bg">
+        <li key={m.id} className={ROW_DIVIDER}>
+          <Link href={href} className="flex min-h-14 items-center gap-3 px-5 py-4 active:bg-mpage">
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
                 <span className={cn("truncate text-[15px] font-medium", m.fromMe ? "text-hint" : "text-ink")}>

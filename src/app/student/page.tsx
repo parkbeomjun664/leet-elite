@@ -8,6 +8,7 @@ import {
   type MakeupItem,
   type MessageItem,
 } from "@/components/mobile/mobile-shell";
+import { MCARD } from "@/components/mobile/styles";
 import { Button } from "@/components/ui/button";
 import { studentDay } from "@/lib/attendance";
 import { addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
@@ -83,7 +84,7 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
     // 한 화면에 한 가지: 맨 위는 "오늘 할 숙제"와 [제출하기]만. 나머지는 아래로 (10/2 재디자인)
     <div className="space-y-7">
       {/* 오늘 할 숙제 (HW-06): 화면에서 유일한 강조 블록 */}
-      <section aria-label="오늘 할 숙제" className="rounded-[var(--radius-card)] bg-wash px-5 py-6">
+      <section aria-label="오늘 할 숙제" className="rounded-[12px] bg-wash p-5">
         {first ? (
           <>
             <p className="text-[13px] text-hint">
@@ -123,6 +124,7 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
 
       {/* 오늘 수업 (ATT-08): 수업 시간이 핵심 정보 */}
       <MobileSection title={`오늘 · ${formatDateKo(date).slice(6)}`} actions={<DayStatusBadge status={day.status} />}>
+        <div className={MCARD}>
         {day.slot ? (
           <p className="text-[22px] leading-tight font-bold text-ink tabular">
             {day.slot.start}~{addMinutes(day.slot.start, day.slot.durationMin)}
@@ -138,8 +140,10 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
         {day.record?.status === "absent" && (
           <p className="mt-1.5 text-[13px] text-hint">결석{day.record.memo ? ` · ${day.record.memo}` : ""}</p>
         )}
+        </div>
+        {/* 같은 묶음 안의 카드 사이는 12px */}
         {makeupItems.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-3">
             <MakeupList items={makeupItems} />
           </div>
         )}
@@ -156,7 +160,7 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
       </MobileSection>
 
       {/* 내 정보: 맨 아래 한 줄 */}
-      <p className="pb-2 text-[13px] leading-relaxed text-hint">
+      <p className="px-1 pb-2 text-[13px] leading-relaxed text-hint">
         {student.name} · {[student.school, student.grade, className].filter(Boolean).join(" · ")}
         {student.programs.length > 0 && (
           <>
