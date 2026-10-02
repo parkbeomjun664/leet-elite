@@ -18,6 +18,9 @@
   --color-card: #ffffff;
   --color-line: #e5e5e5;
   --color-line-soft: #eeeeee;
+  /* 휴대폰 화면 전용 (10/2): 보조 글씨 한 단계, 강조 블록 하나에만 쓰는 아주 옅은 레드 */
+  --color-hint: #8a8a8e;
+  --color-wash: #fdf4f4;
   --color-ink: #1a1a1a;
   --color-sub: #767676;
 

@@ -1,7 +1,14 @@
-import { DayStatusBadge, HomeworkList, MakeupList, MessageList, type HomeworkItem, type MakeupItem, type MessageItem } from "@/components/mobile/mobile-shell";
-import { Badge } from "@/components/ui/badge";
+import {
+  DayStatusBadge,
+  HomeworkList,
+  MakeupList,
+  MessageList,
+  MobileSection,
+  type HomeworkItem,
+  type MakeupItem,
+  type MessageItem,
+} from "@/components/mobile/mobile-shell";
 import { Button } from "@/components/ui/button";
-import { EmptyLine, Panel, SectionTitle } from "@/components/ui/panel";
 import { studentDay } from "@/lib/attendance";
 import { addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
 import { homeworkOfStudent, makeupsOf, messagesOf, submissionOf } from "@/lib/mock/activity";
@@ -71,107 +78,93 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
       unread: m.from !== "student" && !m.read,
     }));
 
+  const first = pendingItems[0];
   return (
-    <div className="space-y-6">
-      {/* 인사 */}
-      <section>
-        <h1 className="text-xl leading-tight font-bold">{student.name} 학생</h1>
-        <p className="mt-1 text-[15px] text-sub">{[student.school, student.grade, className].filter(Boolean).join(" · ")}</p>
-        {student.programs.length > 0 && (
-          <p className="mt-2 text-[15px]">
-            <span className="text-sub">사용 프로그램:</span> <span className="font-semibold">{student.programs.join(" · ")}</span>
-          </p>
+    // 한 화면에 한 가지: 맨 위는 "오늘 할 숙제"와 [제출하기]만. 나머지는 아래로 (10/2 재디자인)
+    <div className="space-y-7">
+      {/* 오늘 할 숙제 (HW-06): 화면에서 유일한 강조 블록 */}
+      <section aria-label="오늘 할 숙제" className="rounded-[var(--radius-card)] bg-wash px-5 py-6">
+        {first ? (
+          <>
+            <p className="text-[13px] text-hint">
+              오늘 할 숙제 <span className="font-medium text-brand tabular">{pendingItems.length}개</span>
+            </p>
+            <h1 className="mt-2 text-[22px] leading-snug font-bold text-ink">{first.title}</h1>
+            <p className="mt-1 text-[13px] text-hint tabular">
+              {first.daily ? "매일 숙제" : "일반 숙제"} · {first.dateLabel}에 받음
+            </p>
+            {/* TODO(HW-06): 사진·글을 올리는 제출 화면으로 이동 */}
+            <Button variant="primary" size="lg" className="mt-5 h-[52px] w-full text-base">
+              제출하기
+            </Button>
+            {pendingItems.length > 1 && (
+              <ul className="mt-4 space-y-1">
+                {pendingItems.slice(1).map((hw) => (
+                  <li key={hw.id} className="flex min-h-12 items-center justify-between gap-3">
+                    <span className="truncate text-[15px] font-medium text-ink">{hw.title}</span>
+                    {/* TODO(HW-06): 제출 화면 */}
+                    <button type="button" className="h-10 shrink-0 px-2 text-[15px] font-medium text-brand">
+                      제출
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-[13px] text-hint">오늘 할 숙제</p>
+            <h1 className="mt-2 text-[22px] leading-snug font-bold text-ink">
+              {homeworkItems.length > 0 ? "모두 냈어요" : "받은 숙제가 없어요"}
+            </h1>
+          </>
         )}
       </section>
 
-      {/* 오늘 할 숙제 (HW-06): 미제출을 가장 먼저, 제출 버튼을 크게 */}
-      {pendingItems.length > 0 ? (
-        <Panel
-          title={
-            <span className="flex items-baseline gap-2">
-              오늘 할 숙제<span className="text-[15px] font-semibold text-brand tabular">{pendingItems.length}</span>
-            </span>
-          }
-          className="border-brand/40"
-        >
-          <ul className="divide-y divide-line-soft">
-            {pendingItems.map((hw) => (
-              <li key={hw.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Badge tone={hw.daily ? "info" : "neutral"}>{hw.daily ? "매일" : "일반"}</Badge>
-                    <span className="min-w-0 truncate text-base font-bold text-ink">{hw.title}</span>
-                  </div>
-                  <p className="mt-1 text-[13px] text-sub tabular">{hw.dateLabel}에 받은 숙제</p>
-                </div>
-                {/* TODO(HW-06): 사진·글을 올리는 제출 화면으로 이동 */}
-                <Button variant="primary" size="lg" className="w-full">
-                  제출하기
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      ) : (
-        homeworkItems.length > 0 && (
-          <p className="rounded-[var(--radius-card)] bg-ink/[0.04] px-4 py-3.5 text-sm font-medium text-ink">
-            오늘 할 숙제를 모두 냈어요
-          </p>
-        )
-      )}
-
-      {/* 오늘 수업·출결 (ATT-08) */}
-      <Panel title="오늘" actions={<span className="text-[15px] text-sub">{formatDateKo(date).slice(6)}</span>}>
+      {/* 오늘 수업 (ATT-08): 수업 시간이 핵심 정보 */}
+      <MobileSection title={`오늘 · ${formatDateKo(date).slice(6)}`} actions={<DayStatusBadge status={day.status} />}>
         {day.slot ? (
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[13px] text-sub">수업 시간</p>
-              <p className="text-lg font-bold tabular">
-                {day.slot.start}~{addMinutes(day.slot.start, day.slot.durationMin)}
-              </p>
-            </div>
-            <DayStatusBadge status={day.status} className="h-8 px-3 text-[15px]" />
-          </div>
+          <p className="text-[22px] leading-tight font-bold text-ink tabular">
+            {day.slot.start}~{addMinutes(day.slot.start, day.slot.durationMin)}
+          </p>
         ) : (
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[15px] text-sub">오늘은 수업이 없습니다.</p>
-            <DayStatusBadge status={day.status} />
-          </div>
-        )}
-        {day.record?.status === "absent" && day.record.memo && (
-          <p className="mt-3 border-t border-line-soft pt-3 text-[15px] text-sub">사유: {day.record.memo}</p>
+          <p className="text-[15px] font-medium text-ink">오늘은 수업이 없어요</p>
         )}
         {day.record?.checkInAt && (
-          <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-line-soft pt-3 text-[15px]">
-            <div>
-              <dt className="text-[13px] text-sub">등원</dt>
-              <dd className="font-semibold tabular">{day.record.checkInAt ?? "–"}</dd>
-            </div>
-            <div>
-              <dt className="text-[13px] text-sub">하원</dt>
-              <dd className="font-semibold tabular">{day.record.checkOutAt ?? "–"}</dd>
-            </div>
-          </dl>
+          <p className="mt-1.5 text-[13px] text-hint tabular">
+            등원 {day.record.checkInAt} · 하원 {day.record.checkOutAt ?? "–"}
+          </p>
         )}
-      </Panel>
+        {day.record?.status === "absent" && (
+          <p className="mt-1.5 text-[13px] text-hint">결석{day.record.memo ? ` · ${day.record.memo}` : ""}</p>
+        )}
+        {makeupItems.length > 0 && (
+          <div className="mt-4">
+            <MakeupList items={makeupItems} />
+          </div>
+        )}
+      </MobileSection>
 
       {/* 제출한 숙제 (HW-10: 선생님 코멘트 확인) */}
-      <section>
-        <SectionTitle count={submittedItems.length}>제출한 숙제</SectionTitle>
-        {submittedItems.length > 0 ? <HomeworkList items={submittedItems} /> : <EmptyLine>아직 제출한 숙제가 없습니다.</EmptyLine>}
-      </section>
-
-      {/* 보강 일정 (MKP-04) */}
-      <section>
-        <SectionTitle>보강 일정</SectionTitle>
-        <MakeupList items={makeupItems} />
-      </section>
+      <MobileSection title={`제출한 숙제 ${submittedItems.length}`}>
+        <HomeworkList items={submittedItems} />
+      </MobileSection>
 
       {/* 학원 메시지 (MSG-05) */}
-      <section>
-        <SectionTitle>학원 메시지</SectionTitle>
+      <MobileSection title="학원 메시지">
         <MessageList items={messageItems} href="/student/messages" />
-      </section>
+      </MobileSection>
+
+      {/* 내 정보: 맨 아래 한 줄 */}
+      <p className="pb-2 text-[13px] leading-relaxed text-hint">
+        {student.name} · {[student.school, student.grade, className].filter(Boolean).join(" · ")}
+        {student.programs.length > 0 && (
+          <>
+            <br />
+            사용 프로그램 · {student.programs.join(", ")}
+          </>
+        )}
+      </p>
     </div>
   );
 }

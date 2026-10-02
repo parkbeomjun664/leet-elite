@@ -10,7 +10,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Badge, type Tone } from "@/components/ui/badge";
-import { EmptyLine } from "@/components/ui/panel";
 import { DAY_STATUS_LABEL, type DayStatus } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
 
@@ -31,9 +30,9 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
     href === home ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <div className="min-h-dvh bg-bg/50">
+    <div className="min-h-dvh bg-card">
       {/* 머리줄: 로고 · 학원 이름 · 사용자 */}
-      <header className="sticky top-0 z-30 border-b border-line bg-card pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 z-30 border-b border-line-soft bg-card pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex h-14 max-w-[560px] items-center justify-between gap-3 px-4">
           <Link href={home} className="flex min-h-11 items-center gap-1.5" aria-label="홈으로">
             {/* 여백을 잘라 낸 투명 로고 (scripts/make-icons.mjs 로 생성) */}
@@ -46,10 +45,10 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
       </header>
 
       {/* 본문: 아래 탭에 가리지 않도록 탭 높이 + 안전 영역만큼 띄운다 */}
-      <main className="mx-auto max-w-[560px] px-4 pt-5 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">{children}</main>
+      <main className="mx-auto max-w-[560px] px-5 pt-6 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">{children}</main>
 
       {/* 아래 탭 */}
-      <nav aria-label="주 메뉴" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card pb-[env(safe-area-inset-bottom,0px)]">
+      <nav aria-label="주 메뉴" className="fixed inset-x-0 bottom-0 z-30 border-t border-line-soft bg-card pb-[env(safe-area-inset-bottom,0px)]">
         <ul className="mx-auto grid h-16 max-w-[560px]" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map((tab, i) => {
             const active = isActive(tab.href);
@@ -120,9 +119,27 @@ function TabIcon({ index }: { index: number }) {
 
 // ── 공통 목록 줄 ─────────────────────────────────────────
 
+/** 휴대폰 화면의 구역: 작은 회색 제목 + 내용. 구역 사이 28px (10/2 재디자인) */
+export function MobileSection({ title, actions, children }: { title: ReactNode; actions?: ReactNode; children: ReactNode }) {
+  return (
+    <section>
+      <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
+        <h2 className="text-[13px] font-medium text-hint">{title}</h2>
+        {actions}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** 목록이 비었을 때 한 줄 */
+export function MobileEmpty({ children }: { children: ReactNode }) {
+  return <p className="py-3 text-[15px] text-hint">{children}</p>;
+}
+
 function Chevron() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-sub">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-hint/70">
       <path d="m9 6 6 6-6 6" />
     </svg>
   );
@@ -140,7 +157,7 @@ const DAY_TONE: Record<DayStatus, Tone> = {
 
 export function DayStatusBadge({ status, className }: { status: DayStatus; className?: string }) {
   return (
-    <Badge tone={DAY_TONE[status]} className={className}>
+    <Badge size="lg" tone={DAY_TONE[status]} className={className}>
       {DAY_STATUS_LABEL[status]}
     </Badge>
   );
@@ -157,24 +174,23 @@ export type HomeworkItem = {
 
 /** 숙제 목록: 한 줄 전체를 누를 수 있는 모양 (HW-06, HW-10) */
 export function HomeworkList({ items }: { items: HomeworkItem[] }) {
-  if (items.length === 0) return <EmptyLine>받은 숙제가 없습니다.</EmptyLine>;
+  if (items.length === 0) return <MobileEmpty>받은 숙제가 없습니다.</MobileEmpty>;
   return (
-    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
+    <ul className="-mx-5 divide-y divide-line-soft border-y border-line-soft">
       {items.map((hw) => (
         <li key={hw.id}>
           {/* TODO(HW-06): 숙제 상세·제출 화면으로 이동 */}
-          <button type="button" className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left hover:bg-bg/60 active:bg-line-soft">
+          <button type="button" className="flex min-h-14 w-full items-center gap-3 px-5 py-3.5 text-left active:bg-bg">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <Badge tone={hw.daily ? "info" : "neutral"}>{hw.daily ? "매일" : "일반"}</Badge>
-                <span className="truncate text-[15px] font-semibold text-ink">{hw.title}</span>
+                <span className="truncate text-[15px] font-medium text-ink">{hw.title}</span>
               </div>
-              <p className="mt-1 text-[13px] text-sub tabular">
-                {hw.dateLabel}
-                {hw.hasTeacherComment && <span className="ml-2 font-semibold text-info">선생님 코멘트 있음</span>}
+              <p className="mt-1 text-[13px] text-hint tabular">
+                {hw.daily ? "매일 숙제" : "일반 숙제"} · {hw.dateLabel}
+                {hw.hasTeacherComment && <span className="ml-1.5 text-info">· 선생님 코멘트</span>}
               </p>
             </div>
-            <Badge tone={hw.submitted ? "ok" : "warn"}>{hw.submitted ? "제출함" : "미제출"}</Badge>
+            <Badge size="lg" tone={hw.submitted ? "ok" : "warn"}>{hw.submitted ? "제출함" : "미제출"}</Badge>
             <Chevron />
           </button>
         </li>
@@ -194,21 +210,21 @@ export type MakeupItem = {
 
 /** 예정된 보강 (MKP-04) */
 export function MakeupList({ items }: { items: MakeupItem[] }) {
-  if (items.length === 0) return <EmptyLine>예정된 보강이 없습니다.</EmptyLine>;
+  if (items.length === 0) return <MobileEmpty>예정된 보강이 없습니다.</MobileEmpty>;
   return (
-    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
+    <ul className="-mx-5 divide-y divide-line-soft border-y border-line-soft">
       {items.map((m) => (
-        <li key={m.id} className="flex min-h-14 items-center gap-3 px-4 py-3">
+        <li key={m.id} className="flex min-h-14 items-center gap-3 px-5 py-3.5">
           <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-semibold text-ink tabular">
+            <p className="text-[15px] font-medium text-ink tabular">
               {m.dateLabel} {m.timeLabel}
             </p>
-            <p className="mt-0.5 truncate text-[13px] text-sub">
+            <p className="mt-1 truncate text-[13px] text-hint">
               {m.reason}
               {m.teacherNickname && ` · ${m.teacherNickname} 선생님`}
             </p>
           </div>
-          {m.isToday && <Badge tone="brand">오늘</Badge>}
+          {m.isToday && <Badge size="lg" tone="brand">오늘</Badge>}
         </li>
       ))}
     </ul>
@@ -226,20 +242,20 @@ export type MessageItem = {
 
 /** 메시지 미리보기 (MSG-04, MSG-05). 누르면 메시지 화면으로 */
 export function MessageList({ items, href }: { items: MessageItem[]; href: string }) {
-  if (items.length === 0) return <EmptyLine>받은 메시지가 없습니다.</EmptyLine>;
+  if (items.length === 0) return <MobileEmpty>받은 메시지가 없습니다.</MobileEmpty>;
   return (
-    <ul className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
+    <ul className="-mx-5 divide-y divide-line-soft border-y border-line-soft">
       {items.map((m) => (
         <li key={m.id}>
-          <Link href={href} className="flex min-h-14 items-center gap-3 px-4 py-3 hover:bg-bg/60 active:bg-line-soft">
+          <Link href={href} className="flex min-h-14 items-center gap-3 px-5 py-3.5 active:bg-bg">
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
-                <span className={cn("truncate text-[15px] font-semibold", m.fromMe ? "text-sub" : "text-ink")}>
+                <span className={cn("truncate text-[15px] font-medium", m.fromMe ? "text-hint" : "text-ink")}>
                   {m.fromMe ? "나" : m.senderName}
                 </span>
-                <span className="shrink-0 text-[13px] text-sub tabular">{m.timeLabel}</span>
+                <span className="shrink-0 text-[13px] text-hint tabular">{m.timeLabel}</span>
               </div>
-              <p className={cn("mt-0.5 line-clamp-2 text-[15px]", m.unread ? "font-semibold text-ink" : "text-ink/80")}>{m.body}</p>
+              <p className={cn("mt-1 line-clamp-2 text-[15px]", m.unread ? "text-ink" : "text-hint")}>{m.body}</p>
             </div>
             {m.unread && <span className="size-2 shrink-0 rounded-full bg-brand" aria-label="읽지 않음" />}
             <Chevron />

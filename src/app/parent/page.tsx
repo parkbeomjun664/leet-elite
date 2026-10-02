@@ -1,10 +1,17 @@
 import Link from "next/link";
 import { ChildSwitcher } from "@/components/mobile/child-switcher";
-import { DayStatusBadge, HomeworkList, MakeupList, MessageList, type HomeworkItem, type MakeupItem, type MessageItem } from "@/components/mobile/mobile-shell";
+import {
+  DayStatusBadge,
+  HomeworkList,
+  MakeupList,
+  MessageList,
+  MobileSection,
+  type HomeworkItem,
+  type MakeupItem,
+  type MessageItem,
+} from "@/components/mobile/mobile-shell";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Panel, SectionTitle } from "@/components/ui/panel";
-import { studentDay } from "@/lib/attendance";
+import { studentDay, type DayStatus } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
 import { addDays, addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
 import { homeworkOfStudent, makeupsOf, messagesOf, submissionOf } from "@/lib/mock/activity";
@@ -108,60 +115,42 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
   }
   alerts.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
 
+  const hero = attendanceHeadline(day.status, day.slot, day.record);
+
   return (
-    <div className="space-y-6">
-      {/* 자녀 선택 + 자녀 정보 */}
-      <section className="space-y-3">
-        <ChildSwitcher items={children.map((s) => ({ id: s.id, name: s.name }))} selectedId={student.id} />
-        <div>
-          <h1 className="text-xl leading-tight font-bold">{student.name}</h1>
-          <p className="mt-1 text-[15px] text-sub">{[student.school, student.grade, classLine].filter(Boolean).join(" · ")}</p>
+    // 한 화면에 한 가지: 맨 위는 "오늘 등원했는지"만 크게. 나머지는 아래로 (10/2 재디자인)
+    <div className="space-y-7">
+      <ChildSwitcher items={children.map((s) => ({ id: s.id, name: s.name }))} selectedId={student.id} />
+
+      {/* 오늘 등원·하원 (ATT-08): 화면에서 유일한 강조 블록 */}
+      <section aria-label="오늘 등원·하원" className="rounded-[var(--radius-card)] bg-wash px-5 py-6">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[13px] text-hint">
+            {student.name} · 오늘 {formatDateKo(date).slice(6)}
+          </p>
+          <DayStatusBadge status={day.status} />
         </div>
-        <NewAlerts items={alerts.slice(0, 3)} />
+        <h1 className="mt-2 text-[22px] leading-snug font-bold text-ink tabular">{hero.title}</h1>
+        {hero.detail && <p className="mt-1 text-[13px] text-hint tabular">{hero.detail}</p>}
+        {/* 결석 신청 (ATT-09) TODO: 날짜·사유 입력 창 → 원장님·담당 선생님 알림 */}
+        <button type="button" className="mt-4 -mb-2 flex min-h-12 items-center text-[15px] font-medium text-brand">
+          결석 신청하기 ›
+        </button>
       </section>
 
-      {/* 오늘 등원·하원 (ATT-08) */}
-      <Panel
-        title="오늘 등원·하원"
-        actions={<span className="text-[15px] text-sub">{formatDateKo(date).slice(6)}</span>}
+      <NewAlerts items={alerts.slice(0, 3)} />
+
+      {/* 숙제·제출 상태 (HW-06, HW-10) */}
+      <MobileSection
+        title={`숙제 ${homeworkItems.length}`}
+        actions={pending > 0 && <span className="text-[13px] font-medium text-warn">미제출 {pending}</span>}
       >
-        {day.slot ? (
-          <>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[15px] text-sub tabular">
-                수업 {day.slot.start}~{addMinutes(day.slot.start, day.slot.durationMin)}
-              </p>
-              <DayStatusBadge status={day.status} className="h-8 px-3 text-[15px]" />
-            </div>
-            {day.status === "absent" ? (
-              <p className="mt-3 rounded-[var(--radius-control)] bg-brand-tint px-3 py-2.5 text-[15px] text-brand">
-                오늘 결석{day.record?.memo ? ` · ${day.record.memo}` : ""}
-              </p>
-            ) : (
-              <dl className="mt-3 grid grid-cols-2 gap-2">
-                <TimeCell label="등원" time={day.record?.checkInAt ?? null} />
-                <TimeCell label="하원" time={day.record?.checkOutAt ?? null} />
-              </dl>
-            )}
-          </>
-        ) : (
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[15px] text-sub">오늘은 수업이 없습니다.</p>
-            <DayStatusBadge status={day.status} />
-          </div>
-        )}
-      </Panel>
+        <HomeworkList items={homeworkItems} />
+      </MobileSection>
 
-      {/* 결석 신청 (ATT-09) */}
-      {/* TODO(ATT-09): 날짜·사유 입력 창 → 원장님·담당 선생님 알림, 해당 날짜 출결에 반영 */}
-      <Button variant="secondary" size="lg" className="w-full">
-        결석 신청
-      </Button>
-
-      {/* 이번 주 시간표 */}
-      <section>
-        <SectionTitle>이번 주 수업</SectionTitle>
-        <ol className="grid grid-cols-6 overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
+      {/* 이번 주 수업 + 보강 */}
+      <MobileSection title={`이번 주 수업 · ${classLine}`}>
+        <ol className="grid grid-cols-6 text-center">
           {WEEK.map((wd) => {
             const slot = student.schedule.find((s) => s.weekday === wd);
             const isToday = wd === today;
@@ -169,82 +158,78 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
               <li
                 key={wd}
                 aria-current={isToday ? "date" : undefined}
-                className={cn(
-                  "flex min-h-16 flex-col items-center justify-center gap-0.5 border-l border-line-soft py-2 first:border-l-0",
-                  isToday && "bg-brand-tint",
-                )}
+                className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)]", isToday && "bg-wash")}
               >
-                <span className={cn("text-[15px] font-bold", isToday ? "text-brand" : slot ? "text-ink" : "text-sub")}>{WEEKDAY_KO[wd]}</span>
-                <span className={cn("text-[13px] tabular", slot ? "font-semibold text-ink" : "text-sub")}>{slot ? slot.start : "–"}</span>
+                <span className={cn("text-[13px]", isToday ? "font-medium text-brand" : "text-hint")}>{WEEKDAY_KO[wd]}</span>
+                <span className={cn("text-[15px] tabular", slot ? "font-medium text-ink" : "text-hint/60")}>{slot ? slot.start : "–"}</span>
               </li>
             );
           })}
         </ol>
-      </section>
-
-      {/* 숙제·제출 상태 (HW-06, HW-10) */}
-      <section>
-        <SectionTitle count={homeworkItems.length} actions={pending > 0 && <span className="text-[15px] font-semibold text-warn">미제출 {pending}</span>}>
-          숙제
-        </SectionTitle>
-        <HomeworkList items={homeworkItems} />
-      </section>
-
-      {/* 보강 일정 (MKP-04) */}
-      <section>
-        <SectionTitle>보강 일정</SectionTitle>
-        <MakeupList items={makeupItems} />
-      </section>
+        {makeupItems.length > 0 && (
+          <div className="mt-4">
+            <MakeupList items={makeupItems} />
+          </div>
+        )}
+      </MobileSection>
 
       {/* 메시지 (MSG-04) */}
-      <section>
-        <SectionTitle
-          actions={
-            <Link href="/parent/messages" className="-my-3 flex min-h-11 items-center gap-2 px-1 text-[15px] font-semibold text-brand">
-              {unread > 0 && <Badge tone="brand">새 메시지 {unread}</Badge>}
-              전체 보기
-            </Link>
-          }
-        >
-          메시지
-        </SectionTitle>
+      <MobileSection
+        title="메시지"
+        actions={
+          <Link href="/parent/messages" className="-my-2 flex min-h-11 items-center gap-2 text-[13px] font-medium text-brand">
+            {unread > 0 && <Badge tone="brand">새 메시지 {unread}</Badge>}
+            전체 보기
+          </Link>
+        }
+      >
         <MessageList items={messageItems} href="/parent/messages" />
-      </section>
+      </MobileSection>
     </div>
   );
 }
 
-// 등원·하원 시각 칸: 기록이 없으면 "–"
-function TimeCell({ label, time }: { label: string; time: string | null }) {
-  return (
-    <div className={cn("rounded-[var(--radius-control)] border px-3 py-2.5", time ? "border-line bg-bg" : "border-line-soft")}>
-      <dt className="text-[13px] text-sub">{label}</dt>
-      <dd className={cn("text-[22px] leading-tight font-bold tabular", time ? "text-ink" : "text-sub")}>{time ?? "–"}</dd>
-    </div>
-  );
+/** 맨 위 큰 문장: 오늘 등원했는지 한 문장으로 */
+function attendanceHeadline(
+  status: DayStatus,
+  slot: { start: string; durationMin: number } | null,
+  record: { checkInAt: string | null; checkOutAt: string | null; memo: string } | null,
+): { title: string; detail?: string } {
+  const classTime = slot ? `수업 ${slot.start}~${addMinutes(slot.start, slot.durationMin)}` : undefined;
+  switch (status) {
+    case "checked_in":
+      return { title: `${record?.checkInAt} 등원했어요`, detail: classTime };
+    case "checked_out":
+      return { title: `${record?.checkOutAt} 하원했어요`, detail: `등원 ${record?.checkInAt ?? "–"}` };
+    case "absent":
+      return { title: "오늘 결석이에요", detail: record?.memo || classTime };
+    case "not_arrived":
+      return { title: "아직 등원하지 않았어요", detail: classTime };
+    case "upcoming":
+      return { title: "아직 수업 전이에요", detail: classTime };
+    default:
+      return { title: "오늘은 수업이 없어요" };
+  }
 }
 
 type AlertItem = { key: string; sortKey: string; tone: "ok" | "info" | "brand"; text: string; time?: string; href?: string };
 
 const DOT: Record<AlertItem["tone"], string> = { ok: "bg-ok", info: "bg-info", brand: "bg-brand" };
 
-// 새 알림 줄: 한 줄에 하나. 누를 곳이 있으면 오른쪽에 화살표
+// 새 알림: 있을 때만 목록으로 (없으면 아무것도 안 보인다)
 function NewAlerts({ items }: { items: AlertItem[] }) {
-  if (items.length === 0) {
-    return <p className="rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] px-4 py-3 text-[15px] text-sub">새 알림이 없습니다</p>;
-  }
+  if (items.length === 0) return null;
   return (
-    <section aria-label="새 알림" className="overflow-hidden rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]">
-      <h2 className="border-b border-line-soft px-4 py-2 text-sm font-semibold text-sub">새 알림</h2>
-      <ul className="divide-y divide-line-soft">
+    <MobileSection title="새 알림">
+      <ul className="-mx-5 divide-y divide-line-soft border-y border-line-soft">
         {items.map((a) => {
           const body = (
             <>
               <span className={cn("size-2 shrink-0 rounded-full", DOT[a.tone])} aria-hidden />
-              <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{a.text}</span>
-              {a.time && <span className="shrink-0 text-[15px] text-sub tabular">{a.time}</span>}
+              <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{a.text}</span>
+              {a.time && <span className="shrink-0 text-[13px] text-hint tabular">{a.time}</span>}
               {a.href && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-sub">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-hint/70">
                   <path d="m9 6 6 6-6 6" />
                 </svg>
               )}
@@ -253,16 +238,16 @@ function NewAlerts({ items }: { items: AlertItem[] }) {
           return (
             <li key={a.key}>
               {a.href ? (
-                <Link href={a.href} className="flex min-h-12 items-center gap-3 px-4 py-2.5 hover:bg-bg/60 active:bg-line-soft">
+                <Link href={a.href} className="flex min-h-14 items-center gap-3 px-5 py-3 active:bg-bg">
                   {body}
                 </Link>
               ) : (
-                <div className="flex min-h-12 items-center gap-3 px-4 py-2.5">{body}</div>
+                <div className="flex min-h-14 items-center gap-3 px-5 py-3">{body}</div>
               )}
             </li>
           );
         })}
       </ul>
-    </section>
+    </MobileSection>
   );
 }
