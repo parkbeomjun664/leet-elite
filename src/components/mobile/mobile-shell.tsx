@@ -9,9 +9,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { Badge, type Tone } from "@/components/ui/badge";
 import { DAY_STATUS_LABEL, type DayStatus } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
+import { STATUS_BADGE_CLASS, statusColor, type MobileStatus } from "@/lib/status-colors";
 import { MCARD, MCARD_LIST, ROW_DIVIDER } from "./styles";
 
 export type MobileTab = { label: string; href: string };
@@ -60,7 +60,7 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex h-full flex-col items-center justify-center gap-1 text-[11px]",
-                    active ? "font-semibold text-brand" : "font-medium text-sub hover:text-ink",
+                    active ? "font-bold text-tab-on" : "font-medium text-tab-off hover:text-tab-on",
                   )}
                 >
                   <TabIcon index={i} />
@@ -147,21 +147,20 @@ function Chevron() {
   );
 }
 
-/** 오늘 출결 상태 표시 (출결 보드와 같은 색 규칙) */
-const DAY_TONE: Record<DayStatus, Tone> = {
-  checked_in: "ok",
-  checked_out: "info",
-  absent: "brand",
-  not_arrived: "warn",
-  upcoming: "neutral",
-  no_class: "neutral",
-};
-
 export function DayStatusBadge({ status, className }: { status: DayStatus; className?: string }) {
   return (
-    <Badge size="lg" tone={DAY_TONE[status]} className={className}>
+    <StatusBadge status={status} className={className}>
       {DAY_STATUS_LABEL[status]}
-    </Badge>
+    </StatusBadge>
+  );
+}
+
+/** 휴대폰 화면 배지: 상태 색 토큰 (status-colors.ts의 규칙 하나로) */
+export function StatusBadge({ status, className, children }: { status: MobileStatus; className?: string; children: ReactNode }) {
+  return (
+    <span className={cn("inline-flex h-7 items-center rounded-[4px] px-2 text-sm font-semibold whitespace-nowrap", STATUS_BADGE_CLASS[statusColor(status)], className)}>
+      {children}
+    </span>
   );
 }
 
@@ -192,7 +191,7 @@ export function HomeworkList({ items }: { items: HomeworkItem[] }) {
                 {hw.hasTeacherComment && <span className="ml-1.5 text-info">· 선생님 코멘트</span>}
               </p>
             </div>
-            <Badge size="lg" tone={hw.submitted ? "ok" : "warn"}>{hw.submitted ? "제출함" : "미제출"}</Badge>
+            <StatusBadge status={hw.submitted ? "submitted" : "missing"}>{hw.submitted ? "제출함" : "미제출"}</StatusBadge>
             <Chevron />
           </button>
         </li>
@@ -226,7 +225,7 @@ export function MakeupList({ items }: { items: MakeupItem[] }) {
               {m.teacherNickname && ` · ${m.teacherNickname} 선생님`}
             </p>
           </div>
-          {m.isToday && <Badge size="lg" tone="brand">오늘</Badge>}
+          {m.isToday && <StatusBadge status="upcoming">오늘</StatusBadge>}
         </li>
       ))}
     </ul>
@@ -259,7 +258,7 @@ export function MessageList({ items, href }: { items: MessageItem[]; href: strin
               </div>
               <p className={cn("mt-1 line-clamp-2 text-[15px]", m.unread ? "text-ink" : "text-hint")}>{m.body}</p>
             </div>
-            {m.unread && <span className="size-2 shrink-0 rounded-full bg-brand" aria-label="읽지 않음" />}
+            {m.unread && <span className="size-2 shrink-0 rounded-full bg-ink" aria-label="읽지 않음" />}
             <Chevron />
           </Link>
         </li>

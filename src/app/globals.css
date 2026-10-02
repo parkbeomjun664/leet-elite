@@ -10,7 +10,7 @@
 @theme {
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 
-  --color-brand: #b72f34;
+  --color-brand: #b3262e; /* 10/2: 로고·주요 버튼에만 */
   --color-brand-dark: #92262a;
   --color-brand-tint: #fbecee;
   /* 회색 3단계 (10/2 디자인 정리): 바탕 #FAFAFA · 구분선 #EEEEEE/#E5E5E5 · 보조 글씨 #767676 · 본문 #1A1A1A */
@@ -21,7 +21,18 @@
   /* 휴대폰 화면 전용 (10/2): 보조 글씨 한 단계, 강조 블록 하나에만 쓰는 아주 옅은 레드 */
   --color-hint: #8a8a8e;
   --color-wash: #fdf4f4;
-  --color-mpage: #f7f8fa; /* 휴대폰 페이지 바탕 (흰 카드와 단차, 10/2 더 옅게) */
+  /* 휴대폰 화면 색 체계 (10/2): 따뜻한 옅은 바탕 + 흰 카드 + 상태색 3쌍. 원장님·선생님 화면도 같은 토큰을 쓸 수 있다 */
+  --color-mpage: #f7f6f4; /* 페이지 바탕 */
+  --color-surface: #ffffff; /* 모든 카드 */
+  --color-border: #eceae6;
+  --color-status-ok-bg: #eaf5ee; /* 등원·제출함 */
+  --color-status-ok-fg: #2e7d4f;
+  --color-status-warn-bg: #fdf3e1; /* 미제출 */
+  --color-status-warn-fg: #a6650a;
+  --color-status-alert-bg: #fcebec; /* 결석 (분홍은 이때만) */
+  --color-status-alert-fg: #b3262e;
+  --color-tab-on: #222222; /* 하단 탭 선택 */
+  --color-tab-off: #9a9a9a;
   --color-mline: #f0f0f2; /* 휴대폰 카드 안 항목 구분선 */
   --color-ink: #1a1a1a;
   --color-sub: #767676;

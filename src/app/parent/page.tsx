@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChildSwitcher } from "@/components/mobile/child-switcher";
 import {
   DayStatusBadge,
+  StatusBadge,
   HomeworkList,
   MakeupList,
   MessageList,
@@ -11,9 +12,9 @@ import {
   type MessageItem,
 } from "@/components/mobile/mobile-shell";
 import { MCARD, MCARD_LIST, ROW_DIVIDER } from "@/components/mobile/styles";
-import { Badge } from "@/components/ui/badge";
 import { studentDay, type DayStatus } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
+import { STATUS_CARD_CLASS, statusColor } from "@/lib/status-colors";
 import { addDays, addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
 import { homeworkOfStudent, makeupsOf, messagesOf, submissionOf } from "@/lib/mock/activity";
 import { classById, guardians, mockAttendanceFor, studentById, teacherById } from "@/lib/mock/data";
@@ -124,7 +125,8 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
       <ChildSwitcher items={children.map((s) => ({ id: s.id, name: s.name }))} selectedId={student.id} />
 
       {/* 오늘 등원·하원 (ATT-08): 화면에서 유일한 강조 블록 */}
-      <section aria-label="오늘 등원·하원" className="rounded-[12px] bg-wash p-5">
+      {/* 상태별 바탕: 등원 → 초록, 결석 → 분홍, 그 밖에는 흰 카드 (status-colors.ts) */}
+      <section aria-label="오늘 등원·하원" className={cn("rounded-[12px] p-5", STATUS_CARD_CLASS[statusColor(day.status)])}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-[13px] text-hint">
             {student.name} · 오늘 {formatDateKo(date).slice(6)}
@@ -134,7 +136,7 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
         <h1 className="mt-2 text-[22px] leading-snug font-bold text-ink tabular">{hero.title}</h1>
         {hero.detail && <p className="mt-1 text-[13px] text-hint tabular">{hero.detail}</p>}
         {/* 결석 신청 (ATT-09) TODO: 날짜·사유 입력 창 → 원장님·담당 선생님 알림 */}
-        <button type="button" className="mt-4 -mb-2 flex min-h-12 items-center text-[15px] font-medium text-brand">
+        <button type="button" className="mt-4 -mb-2 flex min-h-12 items-center text-[15px] font-medium text-ink underline underline-offset-4">
           결석 신청하기 ›
         </button>
       </section>
@@ -159,9 +161,9 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
               <li
                 key={wd}
                 aria-current={isToday ? "date" : undefined}
-                className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)]", isToday && "bg-wash")}
+                className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)]", isToday && "bg-mpage")}
               >
-                <span className={cn("text-[13px]", isToday ? "font-medium text-brand" : "text-hint")}>{WEEKDAY_KO[wd]}</span>
+                <span className={cn("text-[13px]", isToday ? "font-bold text-ink" : "text-hint")}>{WEEKDAY_KO[wd]}</span>
                 <span className={cn("text-[15px] tabular", slot ? "font-medium text-ink" : "text-hint/60")}>{slot ? slot.start : "–"}</span>
               </li>
             );
@@ -178,8 +180,8 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
       <MobileSection
         title="메시지"
         actions={
-          <Link href="/parent/messages" className="-my-2 flex min-h-11 items-center gap-2 text-[13px] font-medium text-brand">
-            {unread > 0 && <Badge tone="brand">새 메시지 {unread}</Badge>}
+          <Link href="/parent/messages" className="-my-2 flex min-h-11 items-center gap-2 text-[13px] font-medium text-ink/70">
+            {unread > 0 && <StatusBadge status="upcoming">새 메시지 {unread}</StatusBadge>}
             전체 보기
           </Link>
         }
@@ -215,7 +217,7 @@ function attendanceHeadline(
 
 type AlertItem = { key: string; sortKey: string; tone: "ok" | "info" | "brand"; text: string; time?: string; href?: string };
 
-const DOT: Record<AlertItem["tone"], string> = { ok: "bg-ok", info: "bg-info", brand: "bg-brand" };
+const DOT: Record<AlertItem["tone"], string> = { ok: "bg-status-ok-fg", info: "bg-info", brand: "bg-ink" };
 
 // 새 알림: 있을 때만 목록으로 (없으면 아무것도 안 보인다)
 function NewAlerts({ items }: { items: AlertItem[] }) {

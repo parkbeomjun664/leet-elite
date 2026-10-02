@@ -84,11 +84,12 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
     // 한 화면에 한 가지: 맨 위는 "오늘 할 숙제"와 [제출하기]만. 나머지는 아래로 (10/2 재디자인)
     <div className="space-y-7">
       {/* 오늘 할 숙제 (HW-06): 화면에서 유일한 강조 블록 */}
-      <section aria-label="오늘 할 숙제" className="rounded-[12px] bg-wash p-5">
+      {/* 흰 카드 + 1px 테두리 + 왼쪽 4px 브랜드 강조선 (분홍 바탕 대신, 10/2) */}
+      <section aria-label="오늘 할 숙제" className="rounded-[12px] border border-border border-l-4 border-l-brand bg-surface p-5">
         {first ? (
           <>
             <p className="text-[13px] text-hint">
-              오늘 할 숙제 <span className="font-medium text-brand tabular">{pendingItems.length}개</span>
+              오늘 할 숙제 <span className="font-medium text-ink tabular">{pendingItems.length}개</span>
             </p>
             <h1 className="mt-2 text-[22px] leading-snug font-bold text-ink">{first.title}</h1>
             <p className="mt-1 text-[13px] text-hint tabular">
@@ -104,7 +105,7 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
                   <li key={hw.id} className="flex min-h-12 items-center justify-between gap-3">
                     <span className="truncate text-[15px] font-medium text-ink">{hw.title}</span>
                     {/* TODO(HW-06): 제출 화면 */}
-                    <button type="button" className="h-10 shrink-0 px-2 text-[15px] font-medium text-brand">
+                    <button type="button" className="h-10 shrink-0 px-2 text-[15px] font-medium text-ink underline underline-offset-4">
                       제출
                     </button>
                   </li>
