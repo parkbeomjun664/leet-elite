@@ -1,4 +1,35 @@
-# 진행 현황 (계획 대비)
+# 진행 현황
+
+## 세션 기록 (새 세션은 여기부터 읽고 이어서)
+형식: 날짜 / 한 일 / 결정사항 / 남은 일. 최신이 위.
+
+### 2026-10-05
+- **한 일**
+  - 개발 환경 정리: Claude Code 플러그인 4개(frontend-design, typescript-lsp, context7, feature-dev, 프로젝트 범위), 스킬 3개(supabase, supabase-postgres-best-practices, vercel-react-best-practices, `.claude/skills/`)
+  - 라이브러리 추가: lucide-react, react-hook-form, zod, @hookform/resolvers, @testing-library/react·dom, jsdom, @playwright/test
+  - 테스트 설정: `vitest.config.ts`(src 단위 테스트), `playwright.config.ts` + `e2e/demo-login.spec.ts`(시연 로그인). 단위 21개·화면 흐름 1개 통과
+  - `.claude/settings.json`: 읽기 차단(node_modules·.next·lock·public 이미지·.env), 상태줄에 컨텍스트 사용량
+  - Supabase MCP 설정(`.mcp.json`): dev 프로젝트, read-only, 키 없이 브라우저 로그인
+  - CLAUDE.md 다시 씀(73줄), gh CLI 설치
+- **결정사항**
+  - shadcn/ui 초기화 안 함: 자체 부품·색 토큰을 덮어쓸 위험. 필요한 부품만 하나씩
+  - 이미지·PDF는 `public/`만 읽기 차단 (캡처·범위 확인서 PDF는 디자인 확인에 필요)
+  - 계획 먼저 보여 주기: 기능 단위·되돌리기 어려운 작업만. 작은 수정은 바로
+  - 제외: GitHub MCP(gh로 대체), Superpowers, Playwright MCP, 토큰 절약 플러그인, 출처 불명 스킬
+  - Next 16 문서는 context7로 확인 (node_modules 읽기 차단 때문)
+- **남은 일**
+  - 범준님: `gh auth login`, Claude Code 재시작 후 `/mcp`에서 supabase-dev 로그인(브라우저)
+  - 범위 확인서에 원장님 추가 요청 1~7 반영 후 재발송 (5번 레포트 비용·일정은 범준님 결정)
+  - DB 1차를 Supabase dev에 적용 (범준님과 함께) → 로그인 연결
+
+### 2026-10-02
+- **한 일**: 범위 확인서 캡처·문구 갱신, 디자인 정리(테두리→바탕·여백, 배지 통일), 학생·학부모 휴대폰 화면 재디자인·색 체계, 테스트 환경(Vitest)·테스트 21개, DB 1차 표 9개 + RLS·권한 테스트 22개, 시연용 배포(https://leet-elite.vercel.app, 1234/1234)
+- **결정사항**: `docs/decisions.md` 10/2 항목들, 원장님 추가 요청은 `docs/requests-2026-10-02.md`
+- **남은 일**: 위 10/5 남은 일과 같음
+
+---
+
+# 일정·작업일지 기준 (계획 대비)
 
 - 기준 일정: 원장님께 드린 계획서 `LEET_Elite_개발계획.pdf` (2026-09-29)
 - 작업 방식: 여유 있을 때 하루 3~4시간
