@@ -4,6 +4,12 @@
 형식: 날짜 / 한 일 / 결정사항 / 남은 일. 최신이 위.
 
 ### 2026-10-05
+- **이어받기 메모 (08:05, 새 세션용)**
+  - 오늘 시작 08:03 (작업일지 시작 시각). 작업이 하나 끝날 때마다 그날 작업일지(작업내역 블록)를 갱신해서 보여 준다
+  - 원장님 10/5 08:01 답장: "아직 리뷰 못했어요~ 그래도 가능해요" → 범위 확정 전이므로 확정과 무관한 작업부터
+  - 오늘 계획: ① 원장님 요청 1·2·3·3' 화면 수정 (`docs/requests-2026-10-02.md`) ② DB 1차를 Supabase dev에 적용 (범준님과 함께, `/mcp` supabase-dev 로그인 후) ③ 로그인 연결 (AUTH-09·10)
+  - 미룰 것: 5번 레포트·7번 교재비(새 기능, 비용·일정 결정 후), 4번 보강 알림·6번 메시지 사진(5단계)
+  - 범준님이 할 것: `/mcp`에서 supabase-dev 승인·로그인, context7 확인, gh 설치(`winget install --id GitHub.cli -e`)·`gh auth login`
 - **한 일**
   - 개발 환경 정리: Claude Code 플러그인 4개(frontend-design, typescript-lsp, context7, feature-dev, 프로젝트 범위), 스킬 3개(supabase, supabase-postgres-best-practices, vercel-react-best-practices, `.claude/skills/`)
   - 라이브러리 추가: lucide-react, react-hook-form, zod, @hookform/resolvers, @testing-library/react·dom, jsdom, @playwright/test
