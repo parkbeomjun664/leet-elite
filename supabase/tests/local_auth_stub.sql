@@ -1,7 +1,8 @@
 -- 로컬 PostgreSQL에서 권한 테스트를 돌리기 위한 Supabase 흉내 (Supabase에는 실행하지 않는다)
--- Supabase에 원래 있는 것: anon·authenticated 역할, auth.users 테이블, auth.uid() 함수
+-- Supabase에 원래 있는 것: anon·authenticated·service_role 역할, auth.users 테이블, auth.uid() 함수
 create role anon nologin;
 create role authenticated nologin;
+create role service_role nologin bypassrls; -- 서버 전용 관리자 (비밀 키)
 create schema auth;
 create table auth.users (id uuid primary key);
 -- 로그인한 사람 = request.jwt.claim.sub 설정값 (테스트에서 set_config로 바꿔 가며 흉내)

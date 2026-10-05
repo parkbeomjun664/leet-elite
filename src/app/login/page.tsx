@@ -6,7 +6,8 @@ export const metadata: Metadata = { title: "로그인" };
 
 const KAKAO_CHANNEL_URL = "http://pf.kakao.com/_zayZX/chat";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  const { next } = await searchParams;
   // 위쪽에 아주 옅은 버건디 빛이 도는 흰 화면. 로고 → 입력칸 → 문의 안내를 가운데 한 줄로
   // 세로는 가운데보다 조금 위 (아래 여백 10vh). 휴대폰 키보드가 올라와도 입력칸이 화면 위쪽이라 가려지지 않는다
   return (
@@ -20,7 +21,7 @@ export default function LoginPage() {
         </h1>
 
         <div className="mt-10">
-          <LoginForm />
+          <LoginForm next={typeof next === "string" ? next : undefined} />
         </div>
 
         {/* 문의 안내: 줄로 나누고 가운데에 짧게 */}

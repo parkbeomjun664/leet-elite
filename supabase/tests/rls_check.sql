@@ -170,6 +170,21 @@ exception when insufficient_privilege then raise notice 'ok   [비로그인] tea
 end $$;
 reset role;
 
+-- 로그인 시도 기록(login_attempts): 서버 전용 관리자(service_role)만 읽고 쓴다. 로그인한 사람·비로그인은 접근 불가 (2차)
+set role service_role;
+insert into public.login_attempts (login_id, fail_count) values ('ip:test', 1);
+select pg_temp.expect('서버(service_role)', '로그인 시도 기록 쓰기·읽기', (select count(*) from public.login_attempts where login_id = 'ip:test'), 1);
+delete from public.login_attempts where login_id = 'ip:test';
+reset role;
+set role authenticated;
+select pg_temp.login('00000000-0000-0000-0000-00000000000a');
+do $$ begin
+  perform count(*) from public.login_attempts;
+  raise exception 'FAIL [원장님] 로그인 시도 기록을 직접 볼 수 있음';
+exception when insufficient_privilege then raise notice 'ok   [원장님] 로그인 시도 기록 직접 접근 거부 (서버만)';
+end $$;
+reset role;
+
 -- security definer 함수는 모두 search_path가 비어 있게 고정 (다른 스키마의 같은 이름 함수·표로 바꿔치기 방지)
 select pg_temp.expect('구조', 'search_path 고정 안 된 security definer 함수', (
   select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace

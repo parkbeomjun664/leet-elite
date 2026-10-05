@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { LogoutButton } from "@/components/logout-button";
 import { usePathname } from "next/navigation";
 import { activeItem, isActive, type NavItem } from "@/lib/nav";
 
@@ -57,10 +58,7 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
           <span className="hidden text-sub sm:inline">
             <b className="font-semibold text-ink">{userName}</b> {roleLabel}
           </span>
-          {/* TODO(2단계): Supabase 로그아웃 연결 */}
-          <Link href="/login" className="text-sub hover:text-ink">
-            로그아웃
-          </Link>
+          <LogoutButton />
         </div>
       </div>
 

@@ -7,6 +7,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { LogoutButton } from "@/components/logout-button";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { DAY_STATUS_LABEL, type DayStatus } from "@/lib/attendance";
@@ -41,7 +42,10 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
             <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>
             <span className="text-body font-semibold text-ink">영어학원</span>
           </Link>
-          <div className="min-w-0 truncate text-body text-sub">{userLabel}</div>
+          <div className="flex min-w-0 items-center gap-3 text-body">
+            <span className="min-w-0 truncate text-sub">{userLabel}</span>
+            <LogoutButton className="shrink-0 text-caption" />
+          </div>
         </div>
       </header>
 

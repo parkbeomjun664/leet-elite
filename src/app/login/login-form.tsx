@@ -1,11 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { buttonClass } from "@/components/ui/button";
+import { useActionState, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { login } from "./actions";
+import type { LoginState } from "./messages";
 
-// TODO(2단계): Supabase 인증 연결. 지금은 화면 확인용
+// 로그인 확인은 서버 함수(actions.ts)가 한다. 이 화면은 빈 칸 확인과 결과 표시만
 // 로그인 화면만의 입력칸: 흰 바탕 + 연한 테두리
 // - 커서가 들어가면: 진한 회색 테두리 (버건디는 에러에만 써서 헷갈리지 않게)
 // - 에러(aria-invalid)면: 버건디 테두리 + 옅은 버건디 빛
@@ -21,9 +22,6 @@ function EyeIcon({ open }: { open: boolean }) {
     </svg>
   );
 }
-
-// 로그인 실패는 이유와 상관없이 이 문장 하나만 보여 준다 (아이디가 있는지 없는지 드러나지 않게, AUTH-09)
-export const LOGIN_ERROR = "아이디 또는 비밀번호가 올바르지 않습니다.";
 
 type FieldName = "id" | "password";
 const EMPTY_MESSAGE: Record<FieldName, string> = {
@@ -41,13 +39,10 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-// 시연용 계정 (10/2, 원장님 시연). 실제 로그인(Supabase) 연결 때 지운다. 가상 데이터만 보이는 시연 화면으로 들어간다
-const DEMO_ID = "1234";
-const DEMO_PASSWORD = "1234";
-
-export function LoginForm() {
-  const router = useRouter();
-  const [message, setMessage] = useState("");
+export function LoginForm({ next }: { next?: string }) {
+  const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
+  // 빈 칸으로 [로그인]을 누르면 서버 결과 문구는 숨긴다 (새로 보낼 때 다시 보임)
+  const [hideResult, setHideResult] = useState(false);
   // 칸마다 따로 에러를 둔다. 입력하는 동안은 띄우지 않고, 칸을 벗어날 때(blur)나 [로그인]을 누를 때만 확인
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   // 눈 아이콘을 누르고 있는 동안만 비밀번호를 보여 준다 (떼면 다시 가림)
@@ -63,27 +58,25 @@ export function LoginForm() {
   return (
     <form
       noValidate
+      action={action}
       onSubmit={(e) => {
-        e.preventDefault();
         const form = e.currentTarget;
         const idInput = form.elements.namedItem("loginId") as HTMLInputElement;
         const pwInput = form.elements.namedItem("password") as HTMLInputElement;
-        const next = { id: check("id", idInput.value), password: check("password", pwInput.value) };
-        setErrors(next);
-        if (next.id || next.password) {
-          setMessage("");
+        const empty = { id: check("id", idInput.value), password: check("password", pwInput.value) };
+        setErrors(empty);
+        if (empty.id || empty.password) {
+          e.preventDefault();
+          setHideResult(true);
           // 비어 있는 첫 칸으로 커서를 옮긴다
-          (next.id ? idInput : pwInput).focus();
+          (empty.id ? idInput : pwInput).focus();
           return;
         }
-        // TODO(2단계): 서버에서 로그인 확인. 너무 많이 틀리면 잠시 막음 (AUTH-10)
-        if (idInput.value.trim() === DEMO_ID && pwInput.value === DEMO_PASSWORD) {
-          router.push("/demo");
-          return;
-        }
-        setMessage(LOGIN_ERROR);
+        setHideResult(false);
       }}
     >
+      {/* 로그인 뒤 돌아갈 주소 (로그인 전에 열려던 화면) */}
+      {next && <input type="hidden" name="next" value={next} />}
       <div>
         <label className="block">
           <span className="sr-only">아이디</span>
@@ -93,6 +86,8 @@ export function LoginForm() {
             autoCapitalize="none"
             spellCheck={false}
             placeholder="휴대폰 번호 또는 아이디"
+            defaultValue={state.loginId}
+            key={`id-${state.loginId ?? ""}`}
             required
             aria-invalid={errors.id ? true : undefined}
             aria-describedby={errors.id ? "login-id-error" : undefined}
@@ -153,20 +148,18 @@ export function LoginForm() {
       </div>
 
       {/* 로그인 상태 유지 (AUTH-06). 기본은 꺼짐: 공용 PC·태블릿에서 다음 사람이 그대로 로그인되지 않게
-          TODO(2단계): 체크하면 세션을 오래 유지, 해제하면 브라우저를 닫을 때 로그아웃 */}
+          체크하면 30일, 안 하면 브라우저를 닫을 때 로그아웃 (src/lib/supabase/cookies.ts) */}
       <label className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 text-body text-ink">
-        <input type="checkbox" name="keepSignedIn" className="size-[18px] accent-[var(--color-ink)]" />
+        <input type="checkbox" name="keepSignedIn" defaultChecked={state.keep} key={`keep-${state.keep ?? ""}`} className="size-[18px] accent-[var(--color-ink)]" />
         로그인 상태 유지
       </label>
 
-      <button
-        type="submit"
-        className={buttonClass("primary", "lg", "mt-2 w-full")}
-      >
+      <Button type="submit" variant="primary" size="lg" state={pending ? "loading" : "idle"} className="mt-2 w-full">
         로그인
-      </button>
+      </Button>
       <p role="status" aria-live="polite" className="mt-3 text-center text-caption text-brand empty:hidden">
-        {message}
+        {!pending && !hideResult && state.error}
+        {!pending && !hideResult && state.hint && <span className="block text-sub">{state.hint}</span>}
       </p>
     </form>
   );
