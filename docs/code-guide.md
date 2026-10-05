@@ -80,3 +80,5 @@ leet-elite/
   - **움직임은 크기·위치(transform)와 투명도만**: 폭·높이를 움직이면 브라우저가 매 순간 배치를 다시 계산해서 저가 태블릿에서 끊긴다. 탭 밑줄은 1px 막대를 `translateX`로 옮기고 `scaleX`로 늘려서 그린다 (`segment.tsx`의 `Tabs`). Tailwind v4의 `translate-x-6`은 `transform`이 아니라 `translate` 속성이라 `transition-[translate]`로 적어야 움직인다 (`sheet.tsx`)
   - **닫힘 움직임은 "닫아 달라고 부탁"하는 방식**: 창을 바로 없애면 닫히는 모습을 보여 줄 수 없다. 창(`Sheet`)이 먼저 0.15초 동안 빠지는 모습을 보여 준 뒤 `onClose`를 부른다. 창 밖의 버튼은 `closeRef`, 창 안의 버튼은 `useSheetClose()`로 부탁한다
   - **화면 흐름 테스트는 "준비 끝"을 기다린다**: 서버가 먼저 그린 화면은 React가 연결(하이드레이션)되기 전에는 눌러도 반영되지 않거나 되돌아간다. 그리고 `loading.tsx`가 있으면 스켈레톤이 먼저 오고 본문이 뒤따른다. 그래서 `<html data-hydrated>` 표시와 스켈레톤(`aria-busy`)이 사라지는 것을 기다린 뒤 누른다 (`e2e/ready.ts`)
+  - **출결 완료 화면은 "한 번에 하나씩"**: 토스 송금 완료 화면처럼 체크 원 → 이름 → "등원했어요" → 시각 순으로 0.1초씩 늦게 올라온다. 각 줄에 같은 움직임(`rise-in`)을 주고 시작 시각(delay)만 다르게 한다. 체크 원은 살짝 넘쳤다 돌아오는 곡선(`cubic-bezier(0.34, 1.56, 0.64, 1)`)이라 튕기는 느낌이 난다 (`src/components/kiosk/result-overlay.tsx`)
+  - **소리는 파일 없이 만든다**: Web Audio로 음 높이(Hz)와 길이를 정해 짧은 음을 낸다. 도(1046)-미(1318)-솔(1568)이 등원, 거꾸로 내려가면 하원. 브라우저는 사람이 화면을 한 번 누르기 전에는 소리를 막아서 첫 키를 누를 때 소리 장치를 켠다 (`keypad.tsx`의 `playSound`)
