@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { gotoReady } from "./ready";
 
 // 10/5 디자인 시스템: 선생님 화면 출결·메시지는 누르는 즉시 반영, 저장 실패면 되돌리고 알린다
 // 가짜 저장(0.4초) 실패 흉내: window.__leetFailSave = true
@@ -8,7 +9,7 @@ const failSaves = (page: Page) => page.addInitScript(() => (window.__leetFailSav
 const tile = (page: Page, name: string) => page.locator("main li").filter({ has: page.getByText(name, { exact: true }) });
 
 test("하원: 누르는 즉시 하원, 저장되면 성공 토스트", async ({ page }) => {
-  await page.goto("/teacher?at=16:00");
+  await gotoReady(page, "/teacher?at=16:00");
   const t = tile(page, "표승현");
   await t.getByRole("button", { name: "하원" }).click();
   // 저장(0.4초)이 끝나기 전에 이미 바뀐다
@@ -21,7 +22,7 @@ test("하원: 누르는 즉시 하원, 저장되면 성공 토스트", async ({ 
 
 test("하원: 저장이 실패하면 등원으로 되돌리고 실패 토스트", async ({ page }) => {
   await failSaves(page);
-  await page.goto("/teacher?at=16:00");
+  await gotoReady(page, "/teacher?at=16:00");
   const t = tile(page, "표승현");
   await t.getByRole("button", { name: "하원" }).click();
   await expect(t).toContainText("하원 16:00", { timeout: 200 });
@@ -32,7 +33,7 @@ test("하원: 저장이 실패하면 등원으로 되돌리고 실패 토스트"
 });
 
 test("출결 입력 창: 결석 처리하면 창이 닫히고 학생 칸이 바로 결석", async ({ page }) => {
-  await page.goto("/teacher?at=16:00&student=s010&mode=attendance");
+  await gotoReady(page, "/teacher?at=16:00&student=s010&mode=attendance");
   const dialog = page.getByRole("dialog");
   const name = (await dialog.getByRole("heading").innerText()).replace(" 출결 입력", "");
   await dialog.getByRole("radio", { name: /결석/ }).click();
@@ -44,7 +45,7 @@ test("출결 입력 창: 결석 처리하면 창이 닫히고 학생 칸이 바�
 
 test("메시지: 보내기 실패면 목록에서 빠지고 쓴 글은 입력칸에 돌아온다", async ({ page }) => {
   await failSaves(page);
-  await page.goto("/teacher?at=16:00");
+  await gotoReady(page, "/teacher?at=16:00");
   const panel = page.locator("aside");
   const box = panel.getByLabel("메시지 내용");
   await box.fill("내일 단어 시험 있어요");
@@ -56,7 +57,7 @@ test("메시지: 보내기 실패면 목록에서 빠지고 쓴 글은 입력칸
 });
 
 test("상단 숫자: 하원하면 등원 숫자가 줄고 하원 숫자가 는다", async ({ page }) => {
-  await page.goto("/teacher?at=16:00");
+  await gotoReady(page, "/teacher?at=16:00");
   const group = page.getByRole("group", { name: "상태로 보기" });
   // "미등원"과 헷갈리지 않게 이름표가 정확히 같은 칸
   const num = (label: string) => group.getByRole("button").filter({ has: page.getByText(label, { exact: true }) }).locator("span").first();

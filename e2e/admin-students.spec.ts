@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { gotoReady } from "./ready";
 
 // 10/5 디자인 시스템: 학생 정보 수정 창은 저장하면 토스트로 알리고, 닫힘 움직임을 거쳐 닫힌다
 test("학생 정보 수정: 저장하면 토스트 + 창 닫힘, 취소도 닫힘", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/admin/students?edit=s010");
+  await gotoReady(page, "/admin/students?edit=s010");
   const dialog = page.getByRole("dialog");
   const name = (await dialog.getByRole("heading").first().innerText()).replace(" 정보 수정", "");
   await dialog.getByRole("button", { name: "저장" }).click();

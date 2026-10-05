@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { gotoReady } from "./ready";
 
 // 10/5 디자인 다듬기: 24시간제 시간 고르기, 선생님 숫자 0은 회색, 키패드 휴대폰 세로
 test("출결 입력: 시간은 24시간제 시·분 선택칸", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/teacher?at=16:00&student=s010&mode=attendance");
+  await gotoReady(page, "/teacher?at=16:00&student=s010&mode=attendance");
   const hour = page.getByRole("combobox", { name: "등원 시각 시" });
   await expect(hour).toBeVisible();
   await expect(hour.locator("option")).toHaveCount(24);

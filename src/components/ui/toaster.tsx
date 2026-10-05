@@ -1,7 +1,7 @@
 "use client";
 
 import { CircleAlert, CircleCheck } from "lucide-react";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { getToast, subscribeToast } from "@/lib/toast";
 
 /**
@@ -10,6 +10,10 @@ import { getToast, subscribeToast } from "@/lib/toast";
  */
 export function Toaster() {
   const item = useSyncExternalStore(subscribeToast, getToast, () => null);
+  // 화면 준비(하이드레이션) 끝 표시: 화면 흐름 테스트가 이것을 기다린 뒤 누른다 (e2e/ready.ts)
+  useEffect(() => {
+    document.documentElement.dataset.hydrated = "true";
+  }, []);
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom,0px))] z-50 flex justify-center px-4 md:bottom-8">
       {/* 화면 읽기 프로그램: 성공은 조용히(status), 실패는 바로(alert) */}
