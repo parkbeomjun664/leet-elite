@@ -56,7 +56,7 @@ CLAUDE.md의 "작업 규칙"·"개인정보·보안"에 있는 내용은 여기�
 - 시간 입력은 `<input type="time">` 대신 `TimeSelect`(24시간제 시·분 선택칸)를 쓴다
 - `"use client"`는 서버에서 직접 부르는 입구 부품에만 붙인다. 클라이언트 부품 안에서만 쓰는 부품에 붙이면 함수 props 경고가 난다
 - 화면 흐름 테스트에서 Tailwind 색은 `oklab(… / 0.5)`처럼 돌아온다. 정확한 rgb 대신 "같은 값인지·다른 값인지"로 비교한다
-- 화면 확인용 캡처는 `LEET_REAL_DATA=0`으로 켠 3200번 서버에서 Playwright 스크립트로 찍는다 (스크립트·캡처는 scratchpad에 두고 저장소에 넣지 않는다)
+- 화면 확인용 캡처는 `LEET_REAL_DATA=0`으로 켠 3200번 서버에서 `node scripts/capture-screens.mjs <저장 폴더> [이름 일부]`로 찍는다. 스크립트는 저장소에 있고(10/6), **캡처 파일은 저장소 밖(scratchpad 등)에** 둔다. 원장님께 보낼 캡처만 골라 `docs/preview/`에
 - (10/5) Tailwind v4의 `translate-x-*`는 `transform`이 아니라 `translate` 속성이다. 움직이려면 `transition-[translate]`로 적는다
 - (10/5) 저장 중 화면 반영은 `src/lib/use-optimistic-save.ts` 하나로. React 19는 동시에 진행 중인 비동기 저장을 함께 확정하므로, 단위 테스트에서 끝내지 않은 저장을 남기면 다음 테스트가 멈춘다
 - (10/5) 창(Sheet)의 닫힘 움직임: 창 밖 버튼은 `closeRef`, 창 안 버튼은 `useSheetClose()`. 부모가 바로 없애면 닫히는 모습이 안 보인다
