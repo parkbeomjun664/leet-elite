@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, Delete } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
 import { cn } from "@/lib/cn";
@@ -240,12 +241,12 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     <div className="flex min-h-dvh flex-col pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] pl-[env(safe-area-inset-left,0px)]">
       {/* 상단 줄: 로고 · 학원 이름 · 날짜와 시계. 10/5: 버건디 바 → 흰 바탕 (다른 화면의 흰 메뉴와 통일)
           휴대폰 세로(아이폰 시험)에서는 학원 이름을 빼고 "출결"만 보여 잘리지 않게 */}
-      <header className="border-b border-line bg-card pt-[env(safe-area-inset-top,0px)] text-ink">
+      <header className="border-b border-line-soft bg-card pt-[env(safe-area-inset-top,0px)] text-ink">
         <div className="flex h-16 items-center justify-between gap-3 px-4 md:h-[72px] md:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             {/* 원본 PNG가 흰 배경이라 흰 바탕 위에 그대로 둔다 */}
             <Image src="/brand/leet-mark.png" alt="" width={407} height={512} priority className="h-8 w-auto shrink-0 md:h-9" />
-            <p className="truncate text-lg font-bold md:text-xl">
+            <p className="truncate text-heading font-bold md:text-title">
               <span className="hidden text-brand sm:inline">LEET영어학원 </span>출결
             </p>
           </div>
@@ -261,7 +262,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
               aria-label={soundOn ? "소리 켜짐 (누르면 끄기)" : "소리 꺼짐 (누르면 켜기)"}
               title="태블릿 음량도 켜 두세요"
               className={cn(
-                "flex h-10 items-center gap-1.5 rounded-[var(--radius-control)] border border-line px-3 text-[15px] font-semibold transition-colors hover:bg-bg",
+                "press flex h-10 items-center gap-1.5 rounded-[var(--radius-control)] border border-line px-3 text-body font-semibold hover:bg-bg",
                 soundOn ? "text-ink" : "text-sub",
               )}
             >
@@ -269,8 +270,8 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
               <span className="hidden sm:inline">{soundOn ? "소리 켜짐" : "소리 꺼짐"}</span>
             </button>
             <div className="flex flex-col items-end leading-tight sm:flex-row sm:items-baseline sm:gap-3">
-              <span className="text-[13px] text-sub sm:text-[15px]">{date ? formatDateKo(date) : " "}</span>
-              <span className="text-xl font-bold tabular md:text-[28px]">{time || " "}</span>
+              <span className="text-caption text-sub sm:text-body">{date ? formatDateKo(date) : " "}</span>
+              <span className="text-[24px] font-bold tabular md:text-[28px]">{time || " "}</span>
             </div>
           </div>
         </div>
@@ -283,7 +284,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
             role="status"
             aria-live="polite"
             className={cn(
-              "flex min-h-[232px] flex-1 flex-col items-center justify-center rounded-[var(--radius-card)] border px-5 py-6 text-center transition-colors md:min-h-[280px]",
+              "flex min-h-[232px] flex-1 flex-col items-center justify-center rounded-[var(--radius-card)] border px-5 py-6 text-center transition-colors duration-[var(--duration-fast)] md:min-h-[280px]",
               !result && "border-line bg-card",
               (result?.kind === "in" || result?.kind === "out") && "border-ok bg-ok-tint",
               result?.kind === "unknown" && "border-brand bg-brand-tint",
@@ -294,7 +295,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
               <ResultView result={result} />
             ) : (
               <>
-                <p className="text-lg font-semibold text-sub md:text-xl">출결 번호를 누르세요</p>
+                <p className="text-[20px] font-semibold text-sub md:text-[24px]">출결 번호를 누르세요</p>
                 <div className="mt-5 flex gap-2 md:gap-3" aria-label={`입력한 번호 ${digits.length}자리`}>
                   {Array.from({ length: slots }, (_, i) => {
                     const filled = i < digits.length;
@@ -303,7 +304,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
                       <span
                         key={i}
                         className={cn(
-                          "grid h-16 w-12 place-items-center rounded-[var(--radius-control)] border-2 bg-card text-[36px] font-bold tabular sm:w-14 md:h-20 md:w-16 md:text-[44px]",
+                          "grid h-[72px] w-12 place-items-center rounded-[var(--radius-control)] border-2 bg-card text-[48px] leading-none font-bold tabular sm:w-14 md:h-[88px] md:w-16 md:text-[56px]",
                           filled ? "border-ink text-ink" : next ? "border-brand" : "border-line",
                         )}
                       >
@@ -312,7 +313,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
                     );
                   })}
                 </div>
-                <p className="mt-5 text-[15px] text-sub md:text-base">
+                <p className="mt-5 text-body text-sub md:text-heading">
                   {waiting ? (
                     <>
                       번호가 더 있으면 이어서 누르고, 끝났으면 <b className="font-bold text-ink">확인</b>을 눌러 주세요
@@ -328,32 +329,34 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
               </>
             )}
           </div>
-          <p className="hidden text-center text-[15px] text-sub md:landscape:block">번호를 잊었으면 선생님께 말씀해 주세요.</p>
+          <p className="hidden text-center text-body text-sub md:landscape:block">번호를 잊었으면 선생님께 말씀해 주세요.</p>
         </section>
 
         {/* 오른쪽(세로 화면에서는 아래): 숫자 패드 */}
         <section aria-label="숫자 패드" className="grid grid-cols-3 grid-rows-4 gap-2 md:gap-3">
           {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
-            <Key key={d} onClick={() => pressDigit(d)} className="border border-line bg-card text-[34px] font-bold text-ink active:bg-line-soft md:text-[40px]">
+            <Key key={d} onClick={() => pressDigit(d)} className="press-key border border-line bg-card text-[48px] font-bold text-ink md:text-[56px]">
               {d}
             </Key>
           ))}
-          <Key onClick={erase} aria-label="한 자리 지우기" className="border border-line bg-line-soft text-xl font-semibold text-sub active:bg-line md:text-[22px]">
-            지우기
+          <Key onClick={erase} aria-label="한 자리 지우기" className="press-key flex items-center justify-center gap-2 border border-line bg-card text-[24px] font-semibold text-ink md:text-[28px]">
+            <Delete aria-hidden className="size-7 text-sub md:size-8" />
+            {/* 휴대폰 세로는 칸이 좁아 그림만 (화면 읽기는 aria-label) */}
+            <span className="hidden sm:inline">지우기</span>
           </Key>
-          <Key onClick={() => pressDigit("0")} className="border border-line bg-card text-[34px] font-bold text-ink active:bg-line-soft md:text-[40px]">
+          <Key onClick={() => pressDigit("0")} className="press-key border border-line bg-card text-[48px] font-bold text-ink md:text-[56px]">
             0
           </Key>
           <Key
             onClick={submit}
             disabled={digits.length < MIN_LEN}
-            className="bg-brand text-2xl font-bold text-white active:bg-brand-dark disabled:bg-line-soft disabled:text-sub md:text-[28px]"
+            className="press bg-brand text-[24px] font-bold text-white active:bg-brand-dark disabled:bg-line-soft disabled:text-sub md:text-[28px]"
           >
             확인
           </Key>
         </section>
 
-        <p className="text-center text-[15px] text-sub md:landscape:hidden">번호를 잊었으면 선생님께 말씀해 주세요.</p>
+        <p className="text-center text-body text-sub md:landscape:hidden">번호를 잊었으면 선생님께 말씀해 주세요.</p>
       </main>
     </div>
   );
@@ -369,13 +372,13 @@ function SpeakerIcon({ on }: { on: boolean }) {
   );
 }
 
-/** 숫자 패드 한 칸. 태블릿 80px, 휴대폰 64px 이상 */
+/** 숫자 패드 한 칸. 휴대폰 72px, 태블릿 88px 이상 (docs/design.md 2번 키패드) */
 function Key({ className, ...rest }: ComponentProps<"button">) {
   return (
     <button
       type="button"
       className={cn(
-        "min-h-16 touch-manipulation rounded-[var(--radius-card)] transition-colors select-none disabled:cursor-not-allowed md:min-h-20",
+        "min-h-[72px] touch-manipulation rounded-[var(--radius-card)] leading-none select-none disabled:cursor-not-allowed md:min-h-[88px]",
         className,
       )}
       {...rest}
@@ -387,8 +390,8 @@ function ResultView({ result }: { result: Result }) {
   if (result.kind === "unknown") {
     return (
       <>
-        <p className="text-[28px] leading-snug font-bold text-brand md:text-[34px]">등록되지 않은 번호입니다.</p>
-        <p className="mt-2 text-xl font-semibold text-ink md:text-2xl">다시 입력해 주세요.</p>
+        <p className="text-[40px] leading-tight font-bold text-brand md:text-[48px]">등록되지 않은 번호입니다.</p>
+        <p className="mt-2 text-[20px] font-semibold text-ink md:text-[24px]">다시 입력해 주세요.</p>
       </>
     );
   }
@@ -399,11 +402,12 @@ function ResultView({ result }: { result: Result }) {
 
   return (
     <>
-      <p className="text-[32px] leading-tight font-bold text-ink md:text-[44px]">{result.name} 학생</p>
-      <p className={cn("mt-2 text-[28px] leading-tight font-bold md:text-[38px]", tone)}>{message}</p>
-      {"time" in result && <p className="mt-3 text-2xl font-semibold text-ink tabular md:text-[28px]">{result.time}</p>}
-      {result.kind === "recent" && <p className="mt-3 text-base text-sub">같은 번호는 1분 뒤에 다시 누를 수 있습니다.</p>}
-      {result.kind === "done" && <p className="mt-3 text-base text-sub">잘못 눌렀다면 선생님께 말씀해 주세요.</p>}
+      {(result.kind === "in" || result.kind === "out") && <Check aria-hidden className="mb-1 size-9 text-ok" strokeWidth={2.5} />}
+      <p className="text-[40px] leading-tight font-bold text-ink md:text-[48px]">{result.name} 학생</p>
+      <p className={cn("mt-1 text-[40px] leading-tight font-bold md:text-[48px]", tone)}>{message}</p>
+      {"time" in result && <p className="mt-3 text-[24px] font-semibold text-ink tabular md:text-[28px]">{result.time}</p>}
+      {result.kind === "recent" && <p className="mt-3 text-[20px] text-sub md:text-[24px]">같은 번호는 1분 뒤에 다시 누를 수 있습니다.</p>}
+      {result.kind === "done" && <p className="mt-3 text-[20px] text-sub md:text-[24px]">잘못 눌렀다면 선생님께 말씀해 주세요.</p>}
     </>
   );
 }
