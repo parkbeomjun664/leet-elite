@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field, Input, Select } from "@/components/ui/field";
-import { CardsDemo, KeypadDemo, NumbersDemo, OptimisticDemo, SheetDemo, SkeletonDemo, TabsDemo, TimeSelectDemo, ToastDemo } from "./demos";
+import { CardsDemo, KioskDoneDemo, NumbersDemo, OptimisticDemo, SheetDemo, SkeletonDemo, TabsDemo, TimeSelectDemo, ToastDemo } from "./demos";
 
 export const metadata: Metadata = { title: "디자인 시스템" };
 
@@ -323,8 +323,8 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
-      <Section title="출결 키패드" note="학원 입구 태블릿용 실제 크기. 누름 반응과 완료 표시만 움직입니다. [확인]을 눌러 보세요.">
-        <KeypadDemo />
+      <Section title="출결 키패드 완료 화면" note="번호 4자리가 차면 바로 처리되고, 등원·하원이면 화면 전체가 이렇게 바뀝니다. 2.5초 뒤 또는 화면을 누르면 키패드로 돌아갑니다.">
+        <KioskDoneDemo />
       </Section>
 
       <Section title="사용자별 톤" note="같은 부품, 다른 밀도.">

@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, Delete } from "lucide-react";
+
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { KioskDoneScreen, type DoneResult } from "@/components/kiosk/result-overlay";
 import { Button } from "@/components/ui/button";
 import { TimeSelect } from "@/components/ui/field";
 import { FilterRow, Segment, Tabs } from "@/components/ui/segment";
@@ -281,53 +282,33 @@ export function OptimisticDemo() {
   );
 }
 
-/** 출결 키패드: 실제 크기 숫자 버튼 + 완료 표시 */
-export function KeypadDemo() {
-  const [done, setDone] = useState(false);
-  return (
-    <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
-      <div className="grid grid-cols-3 gap-2">
-        {["1", "2", "3"].map((d) => (
-          <button key={d} type="button" className="press-key min-h-[72px] rounded-[var(--radius-card)] border border-line bg-card text-[48px] leading-none font-bold md:min-h-[88px] md:text-[56px]">
-            {d}
-          </button>
-        ))}
-        <button type="button" aria-label="지우기" className="press-key grid min-h-[72px] place-items-center rounded-[var(--radius-card)] border border-line bg-card text-sub md:min-h-[88px]">
-          <Delete className="size-8" />
-        </button>
-        <button type="button" className="press-key min-h-[72px] rounded-[var(--radius-card)] border border-line bg-card text-[48px] leading-none font-bold md:min-h-[88px] md:text-[56px]">
-          0
-        </button>
-        <button
-          type="button"
-          onClick={() => setDone((v) => !v)}
-          className="press min-h-[72px] rounded-[var(--radius-card)] bg-brand text-[24px] font-bold text-white active:bg-brand-dark md:min-h-[88px]"
-        >
-          확인
-        </button>
-      </div>
-      <div
-        className={cn(
-          "flex min-h-[160px] flex-col items-center justify-center rounded-[var(--radius-card)] border px-4 text-center transition-colors duration-[var(--duration-fast)]",
-          done ? "border-transparent bg-ok-tint text-ok" : "border-line bg-card text-sub",
-        )}
-      >
-        {done ? (
-          <>
-            <Check aria-hidden className="mb-1 size-8" />
-            <p className="text-[40px] leading-tight font-bold text-ink md:text-[48px]">김하윤</p>
-            <p className="text-[20px] font-semibold md:text-[24px]">14:38 등원했어요</p>
-          </>
-        ) : (
-          <p className="text-[20px] font-semibold md:text-[24px]">출결 번호를 누르세요</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /** 24시간제 시간 고르기 */
 export function TimeSelectDemo() {
   const [t, setT] = useState("14:38");
   return <TimeSelect value={t} onChange={setT} label="등원 시각" />;
+}
+
+/** 출결 키패드 완료 화면 (등원·하원). 실제 키패드에서는 화면 전체를 덮는다 */
+export function KioskDoneDemo() {
+  const [shown, setShown] = useState<DoneResult | null>(null);
+  const [seq, setSeq] = useState(0);
+  const open = (r: DoneResult) => {
+    setShown(r);
+    setSeq((n) => n + 1);
+  };
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => open({ kind: "in", name: "김하윤", time: "14:38", detail: "오늘 수업 15:00~16:30" })}>등원 화면</Button>
+        <Button onClick={() => open({ kind: "out", name: "김하윤", time: "16:32", detail: "오늘도 수고했어요, 조심히 가요" })}>하원 화면</Button>
+      </div>
+      <div className="relative h-[420px] overflow-hidden rounded-[var(--radius-card)] border border-line-soft bg-bg">
+        {shown ? (
+          <KioskDoneScreen key={seq} result={shown} onClose={() => setShown(null)} contained />
+        ) : (
+          <p className="grid h-full place-items-center text-body text-sub">위 버튼을 눌러 보세요</p>
+        )}
+      </div>
+    </div>
+  );
 }

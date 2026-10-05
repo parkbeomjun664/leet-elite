@@ -3,30 +3,45 @@
 import { Delete } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
+import { KioskDoneScreen, DONE_SCREEN_MS, type DoneResult } from "@/components/kiosk/result-overlay";
 import { cn } from "@/lib/cn";
-import { formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
+import { addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf } from "@/lib/date";
 import { KIOSK_CODE_LEN, shouldSubmitNow } from "@/lib/kiosk";
 
-/** 키패드에 넘기는 학생 정보. 코드로 찾는 데 필요한 것만 (전화번호 등은 넘기지 않는다) */
-export type KioskStudent = { id: string; code: string; name: string };
+/**
+ * 키패드에 넘기는 학생 정보. 코드로 찾는 데 필요한 것과 등원 화면에 보일 요일별 수업 시각만 (전화번호 등은 넘기지 않는다)
+ * TODO(3단계): kiosk_check(code)가 이름·시각·오늘 수업 시간만 돌려준다
+ */
+export type KioskStudent = { id: string; code: string; name: string; schedule?: { weekday: number; start: string; durationMin: number }[] };
 
-const RESULT_MS = 4000; // 결과를 보여 주는 시간
 const FILL_SHOW_MS = 180; // 4번째 숫자가 칸에 들어간 것을 잠깐 보여 준 뒤 처리
 const IDLE_CLEAR_MS = 10000; // 누르다 만 번호를 지우기까지 시간
 const REPEAT_BLOCK_MS = 60_000; // 같은 코드를 1분 안에 다시 누르면 기록하지 않음 (KIOSK-04)
+const BYE_MESSAGE = "오늘도 수고했어요, 조심히 가요";
 
+// 등원·하원은 전체 화면(DoneResult), 나머지는 입력 칸 자리에서 짧게 알린다 (10/5, 토스 참고)
 type Result =
-  | { kind: "in" | "out"; name: string; time: string }
+  | DoneResult
   | { kind: "done"; name: string }
-  | { kind: "recent"; name: string }
-  | { kind: "unknown" };
+  | { kind: "recent"; name: string; label: "등원" | "하원"; time: string }
+  | { kind: "unknown"; code: string };
 
-type Entry = { count: number; lastAt: number };
+/** 결과를 보여 주는 시간 */
+const RESULT_MS: Record<Result["kind"], number> = { in: DONE_SCREEN_MS, out: DONE_SCREEN_MS, recent: 2000, done: 3000, unknown: 1500 };
+
+type Entry = { count: number; lastAt: number; time: string };
+
+/** 오늘 수업 시간 "오늘 수업 15:00~16:30" (없으면 빈 글) */
+function todayClassLabel(student: KioskStudent) {
+  const wd = weekdayOf(todayKST());
+  const slot = student.schedule?.find((s) => s.weekday === wd);
+  return slot ? `오늘 수업 ${slot.start}~${addMinutes(slot.start, slot.durationMin)}` : "";
+}
 
 // ── 소리 (KIOSK-03 보조) ───────────────────────────────────
 // 소리 파일 없이 Web Audio로 짧은 음을 만든다. 브라우저는 사용자가 누르기 전에는 소리를 막으므로
 // 첫 키를 누를 때 AudioContext를 만든다.
-type Sound = "ok" | "notice" | "error";
+type Sound = "ok" | "bye" | "notice" | "error";
 const VOLUME = 0.12; // 너무 크지 않게
 
 function playSound(ctx: AudioContext, sound: Sound) {
@@ -50,6 +65,10 @@ function playSound(ctx: AudioContext, sound: Sound) {
     tone(0, 1046.5, 0.14);
     tone(0.11, 1318.5, 0.14);
     tone(0.22, 1568, 0.42);
+  } else if (sound === "bye") {
+    // 하원: 솔-미로 내려가는 부드러운 두 음
+    tone(0, 1568, 0.16);
+    tone(0.15, 1318.5, 0.36);
   } else if (sound === "notice") {
     // 이미 처리됨: 가운데 음 하나
     tone(0, 660, 0.22);
@@ -140,8 +159,16 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
   function show(next: Result) {
     changeResult(next);
     setResultSeq((n) => n + 1);
+    // 지원하는 태블릿(안드로이드)은 성공할 때 짧게 진동
+    if (next.kind === "in" || next.kind === "out") {
+      try {
+        navigator.vibrate?.(40);
+      } catch {
+        // 진동이 안 되는 기기
+      }
+    }
     if (!soundOn || !audio.current) return;
-    const sound: Sound = next.kind === "in" || next.kind === "out" ? "ok" : next.kind === "unknown" ? "error" : "notice";
+    const sound: Sound = next.kind === "in" ? "ok" : next.kind === "out" ? "bye" : next.kind === "unknown" ? "error" : "notice";
     try {
       playSound(audio.current, sound);
     } catch {
@@ -149,10 +176,10 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     }
   }
 
-  // 결과는 몇 초 뒤 자동으로 처음 화면으로 (KIOSK-03)
+  // 결과는 몇 초 뒤 자동으로 처음 화면으로 (KIOSK-03). 등원·하원 2.5초, 없는 번호 1.5초
   useEffect(() => {
     if (!result) return;
-    const t = setTimeout(() => changeResult(null), RESULT_MS);
+    const t = setTimeout(() => changeResult(null), RESULT_MS[result.kind]);
     return () => clearTimeout(t);
   }, [result, resultSeq]);
 
@@ -168,7 +195,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
   function pressDigit(d: string) {
     wakeAudio();
     if (processing.current) return;
-    // 결과 화면에서 바로 다음 학생이 누르면 결과를 닫고 새로 입력
+    // 결과가 보이는 중에 다음 학생이 누르면 결과를 닫고 그 숫자부터 새로 입력
     const prev = showing.current ? "" : input.current;
     if (showing.current) changeResult(null);
     if (prev.length >= KIOSK_CODE_LEN) return;
@@ -196,7 +223,8 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
 
     const student = byCode.get(code);
     if (!student) {
-      show({ kind: "unknown" });
+      // 없는 번호: 누른 번호를 빨간 칸에 남긴 채 흔들고 비운다
+      show({ kind: "unknown", code });
       return;
     }
 
@@ -204,14 +232,15 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     const key = `${todayKST()}:${student.id}`;
     const prev = log.current[key];
     if (prev && now - prev.lastAt < REPEAT_BLOCK_MS) {
-      show({ kind: "recent", name: student.name });
+      show({ kind: "recent", name: student.name, label: prev.count === 1 ? "등원" : "하원", time: prev.time });
       return;
     }
 
     const count = (prev?.count ?? 0) + 1;
-    log.current[key] = { count, lastAt: now };
-    if (count === 1) show({ kind: "in", name: student.name, time: nowTimeKST() });
-    else if (count === 2) show({ kind: "out", name: student.name, time: nowTimeKST() });
+    const time = nowTimeKST();
+    log.current[key] = { count, lastAt: now, time };
+    if (count === 1) show({ kind: "in", name: student.name, time, detail: todayClassLabel(student) });
+    else if (count === 2) show({ kind: "out", name: student.name, time, detail: BYE_MESSAGE });
     else show({ kind: "done", name: student.name });
   }
 
@@ -280,57 +309,56 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
       <main className="mx-auto grid w-full max-w-[1120px] flex-1 grid-rows-[auto_1fr] gap-4 p-4 md:gap-6 md:p-6 md:landscape:grid-cols-[1fr_minmax(0,1.05fr)] md:landscape:grid-rows-1 md:landscape:gap-8 md:landscape:py-8">
         {/* 왼쪽(세로 화면에서는 위): 입력한 번호 또는 결과 */}
         <section className="flex flex-col gap-3">
+          {/* 입력 칸. 없는 번호·이미 처리는 이 자리에서 짧게 알린다 (등원·하원은 전체 화면, 아래 KioskDoneScreen) */}
           <div
-            role="status"
-            aria-live="polite"
-            data-result={result?.kind ?? "none"}
-            className={cn(
-              "relative flex min-h-[232px] flex-1 flex-col items-center justify-center overflow-hidden rounded-[var(--radius-card)] border px-5 py-6 text-center transition-colors duration-[var(--duration-fast)] md:min-h-[280px]",
-              !result && "border-line bg-card",
-              (result?.kind === "in" || result?.kind === "out") && "border-ok bg-ok-tint",
-              result?.kind === "unknown" && "border-brand bg-brand-tint",
-              (result?.kind === "recent" || result?.kind === "done") && "border-warn bg-warn-tint",
-            )}
+            data-result={result && result.kind !== "in" && result.kind !== "out" ? result.kind : "none"}
+            className="flex min-h-[232px] flex-1 flex-col items-center justify-center rounded-[var(--radius-card)] border border-line bg-card px-5 py-6 text-center md:min-h-[280px]"
           >
-            {result ? (
-              // 결과마다 새로 그려서 효과가 매번 보이게 (성공: 튀어나옴, 실패: 좌우로 흔들림)
-              <div
-                key={resultSeq}
-                className={cn(
-                  "flex flex-col items-center",
-                  result.kind === "unknown" ? "animate-kiosk-shake" : "animate-kiosk-pop",
-                )}
-              >
-                <ResultView result={result} />
-              </div>
-            ) : (
-              <>
-                <p className="text-[20px] font-semibold text-sub md:text-[24px]">출결 번호 4자리를 누르세요</p>
-                <div className="mt-5 flex gap-2 md:gap-3" aria-label={`입력한 번호 ${digits.length}자리`}>
-                  {Array.from({ length: KIOSK_CODE_LEN }, (_, i) => {
-                    const filled = i < digits.length;
-                    const next = i === digits.length;
-                    return (
-                      <span
-                        key={i}
-                        className={cn(
-                          "grid h-[72px] w-14 place-items-center rounded-[var(--radius-control)] border-2 bg-card text-[48px] leading-none font-bold tabular transition-colors duration-[var(--duration-fast)] sm:w-16 md:h-[88px] md:w-[72px] md:text-[56px]",
-                          filled ? "border-ink text-ink" : next ? "border-brand" : "border-line",
-                        )}
-                      >
-                        {/* 숫자가 칸에 톡 들어가는 효과 */}
-                        {filled && (
-                          <span key={`${i}-${digits[i]}`} className="animate-digit-in">
-                            {digits[i]}
-                          </span>
-                        )}
+            <p className="text-[20px] font-semibold text-sub md:text-[24px]">출결 번호 4자리를 누르세요</p>
+            {/* 없는 번호면 누른 번호를 빨간 칸에 남긴 채 좌우로 흔든다 */}
+            <div
+              key={result?.kind === "unknown" ? `shake-${resultSeq}` : "slots"}
+              className={cn("mt-5 flex gap-2 md:gap-3", result?.kind === "unknown" && "animate-kiosk-shake")}
+              aria-label={`입력한 번호 ${digits.length}자리`}
+            >
+              {Array.from({ length: KIOSK_CODE_LEN }, (_, i) => {
+                const wrong = result?.kind === "unknown";
+                const shown = wrong ? result.code[i] : digits[i];
+                const next = !wrong && i === digits.length;
+                return (
+                  <span
+                    key={i}
+                    className={cn(
+                      "grid h-[72px] w-14 place-items-center rounded-[var(--radius-control)] border-2 bg-card text-[48px] leading-none font-bold tabular transition-colors duration-[var(--duration-fast)] sm:w-16 md:h-[88px] md:w-[72px] md:text-[56px]",
+                      wrong ? "border-brand bg-brand-tint text-brand" : shown ? "border-ink text-ink" : next ? "border-brand" : "border-line",
+                    )}
+                  >
+                    {/* 숫자가 칸에 톡 들어가는 효과 */}
+                    {shown && (
+                      <span key={`${i}-${shown}`} className={wrong ? undefined : "animate-digit-in"}>
+                        {shown}
                       </span>
-                    );
-                  })}
-                </div>
-                <p className="mt-5 text-body text-sub md:text-heading">4자리를 다 누르면 바로 처리돼요</p>
-              </>
-            )}
+                    )}
+                  </span>
+                );
+              })}
+            </div>
+            <p
+              role="status"
+              aria-live="polite"
+              className={cn(
+                "mt-5 min-h-[1.5em] text-body md:text-heading",
+                result?.kind === "unknown" ? "font-semibold text-brand" : result?.kind === "recent" || result?.kind === "done" ? "font-semibold text-warn" : "text-sub",
+              )}
+            >
+              {result?.kind === "unknown"
+                ? "없는 번호예요. 다시 눌러 주세요"
+                : result?.kind === "recent"
+                  ? `${result.name} 학생, 방금 ${result.label}했어요 (${result.time})`
+                  : result?.kind === "done"
+                    ? `${result.name} 학생은 이미 하원했어요. 잘못 눌렀다면 선생님께 말해 주세요`
+                    : "4자리를 다 누르면 바로 처리돼요"}
+            </p>
           </div>
           <p className="hidden text-center text-body text-sub md:landscape:block">번호를 잊었으면 선생님께 말씀해 주세요.</p>
         </section>
@@ -354,6 +382,9 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
 
         <p className="text-center text-body text-sub md:landscape:hidden">번호를 잊었으면 선생님께 말씀해 주세요.</p>
       </main>
+
+      {/* 등원·하원 완료: 숫자 패드까지 덮는 전체 화면 (토스 송금 완료 화면 참고, 10/5). 누르면 바로 닫힌다 */}
+      {(result?.kind === "in" || result?.kind === "out") && <KioskDoneScreen key={resultSeq} result={result} onClose={() => changeResult(null)} />}
     </div>
   );
 }
@@ -382,45 +413,3 @@ function Key({ className, ...rest }: ComponentProps<"button">) {
   );
 }
 
-function ResultView({ result }: { result: Result }) {
-  if (result.kind === "unknown") {
-    return (
-      <>
-        <p className="text-[40px] leading-tight font-bold text-brand md:text-[48px]">등록되지 않은 번호입니다.</p>
-        <p className="mt-2 text-[20px] font-semibold text-ink md:text-[24px]">다시 입력해 주세요.</p>
-      </>
-    );
-  }
-
-  const tone = result.kind === "in" || result.kind === "out" ? "text-ok" : "text-warn";
-  const message =
-    result.kind === "in" ? "등원했습니다" : result.kind === "out" ? "하원했습니다" : result.kind === "done" ? "이미 하원했습니다" : "방금 처리되었습니다";
-
-  return (
-    <>
-      {(result.kind === "in" || result.kind === "out") && <SuccessMark />}
-      <p className="text-[40px] leading-tight font-bold text-ink md:text-[48px]">{result.name} 학생</p>
-      <p className={cn("mt-1 text-[40px] leading-tight font-bold md:text-[48px]", tone)}>{message}</p>
-      {"time" in result && <p className="mt-3 text-[24px] font-semibold text-ink tabular md:text-[28px]">{result.time}</p>}
-      {result.kind === "recent" && <p className="mt-3 text-[20px] text-sub md:text-[24px]">같은 번호는 1분 뒤에 다시 누를 수 있습니다.</p>}
-      {result.kind === "done" && <p className="mt-3 text-[20px] text-sub md:text-[24px]">잘못 눌렀다면 선생님께 말씀해 주세요.</p>}
-    </>
-  );
-}
-
-/**
- * 등원·하원 완료 표시: 초록 원이 퍼지고 그 안에 체크가 그려진다 (약 0.5초, 크기·투명도·선 길이만 움직임)
- * 움직임 줄이기 설정이면 바로 완성된 모습
- */
-function SuccessMark() {
-  return (
-    <span className="relative mb-2 grid size-16 place-items-center md:size-20" aria-hidden>
-      {/* 퍼져 나가는 고리 */}
-      <span className="absolute inset-0 animate-kiosk-ring rounded-full bg-ok/25" />
-      <svg viewBox="0 0 52 52" className="relative size-full">
-        <circle cx="26" cy="26" r="24" className="fill-ok" />
-        <path d="M15 27l7 7 15-16" fill="none" className="animate-check-draw stroke-white" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="36" strokeDashoffset="0" />
-      </svg>
-    </span>
-  );
-}

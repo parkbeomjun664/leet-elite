@@ -40,27 +40,57 @@ test.describe("키패드 4자리 바로 처리", () => {
     expect(zero!.width).toBeGreaterThan(one!.width * 1.8);
   });
 
-  test("1234를 누르면 바로 등원 처리 + 완료 표시, 1분 안에 다시 누르면 기록하지 않음", async ({ page }) => {
+  test("1234: 등원 전체 화면 → 2.5초 뒤 키패드로, 1분 안에 다시 누르면 기록하지 않음", async ({ page }) => {
     await page.goto("/kiosk");
     await press(page, "1234");
-    const status = page.getByRole("status").filter({ hasText: "학생" });
-    await expect(status).toContainText("조나윤 학생");
-    await expect(status).toContainText("등원했습니다");
-    await expect(page.locator('[data-result="in"]')).toBeVisible();
+    const done = page.locator('[data-result="in"]');
+    await expect(done).toBeVisible();
+    await expect(done).toContainText("조나윤 학생");
+    await expect(done).toContainText("등원했어요");
+    // 숫자 패드까지 덮는 전체 화면
+    const box = await done.boundingBox();
+    expect(box!.width).toBeGreaterThanOrEqual(1180 - 1);
+    // 2.5초 뒤 저절로 닫힌다
+    await expect(done).toHaveCount(0, { timeout: 4000 });
 
     await press(page, "1234");
     await expect(page.locator('[data-result="recent"]')).toBeVisible();
-    await expect(page.getByText("방금 처리되었습니다")).toBeVisible();
+    await expect(page.getByText("조나윤 학생, 방금 등원했어요")).toBeVisible();
   });
 
-  test("없는 번호(9999)는 4자리가 차면 바로 실패 안내", async ({ page }) => {
+  test("완료 화면은 누르면 바로 닫힌다", async ({ page }) => {
+    await page.goto("/kiosk");
+    await press(page, "1234");
+    const done = page.locator('[data-result="in"]');
+    await expect(done).toBeVisible();
+    await done.click();
+    await expect(done).toHaveCount(0, { timeout: 1000 });
+  });
+
+  test("1분 뒤 다시 누르면 하원 전체 화면 (파랑, 인사말)", async ({ page }) => {
+    await page.clock.install();
+    await page.goto("/kiosk");
+    await press(page, "1234");
+    await expect(page.locator('[data-result="in"]')).toBeVisible();
+    await page.clock.fastForward("01:05");
+    await expect(page.locator('[data-result="in"]')).toHaveCount(0);
+    await press(page, "1234");
+    const out = page.locator('[data-result="out"]');
+    await expect(out).toBeVisible();
+    await expect(out).toContainText("하원했어요");
+    await expect(out).toContainText("오늘도 수고했어요, 조심히 가요");
+  });
+
+  test("없는 번호(9999)는 4자리가 차면 그 자리에서 흔들리며 안내", async ({ page }) => {
     await page.goto("/kiosk");
     await press(page, "999");
     // 3자리까지는 기다린다
     await expect(page.getByLabel("입력한 번호 3자리")).toBeVisible();
     await press(page, "9");
     await expect(page.locator('[data-result="unknown"]')).toBeVisible();
-    await expect(page.getByText("등록되지 않은 번호입니다.")).toBeVisible();
+    await expect(page.getByText("없는 번호예요. 다시 눌러 주세요")).toBeVisible();
+    // 전체 화면 결과는 뜨지 않는다
+    await expect(page.locator('[data-result="in"], [data-result="out"]')).toHaveCount(0);
   });
 
   test("지우기: 누른 숫자를 한 자리씩 지운다", async ({ page }) => {

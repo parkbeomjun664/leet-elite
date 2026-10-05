@@ -81,6 +81,8 @@
   --animate-kiosk-ring: kiosk-ring 700ms var(--ease-out) both;
   --animate-check-draw: check-draw 360ms 120ms var(--ease-out) both;
   --animate-digit-in: digit-in 140ms var(--ease-out);
+  /* 완료 체크 원: 살짝 넘쳤다가 자리 잡는 스프링 곡선 */
+  --animate-kiosk-badge: kiosk-badge 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 
   @keyframes skeleton {
     50% {
@@ -136,6 +138,12 @@
   @keyframes check-draw {
     from {
       stroke-dashoffset: 36;
+    }
+  }
+  @keyframes kiosk-badge {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
     }
   }
   @keyframes digit-in {
@@ -222,5 +230,21 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* 키패드 완료 화면: 인라인 style에서 이름으로 부르는 움직임이라 @theme 밖에 둔다 (쓰는 클래스가 없어도 항상 들어가게) */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes kiosk-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
   }
 }
