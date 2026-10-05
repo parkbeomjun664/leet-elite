@@ -32,10 +32,25 @@
 - 출결 번호는 재원·예정 학생끼리만 겹치지 않으면 됩니다. 퇴원생 번호는 다시 쓸 수 있습니다.
 
 ## 3. 처음 설치하는 방법
-1. Supabase 대시보드 → SQL Editor를 엽니다.
-2. `supabase/migrations/` 안의 파일을 **이름 순서대로** 열어 내용을 붙여 넣고 실행합니다.
+1. 대시보드 Integrations → Data API → Settings에서 **"Automatically expose new tables"가 꺼져 있는지** 확인합니다. 권한은 SQL 파일 안에서 직접 줍니다. 새 표에 RLS를 자동으로 켜는 설정(이벤트 트리거 `ensure_rls`)도 켜 둡니다.
+2. 대시보드 **Connect → Direct → Session pooler**의 연결 주소(URI)에 DB 비밀번호를 넣어, 컴퓨터의 사용자 환경변수 `SUPABASE_DEV_DB_URL`에 저장합니다 (파일·명령 기록에 남기지 않기 위해 "계정의 환경 변수 편집" 창 사용). Direct connection 주소는 IPv6 전용이라 집 인터넷에서 안 될 수 있습니다. 비밀번호는 영문·숫자만 쓰면 주소 인코딩 걱정이 없습니다
+3. **새 PowerShell 창**에서 저장소 폴더로 이동한 뒤 실행합니다. CLI 로그인은 하지 않습니다.
+   ```powershell
+   npx supabase@2.119.0 db push --db-url $env:SUPABASE_DEV_DB_URL --skip-vault --dry-run   # 미리보기
+   npx supabase@2.119.0 db push --db-url $env:SUPABASE_DEV_DB_URL --skip-vault             # 적용
+   ```
+   `supabase/migrations/` 안에서 아직 적용하지 않은 파일만 이름 순서대로 적용되고, 적용 기록이 DB에 남습니다
    - `20261002000000_core_people_classes.sql`: 1차 표·권한
-3. Settings → API에서 "새 표 자동 노출"이 꺼져 있는지 확인합니다. 권한은 SQL 파일 안에서 직접 줍니다.
+4. 대시보드 Advisors(보안·성능)에서 새 경고가 없는지 봅니다. 일부러 둔 경고는 아래 표
+
+- 적용 기록: dev 프로젝트 2026-10-06 (1차)
+
+| 보안 경고 | 일부러 둔 이유 |
+|---|---|
+| `teacher_public` Security Definer View (ERROR) | 학생·학부모에게 선생님 실명 대신 닉네임만 보이도록, 선생님 표의 RLS를 거치지 않고 `id`·`nickname` 두 열만 보여 준다. 권한 테스트로 다른 열이 안 보이는 것을 확인 |
+| `set_student_programs` 로그인 사용자 실행 가능 (WARN) | 선생님이 담당 학생의 사용 프로그램만 바꾸는 함수. 안에서 원장님·담당 선생님인지 확인하고, 비로그인은 실행 불가 |
+| `login_attempts` 정책 없음 (INFO) | 서버(서비스 키)만 쓰는 표라서 일부러 아무도 직접 접근 못 하게 둠 |
+| `rls_auto_enable` 실행 가능 (WARN) | 자동 RLS용으로 Supabase가 만든 함수. 우리 코드가 아님 |
 
 ## 4. 권한 테스트 방법 (내 컴퓨터에서)
 Supabase를 건드리지 않고, 컴퓨터에 설치된 PostgreSQL에 임시 DB를 만들어 검사합니다.
