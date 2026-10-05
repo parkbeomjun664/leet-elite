@@ -5,8 +5,8 @@ import { cn } from "@/lib/cn";
 
 export function Table({ className, ...rest }: ComponentProps<"table">) {
   return (
-    <div className="overflow-x-auto rounded-[var(--radius-card)] border border-line bg-card">
-      <table className={cn("w-full border-collapse text-[15px]", className)} {...rest} />
+    <div className="overflow-x-auto rounded-[var(--radius-card)] border border-line-soft bg-card">
+      <table className={cn("w-full border-collapse text-body", className)} {...rest} />
     </div>
   );
 }
@@ -14,7 +14,7 @@ export function Table({ className, ...rest }: ComponentProps<"table">) {
 export function Th({ className, ...rest }: ComponentProps<"th">) {
   return (
     <th
-      className={cn("border-b border-line bg-card px-3 py-2.5 text-left text-sm font-semibold whitespace-nowrap text-sub", className)}
+      className={cn("border-b border-line-soft bg-card px-3 py-2.5 text-left text-caption font-semibold whitespace-nowrap text-sub", className)}
       {...rest}
     />
   );
@@ -25,5 +25,5 @@ export function Td({ className, ...rest }: ComponentProps<"td">) {
 }
 
 export function Tr({ className, ...rest }: ComponentProps<"tr">) {
-  return <tr className={cn("hover:bg-bg/60 [&:last-child>td]:border-b-0", className)} {...rest} />;
+  return <tr className={cn("transition-colors duration-[var(--duration-fast)] hover:bg-bg/70 [&:last-child>td]:border-b-0", className)} {...rest} />;
 }

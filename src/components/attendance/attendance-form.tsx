@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, TimeSelect } from "@/components/ui/field";
+import { useSheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/cn";
 import type { Attendance } from "@/lib/mock/types";
 
@@ -37,8 +38,11 @@ export function AttendanceForm({
   nowTime: string; // 창을 연 시각 (시연 중이면 시연 시각)
   record: Attendance | null;
   onSave: (next: Attendance) => void;
-  onCancel: () => void;
+  /** 창(Sheet) 밖에서 쓸 때만. 창 안에서는 창의 닫힘 움직임으로 닫힌다 */
+  onCancel?: () => void;
 }) {
+  const closeSheet = useSheetClose();
+  const close = () => (onCancel ? onCancel() : closeSheet());
   const [choice, setChoice] = useState<Choice>(initialChoice(record));
   const [checkIn, setCheckIn] = useState(record?.checkInAt ?? nowTime);
   const [checkOut, setCheckOut] = useState(record?.checkOutAt ?? nowTime);
@@ -58,6 +62,8 @@ export function AttendanceForm({
           status: choice === "absent" ? "absent" : "present",
           memo: memo.trim(),
         });
+        // 저장은 누르는 즉시 화면에 반영되므로 창은 바로 닫는다
+        close();
       }}
     >
       {/* 하나만 고르는 큰 버튼 3개 */}
@@ -72,12 +78,12 @@ export function AttendanceForm({
               aria-checked={on}
               onClick={() => setChoice(c.key)}
               className={cn(
-                "rounded-[var(--radius-card)] border px-2 py-3 text-center transition-colors",
-                on ? (c.key === "absent" ? "border-brand bg-brand-tint" : "border-ink bg-bg") : "border-line hover:border-ink/30",
+                "press-card rounded-[var(--radius-card)] border px-2 py-3 text-center",
+                on ? (c.key === "absent" ? "border-brand bg-brand-tint" : "border-ink bg-card shadow-[inset_0_0_0_0.5px_var(--color-ink)]") : "border-line hover:bg-bg",
               )}
             >
-              <span className={cn("block text-lg font-bold", on && c.key === "absent" && "text-brand")}>{c.label}</span>
-              <span className="text-[13px] text-sub">{c.hint}</span>
+              <span className={cn("block text-heading font-bold", on && c.key === "absent" && "text-brand")}>{c.label}</span>
+              <span className="text-caption text-sub">{c.hint}</span>
             </button>
           );
         })}
@@ -100,7 +106,7 @@ export function AttendanceForm({
         <Button type="submit" variant="primary" size="lg" className="flex-1">
           {choice === "in" ? "등원 처리" : choice === "out" ? "하원 처리" : "결석 처리"}
         </Button>
-        <Button size="lg" onClick={onCancel}>
+        <Button size="lg" onClick={close}>
           취소
         </Button>
       </div>

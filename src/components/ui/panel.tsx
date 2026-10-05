@@ -16,15 +16,15 @@ export function Panel({
   bodyClassName?: string;
 }) {
   return (
-    // 테두리 없이 흰 바탕 + 아주 옅은 그림자로 구분 (10/2)
-    <section className={cn("rounded-[var(--radius-card)] bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)]", className)}>
+    // 상자 없이 제목 + 구분선으로 묶는다 (10/5: 한 화면에 상자·맨바탕이 섞이지 않게)
+    <section className={cn("bg-card", className)}>
       {(title || actions) && (
-        <header className="flex min-h-12 items-center justify-between gap-3 border-b border-line-soft px-4 py-2.5">
-          {title && <h2 className="text-[15px] font-semibold">{title}</h2>}
+        <header className="flex min-h-12 items-center justify-between gap-3 border-b border-line-soft py-2.5">
+          {title && <h2 className="text-heading font-semibold">{title}</h2>}
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </header>
       )}
-      <div className={cn("p-4", bodyClassName)}>{children}</div>
+      <div className={cn("py-4", bodyClassName)}>{children}</div>
     </section>
   );
 }
@@ -32,10 +32,10 @@ export function Panel({
 /** 화면 맨 위 제목 줄 */
 export function PageHeader({ title, description, actions }: { title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-4">
+    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line-soft pb-4">
       <div>
-        <h1 className="text-[22px] leading-tight font-bold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-[15px] text-sub">{description}</p>}
+        <h1 className="text-title font-bold tracking-tight">{title}</h1>
+        {description && <p className="mt-1 text-body text-sub">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -46,9 +46,9 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
 export function SectionTitle({ children, count, actions }: { children: ReactNode; count?: number; actions?: ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-2">
-      <h2 className="flex items-baseline gap-2 text-[15px] font-semibold">
+      <h2 className="flex items-baseline gap-2 text-body font-semibold">
         {children}
-        {count !== undefined && <span className="text-[13px] font-medium text-sub tabular">{count}</span>}
+        {count !== undefined && <span className="text-caption text-sub tabular">{count}</span>}
       </h2>
       {actions}
     </div>
@@ -57,15 +57,15 @@ export function SectionTitle({ children, count, actions }: { children: ReactNode
 
 /** 목록이 비었을 때 한 줄 안내 */
 export function EmptyLine({ children }: { children: ReactNode }) {
-  return <p className="border-y border-line-soft py-3.5 text-[15px] text-sub">{children}</p>;
+  return <p className="border-y border-line-soft py-3.5 text-body text-sub">{children}</p>;
 }
 
 /** 숫자 요약 (등원 2, 미등원 1 …) */
 export function Stat({ label, value, tone = "text-ink" }: { label: string; value: number | string; tone?: string }) {
   return (
     <div className="flex items-baseline gap-1.5">
-      <dt className="text-[15px] text-sub">{label}</dt>
-      <dd className={cn("text-xl font-bold tabular", tone)}>{value}</dd>
+      <dt className="text-body text-sub">{label}</dt>
+      <dd className={cn("text-figure font-bold tabular", tone)}>{value}</dd>
     </div>
   );
 }
@@ -73,7 +73,7 @@ export function Stat({ label, value, tone = "text-ink" }: { label: string; value
 /** 이름표: 값 목록 (학생 정보 등) */
 export function InfoList({ items }: { items: { label: string; value: ReactNode }[] }) {
   return (
-    <dl className="grid grid-cols-[88px_1fr] gap-x-3 gap-y-2 text-[15px]">
+    <dl className="grid grid-cols-[88px_1fr] gap-x-3 gap-y-2 text-body">
       {items.map((it) => (
         <div key={it.label} className="contents">
           <dt className="text-sub">{it.label}</dt>

@@ -30,7 +30,10 @@ test.describe("선생님 화면 학생 상세", () => {
 
     await messageSection.getByLabel("메시지 내용").fill("내일 단어 시험 있어요");
     await messageSection.getByRole("button", { name: "보내기" }).click();
-    await expect(messageSection.getByText("보냈습니다.")).toBeVisible();
+    // 보내기를 누르면 바로 목록에 붙고(보내는 중), 저장이 끝나면 토스트 (10/5 낙관적 업데이트)
+    await expect(messageSection.getByText("내일 단어 시험 있어요")).toBeVisible({ timeout: 200 });
+    await expect(page.getByTestId("toast")).toContainText("메시지를 보냈어요");
+    await expect(messageSection.getByText("보내는 중")).toHaveCount(0);
     await expect(messageSection.getByLabel("메시지 내용")).toHaveValue("");
   });
 });

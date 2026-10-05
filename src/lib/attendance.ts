@@ -55,3 +55,11 @@ export function sortDays(a: StudentDay, b: StudentDay): number {
   const byTime = (a.slot?.start ?? "99").localeCompare(b.slot?.start ?? "99");
   return byTime || a.student.name.localeCompare(b.student.name, "ko");
 }
+
+const ATTENDANCE_ACTION_LABEL = { in: "등원", out: "하원", absent: "결석" } as const;
+
+/** 출결 저장 토스트 문장: "김하윤 하원 처리했어요" / 여러 명이면 "3명 등원 처리했어요" (버튼 이름과 같은 말) */
+export function attendanceSaveMessage(names: string[], kind: keyof typeof ATTENDANCE_ACTION_LABEL) {
+  const who = names.length === 1 ? names[0] : `${names.length}명`;
+  return `${who} ${ATTENDANCE_ACTION_LABEL[kind]} 처리했어요`;
+}

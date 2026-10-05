@@ -12,6 +12,7 @@ type Props = {
 };
 
 // 흰 한 줄 메뉴: 로고 · 메뉴 · 사용자 (10/1: 버건디 메뉴 바 대신 가볍게)
+// 선택된 메뉴는 검정 글씨 + 검정 밑줄 (10/5 디자인 시스템: 빨강은 로고·주 버튼에만)
 // PC(lg 이상)는 한 줄, 좁은 화면은 메뉴를 둘째 줄에서 옆으로 밀어 본다. 하위 메뉴는 그 아래 줄
 export function TopBar({ nav, roleLabel, userName }: Props) {
   const pathname = usePathname();
@@ -27,12 +28,12 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
             <Link
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`relative flex h-full items-center px-3.5 text-[15px] whitespace-nowrap transition-colors ${
-                active ? "font-bold text-brand" : "font-medium text-ink/70 hover:text-ink"
+              className={`relative flex h-full items-center px-3.5 text-body whitespace-nowrap transition-colors duration-[var(--duration-fast)] ${
+                active ? "font-semibold text-ink" : "text-sub hover:text-ink"
               }`}
             >
               {item.label}
-              {active && <span className="absolute inset-x-3.5 bottom-0 h-0.5 rounded-full bg-brand" />}
+              {active && <span className="absolute inset-x-3.5 bottom-0 h-0.5 bg-ink" />}
             </Link>
           </li>
         );
@@ -41,7 +42,7 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
   );
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-card">
+    <header className="sticky top-0 z-30 border-b border-line-soft bg-card">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-6 px-4">
         <Link href={home.href} className="flex shrink-0 items-center gap-2" aria-label="홈으로">
           {/* 여백을 잘라 낸 투명 로고 (scripts/make-icons.mjs 로 생성) */}
@@ -52,7 +53,7 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
         <nav aria-label="주 메뉴" className="hidden h-full min-w-0 flex-1 lg:block">
           {menu}
         </nav>
-        <div className="ml-auto flex shrink-0 items-center gap-3 text-sm">
+        <div className="ml-auto flex shrink-0 items-center gap-3 text-body">
           <span className="hidden text-sub sm:inline">
             <b className="font-semibold text-ink">{userName}</b> {roleLabel}
           </span>
@@ -79,7 +80,7 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
                   <Link
                     href={child.href}
                     aria-current={active ? "page" : undefined}
-                    className={`relative flex h-11 items-center px-4 text-[15px] whitespace-nowrap ${
+                    className={`relative flex h-11 items-center px-4 text-body whitespace-nowrap ${
                       active ? "font-semibold text-ink" : "text-sub hover:text-ink"
                     }`}
                   >
