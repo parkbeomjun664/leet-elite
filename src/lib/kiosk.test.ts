@@ -1,27 +1,30 @@
-// 출결 키패드 "바로 처리" 규칙 테스트. 실행: npm test
+// 출결 키패드 규칙 테스트 (10/5: 4자리 고정, 다 차면 바로 처리). 실행: npm test
 import { describe, expect, it } from "vitest";
-import { longerPrefixesOf, shouldSubmitNow } from "./kiosk";
+import { isKioskCode, KIOSK_CODE_LEN, shouldSubmitNow } from "./kiosk";
+import { students } from "./mock/data";
 
 describe("키패드 바로 처리", () => {
-  const codes = new Set(["1004", "1002", "10024", "5121", "512199"]);
-  const prefixes = longerPrefixesOf(codes);
+  it("4칸이 다 차면 바로 처리 (있는 번호든 없는 번호든)", () => {
+    expect(shouldSubmitNow("1234")).toBe(true);
+    expect(shouldSubmitNow("9999")).toBe(true);
+  });
+  it("4칸이 차기 전에는 기다린다", () => {
+    expect(shouldSubmitNow("")).toBe(false);
+    expect(shouldSubmitNow("123")).toBe(false);
+  });
+  it("출결 번호는 숫자 4자리만", () => {
+    expect(KIOSK_CODE_LEN).toBe(4);
+    expect(isKioskCode("1234")).toBe(true);
+    expect(isKioskCode("123")).toBe(false);
+    expect(isKioskCode("10024")).toBe(false);
+    expect(isKioskCode("12a4")).toBe(false);
+  });
+});
 
-  it("학생이 한 명만 정해지면 [확인] 없이 바로 처리 (1004)", () => {
-    expect(shouldSubmitNow("1004", codes, prefixes)).toBe(true);
-  });
-  it("더 긴 번호의 앞자리면 기다린다 (1002 → 10024가 있음)", () => {
-    expect(shouldSubmitNow("1002", codes, prefixes)).toBe(false);
-    expect(shouldSubmitNow("10024", codes, prefixes)).toBe(true);
-  });
-  it("없는 번호는 처리하지 않고 더 누르기를 기다린다", () => {
-    expect(shouldSubmitNow("1003", codes, prefixes)).toBe(false);
-    expect(shouldSubmitNow("100", codes, prefixes)).toBe(false);
-  });
-  it("6자리가 차면 무조건 처리 (없는 번호면 '없는 번호' 안내로 넘어감)", () => {
-    expect(shouldSubmitNow("512199", codes, prefixes)).toBe(true);
-    expect(shouldSubmitNow("999999", codes, prefixes)).toBe(true);
-  });
-  it("앞자리 목록은 4자리부터만 만든다", () => {
-    expect([...longerPrefixesOf(["512199"])]).toEqual(["5121", "51219"]);
+describe("가상 데이터의 출결 번호", () => {
+  it("모두 4자리이고 서로 겹치지 않는다", () => {
+    const codes = students.map((s) => s.attendanceCode);
+    expect(codes.every(isKioskCode)).toBe(true);
+    expect(new Set(codes).size).toBe(codes.length);
   });
 });

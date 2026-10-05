@@ -20,10 +20,53 @@ for (const [label, vp, font, height] of [
   });
 }
 
-test("키패드: 지우기는 흰 칸이라 비활성 확인(회색)과 달라 보인다", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/kiosk");
-  const pad = page.getByRole("region", { name: "숫자 패드" });
-  const bg = (name: string) => pad.getByRole("button", { name, exact: true }).evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(await bg("한 자리 지우기")).not.toBe(await bg("확인"));
+// 10/5 범준님: 4칸 고정, [확인] 없이 4자리가 차면 바로 처리. 예시 번호 1234 (가상 학생 조나윤)
+test.describe("키패드 4자리 바로 처리", () => {
+  test.use({ viewport: { width: 1180, height: 820 } });
+
+  const press = async (page: import("@playwright/test").Page, code: string) => {
+    const pad = page.getByRole("region", { name: "숫자 패드" });
+    for (const k of code) await pad.getByRole("button", { name: k, exact: true }).click();
+  };
+
+  test("칸은 4개, [확인] 버튼은 없다", async ({ page }) => {
+    await page.goto("/kiosk");
+    await expect(page.getByLabel("입력한 번호 0자리").locator("> span")).toHaveCount(4);
+    await expect(page.getByRole("button", { name: "확인" })).toHaveCount(0);
+    // 맨 아래 줄은 0(두 칸 너비)과 지우기
+    const pad = page.getByRole("region", { name: "숫자 패드" });
+    const zero = await pad.getByRole("button", { name: "0", exact: true }).boundingBox();
+    const one = await pad.getByRole("button", { name: "1", exact: true }).boundingBox();
+    expect(zero!.width).toBeGreaterThan(one!.width * 1.8);
+  });
+
+  test("1234를 누르면 바로 등원 처리 + 완료 표시, 1분 안에 다시 누르면 기록하지 않음", async ({ page }) => {
+    await page.goto("/kiosk");
+    await press(page, "1234");
+    const status = page.getByRole("status").filter({ hasText: "학생" });
+    await expect(status).toContainText("조나윤 학생");
+    await expect(status).toContainText("등원했습니다");
+    await expect(page.locator('[data-result="in"]')).toBeVisible();
+
+    await press(page, "1234");
+    await expect(page.locator('[data-result="recent"]')).toBeVisible();
+    await expect(page.getByText("방금 처리되었습니다")).toBeVisible();
+  });
+
+  test("없는 번호(9999)는 4자리가 차면 바로 실패 안내", async ({ page }) => {
+    await page.goto("/kiosk");
+    await press(page, "999");
+    // 3자리까지는 기다린다
+    await expect(page.getByLabel("입력한 번호 3자리")).toBeVisible();
+    await press(page, "9");
+    await expect(page.locator('[data-result="unknown"]')).toBeVisible();
+    await expect(page.getByText("등록되지 않은 번호입니다.")).toBeVisible();
+  });
+
+  test("지우기: 누른 숫자를 한 자리씩 지운다", async ({ page }) => {
+    await page.goto("/kiosk");
+    await press(page, "12");
+    await page.getByRole("button", { name: "한 자리 지우기" }).click();
+    await expect(page.getByLabel("입력한 번호 1자리")).toBeVisible();
+  });
 });

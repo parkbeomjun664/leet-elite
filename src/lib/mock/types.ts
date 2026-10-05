@@ -48,7 +48,7 @@ export type Student = {
   status: StudentStatus;
   enrolledOn: string; // YYYY-MM-DD
   leftOn: string | null;
-  attendanceCode: string; // 출결 코드 4~6자리. 전화 뒷 4자리 기본, 재원생끼리 겹치지 않음 (KIOSK)
+  attendanceCode: string; // 출결 코드 4자리 고정(10/5). 전화 뒷 4자리 기본, 재원생끼리 겹치지 않음 (KIOSK)
   programs: string[];
   memo: string;
   classIds: string[];

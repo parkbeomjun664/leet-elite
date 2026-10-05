@@ -33,15 +33,11 @@ test("선생님 홈: 0인 숫자는 회색, 1 이상만 상태색", async ({ pag
   for (const c of nonZeros) expect(c.color).not.toBe(gray);
 });
 
-test("키패드 휴대폰 세로: 제목이 잘리지 않고 비활성 확인 버튼은 분홍이 아니다", async ({ page }) => {
+test("키패드 휴대폰 세로: 제목이 잘리지 않는다", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/kiosk");
   const title = page.locator("header p").first();
   expect(await title.innerText()).toBe("출결"); // 학원 이름은 좁은 화면에서 숨김
   const box = await title.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
   expect(box.scroll).toBeLessThanOrEqual(box.client);
-
-  const confirm = page.getByRole("button", { name: "확인" });
-  await expect(confirm).toBeDisabled();
-  await expect(confirm).toHaveCSS("background-color", "rgb(239, 237, 234)"); // line-soft #EFEDEA (10/5 회색 한 벌)
 });

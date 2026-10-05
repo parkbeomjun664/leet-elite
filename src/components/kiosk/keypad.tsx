@@ -1,18 +1,17 @@
 "use client";
 
-import { Check, Delete } from "lucide-react";
+import { Delete } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 import { formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
-import { longerPrefixesOf, shouldSubmitNow } from "@/lib/kiosk";
+import { KIOSK_CODE_LEN, shouldSubmitNow } from "@/lib/kiosk";
 
 /** 키패드에 넘기는 학생 정보. 코드로 찾는 데 필요한 것만 (전화번호 등은 넘기지 않는다) */
 export type KioskStudent = { id: string; code: string; name: string };
 
-const MIN_LEN = 4;
-const MAX_LEN = 6;
 const RESULT_MS = 4000; // 결과를 보여 주는 시간
+const FILL_SHOW_MS = 180; // 4번째 숫자가 칸에 들어간 것을 잠깐 보여 준 뒤 처리
 const IDLE_CLEAR_MS = 10000; // 누르다 만 번호를 지우기까지 시간
 const REPEAT_BLOCK_MS = 60_000; // 같은 코드를 1분 안에 다시 누르면 기록하지 않음 (KIOSK-04)
 
@@ -47,15 +46,17 @@ function playSound(ctx: AudioContext, sound: Sound) {
     osc.stop(t + dur + 0.02);
   };
   if (sound === "ok") {
-    // 성공: 올라가는 두 음
-    tone(0, 880, 0.13);
-    tone(0.14, 1320, 0.18);
+    // 성공: 도-미-솔로 올라가는 밝은 차임 (마지막 음은 길게 울림)
+    tone(0, 1046.5, 0.14);
+    tone(0.11, 1318.5, 0.14);
+    tone(0.22, 1568, 0.42);
   } else if (sound === "notice") {
     // 이미 처리됨: 가운데 음 하나
     tone(0, 660, 0.22);
   } else {
-    // 오류: 낮은 '삐-'
-    tone(0, 150, 0.4, "square");
+    // 오류: 낮은 '삐-삐' 두 번
+    tone(0, 180, 0.16, "square");
+    tone(0.22, 180, 0.22, "square");
   }
 }
 
@@ -94,14 +95,14 @@ function subscribeClock(onChange: () => void) {
 
 export function KioskKeypad({ students }: { students: KioskStudent[] }) {
   const byCode = useMemo(() => new Map(students.map((s) => [s.code, s])), [students]);
-  // 더 긴 번호의 앞자리인 번호들 (예: 10024가 있으면 1002). 이 번호에서는 바로 처리하지 않고 확인을 기다린다
-  const longerPrefixes = useMemo(() => longerPrefixesOf(students.map((s) => s.code)), [students]);
 
   const time = useSyncExternalStore(subscribeClock, () => nowTimeKST(), () => "");
   const date = useSyncExternalStore(subscribeClock, () => todayKST(), () => "");
 
   const [digits, setDigits] = useState("");
   const [result, setResult] = useState<Result | null>(null);
+  // 같은 결과가 연달아 나와도 효과가 다시 보이도록 결과마다 번호를 붙인다
+  const [resultSeq, setResultSeq] = useState(0);
   // 오늘 누른 기록 (날짜:학생ID → 횟수·마지막 시각). 시제품이라 새로고침하면 사라진다
   // TODO(3단계): kiosk_check(code)가 DB의 오늘 출결 기록으로 등원·하원을 판단한다
   const log = useRef<Record<string, Entry>>({});
@@ -109,6 +110,8 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
   // 빠르게 연달아 누를 때 화면이 다시 그려지기 전의 값을 읽지 않도록, 입력·결과 여부를 ref에도 같이 둔다
   const input = useRef("");
   const showing = useRef(false);
+  // 4칸이 찬 뒤 처리하기까지 잠깐(0.18초) 다른 키를 받지 않는다
+  const processing = useRef<ReturnType<typeof setTimeout> | null>(null);
   function changeDigits(v: string) {
     input.current = v;
     setDigits(v);
@@ -136,6 +139,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
 
   function show(next: Result) {
     changeResult(next);
+    setResultSeq((n) => n + 1);
     if (!soundOn || !audio.current) return;
     const sound: Sound = next.kind === "in" || next.kind === "out" ? "ok" : next.kind === "unknown" ? "error" : "notice";
     try {
@@ -150,7 +154,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     if (!result) return;
     const t = setTimeout(() => changeResult(null), RESULT_MS);
     return () => clearTimeout(t);
-  }, [result]);
+  }, [result, resultSeq]);
 
   // 누르다 만 번호는 잠시 뒤 지운다. 다음 학생 번호가 뒤에 붙지 않게
   useEffect(() => {
@@ -159,32 +163,32 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     return () => clearTimeout(t);
   }, [digits, result]);
 
+  useEffect(() => () => clearTimeout(processing.current ?? undefined), []);
+
   function pressDigit(d: string) {
     wakeAudio();
+    if (processing.current) return;
     // 결과 화면에서 바로 다음 학생이 누르면 결과를 닫고 새로 입력
     const prev = showing.current ? "" : input.current;
     if (showing.current) changeResult(null);
-    if (prev.length >= MAX_LEN) return;
+    if (prev.length >= KIOSK_CODE_LEN) return;
     const next = prev + d;
-
-    // 바로 처리: 번호로 학생이 한 명만 정해지면(더 긴 번호의 앞자리가 아니면) 확인 없이 처리. 6자리가 차도 처리
-    if (shouldSubmitNow(next, byCode, longerPrefixes)) {
-      processCode(next);
-      return;
-    }
     changeDigits(next);
+
+    // 4칸이 다 차면 [확인] 없이 바로 처리 (10/5). 마지막 숫자가 칸에 들어간 것을 잠깐 보여 준 뒤
+    if (shouldSubmitNow(next)) {
+      processing.current = setTimeout(() => {
+        processing.current = null;
+        processCode(next);
+      }, FILL_SHOW_MS);
+    }
   }
 
   function erase() {
     wakeAudio();
+    if (processing.current) return;
     changeResult(null);
     changeDigits(input.current.slice(0, -1));
-  }
-
-  function submit() {
-    wakeAudio();
-    if (input.current.length < MIN_LEN) return;
-    processCode(input.current);
   }
 
   function processCode(code: string) {
@@ -211,14 +215,14 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     else show({ kind: "done", name: student.name });
   }
 
-  // 태블릿에 키보드를 연결해도 쓸 수 있게: 숫자, Backspace, Enter, Esc(모두 지우기)
+  // 태블릿에 키보드를 연결해도 쓸 수 있게: 숫자, Backspace, Esc(모두 지우기)
   const onKey = useEffectEvent((e: KeyboardEvent) => {
     // 키를 누르고 있어 같은 숫자가 반복 입력되는 것은 무시
     if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
     if (/^[0-9]$/.test(e.key)) pressDigit(e.key);
     else if (e.key === "Backspace") erase();
-    else if (e.key === "Enter") submit();
     else if (e.key === "Escape") {
+      if (processing.current) return;
       changeResult(null);
       changeDigits("");
     } else return;
@@ -232,10 +236,6 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // 다른 번호의 앞자리라서 기다리는 중 (예: 1002를 눌렀는데 10024도 있음)
-  const waiting = byCode.has(digits) && longerPrefixes.has(digits);
-
-  const slots = Math.min(MAX_LEN, Math.max(MIN_LEN, digits.length + (digits.length < MAX_LEN ? 1 : 0)));
 
   return (
     <div className="flex min-h-dvh flex-col pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] pl-[env(safe-area-inset-left,0px)]">
@@ -283,8 +283,9 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
           <div
             role="status"
             aria-live="polite"
+            data-result={result?.kind ?? "none"}
             className={cn(
-              "flex min-h-[232px] flex-1 flex-col items-center justify-center rounded-[var(--radius-card)] border px-5 py-6 text-center transition-colors duration-[var(--duration-fast)] md:min-h-[280px]",
+              "relative flex min-h-[232px] flex-1 flex-col items-center justify-center overflow-hidden rounded-[var(--radius-card)] border px-5 py-6 text-center transition-colors duration-[var(--duration-fast)] md:min-h-[280px]",
               !result && "border-line bg-card",
               (result?.kind === "in" || result?.kind === "out") && "border-ok bg-ok-tint",
               result?.kind === "unknown" && "border-brand bg-brand-tint",
@@ -292,67 +293,62 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
             )}
           >
             {result ? (
-              <ResultView result={result} />
+              // 결과마다 새로 그려서 효과가 매번 보이게 (성공: 튀어나옴, 실패: 좌우로 흔들림)
+              <div
+                key={resultSeq}
+                className={cn(
+                  "flex flex-col items-center",
+                  result.kind === "unknown" ? "animate-kiosk-shake" : "animate-kiosk-pop",
+                )}
+              >
+                <ResultView result={result} />
+              </div>
             ) : (
               <>
-                <p className="text-[20px] font-semibold text-sub md:text-[24px]">출결 번호를 누르세요</p>
+                <p className="text-[20px] font-semibold text-sub md:text-[24px]">출결 번호 4자리를 누르세요</p>
                 <div className="mt-5 flex gap-2 md:gap-3" aria-label={`입력한 번호 ${digits.length}자리`}>
-                  {Array.from({ length: slots }, (_, i) => {
+                  {Array.from({ length: KIOSK_CODE_LEN }, (_, i) => {
                     const filled = i < digits.length;
                     const next = i === digits.length;
                     return (
                       <span
                         key={i}
                         className={cn(
-                          "grid h-[72px] w-12 place-items-center rounded-[var(--radius-control)] border-2 bg-card text-[48px] leading-none font-bold tabular sm:w-14 md:h-[88px] md:w-16 md:text-[56px]",
+                          "grid h-[72px] w-14 place-items-center rounded-[var(--radius-control)] border-2 bg-card text-[48px] leading-none font-bold tabular transition-colors duration-[var(--duration-fast)] sm:w-16 md:h-[88px] md:w-[72px] md:text-[56px]",
                           filled ? "border-ink text-ink" : next ? "border-brand" : "border-line",
                         )}
                       >
-                        {filled ? digits[i] : ""}
+                        {/* 숫자가 칸에 톡 들어가는 효과 */}
+                        {filled && (
+                          <span key={`${i}-${digits[i]}`} className="animate-digit-in">
+                            {digits[i]}
+                          </span>
+                        )}
                       </span>
                     );
                   })}
                 </div>
-                <p className="mt-5 text-body text-sub md:text-heading">
-                  {waiting ? (
-                    <>
-                      번호가 더 있으면 이어서 누르고, 끝났으면 <b className="font-bold text-ink">확인</b>을 눌러 주세요
-                    </>
-                  ) : digits.length >= MIN_LEN ? (
-                    <>
-                      번호를 다 눌렀으면 <b className="font-bold text-ink">확인</b>을 눌러 주세요
-                    </>
-                  ) : (
-                    <>번호를 누르면 바로 처리됩니다</>
-                  )}
-                </p>
+                <p className="mt-5 text-body text-sub md:text-heading">4자리를 다 누르면 바로 처리돼요</p>
               </>
             )}
           </div>
           <p className="hidden text-center text-body text-sub md:landscape:block">번호를 잊었으면 선생님께 말씀해 주세요.</p>
         </section>
 
-        {/* 오른쪽(세로 화면에서는 아래): 숫자 패드 */}
+        {/* 오른쪽(세로 화면에서는 아래): 숫자 패드. [확인] 없이 4자리가 차면 처리 (10/5) → 맨 아래 줄은 0(두 칸)과 지우기 */}
         <section aria-label="숫자 패드" className="grid grid-cols-3 grid-rows-4 gap-2 md:gap-3">
           {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
             <Key key={d} onClick={() => pressDigit(d)} className="press-key border border-line bg-card text-[48px] font-bold text-ink md:text-[56px]">
               {d}
             </Key>
           ))}
+          <Key onClick={() => pressDigit("0")} className="press-key col-span-2 border border-line bg-card text-[48px] font-bold text-ink md:text-[56px]">
+            0
+          </Key>
           <Key onClick={erase} aria-label="한 자리 지우기" className="press-key flex items-center justify-center gap-2 border border-line bg-card text-[24px] font-semibold text-ink md:text-[28px]">
             <Delete aria-hidden className="size-7 text-sub md:size-8" />
             {/* 휴대폰 세로는 칸이 좁아 그림만 (화면 읽기는 aria-label) */}
             <span className="hidden sm:inline">지우기</span>
-          </Key>
-          <Key onClick={() => pressDigit("0")} className="press-key border border-line bg-card text-[48px] font-bold text-ink md:text-[56px]">
-            0
-          </Key>
-          <Key
-            onClick={submit}
-            disabled={digits.length < MIN_LEN}
-            className="press bg-brand text-[24px] font-bold text-white active:bg-brand-dark disabled:bg-line-soft disabled:text-sub md:text-[28px]"
-          >
-            확인
           </Key>
         </section>
 
@@ -402,12 +398,29 @@ function ResultView({ result }: { result: Result }) {
 
   return (
     <>
-      {(result.kind === "in" || result.kind === "out") && <Check aria-hidden className="mb-1 size-9 text-ok" strokeWidth={2.5} />}
+      {(result.kind === "in" || result.kind === "out") && <SuccessMark />}
       <p className="text-[40px] leading-tight font-bold text-ink md:text-[48px]">{result.name} 학생</p>
       <p className={cn("mt-1 text-[40px] leading-tight font-bold md:text-[48px]", tone)}>{message}</p>
       {"time" in result && <p className="mt-3 text-[24px] font-semibold text-ink tabular md:text-[28px]">{result.time}</p>}
       {result.kind === "recent" && <p className="mt-3 text-[20px] text-sub md:text-[24px]">같은 번호는 1분 뒤에 다시 누를 수 있습니다.</p>}
       {result.kind === "done" && <p className="mt-3 text-[20px] text-sub md:text-[24px]">잘못 눌렀다면 선생님께 말씀해 주세요.</p>}
     </>
+  );
+}
+
+/**
+ * 등원·하원 완료 표시: 초록 원이 퍼지고 그 안에 체크가 그려진다 (약 0.5초, 크기·투명도·선 길이만 움직임)
+ * 움직임 줄이기 설정이면 바로 완성된 모습
+ */
+function SuccessMark() {
+  return (
+    <span className="relative mb-2 grid size-16 place-items-center md:size-20" aria-hidden>
+      {/* 퍼져 나가는 고리 */}
+      <span className="absolute inset-0 animate-kiosk-ring rounded-full bg-ok/25" />
+      <svg viewBox="0 0 52 52" className="relative size-full">
+        <circle cx="26" cy="26" r="24" className="fill-ok" />
+        <path d="M15 27l7 7 15-16" fill="none" className="animate-check-draw stroke-white" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="36" strokeDashoffset="0" />
+      </svg>
+    </span>
   );
 }

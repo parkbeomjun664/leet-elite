@@ -172,12 +172,22 @@ if (!roster) {
   byId("s020").phone = "010-5559-1020";
 }
 
-// 출결 코드: 전화 뒷 4자리가 기본, 이미 쓰는 코드면 5자리로 바꿔 겹치지 않게 (원장님이 수동으로 지정하는 상황을 흉내)
+// 출결 코드: 4자리 고정 (10/5). 전화 뒷 4자리가 기본, 이미 쓰는 코드면 원장님이 다른 4자리를 지정하는 상황을 흉내 (9 + 학생 번호)
+// 시연용: 가상 데이터에서는 첫 학생(s001)의 코드를 1234로 둔다 (키패드 예시 번호)
 {
-  const used = new Set<string>();
+  const DEMO_CODE = "1234";
+  const used = new Set<string>(roster ? [] : [DEMO_CODE]);
   for (const s of students) {
+    if (!roster && s.id === "s001") {
+      s.attendanceCode = DEMO_CODE;
+      continue;
+    }
     let code = s.phone ? last4(s.phone) : String(1000 + Number(s.id.slice(1)));
-    if (used.has(code)) code = `${code}${s.id.slice(-1)}`;
+    if (used.has(code)) {
+      let n = 9000 + Number(s.id.slice(1));
+      while (used.has(String(n))) n++;
+      code = String(n);
+    }
     s.attendanceCode = code;
     used.add(code);
   }

@@ -75,6 +75,12 @@
   --animate-sheet-up: sheet-up var(--duration-slow) var(--ease-out);
   --animate-fade-in: fade-in var(--duration-base) var(--ease-out);
   --animate-toast-in: toast-in var(--duration-base) var(--ease-out);
+  /* 출결 키패드 전용 (완료 표시만, docs/design.md 6번) */
+  --animate-kiosk-pop: kiosk-pop 320ms var(--ease-out);
+  --animate-kiosk-shake: kiosk-shake 360ms var(--ease-out);
+  --animate-kiosk-ring: kiosk-ring 700ms var(--ease-out) both;
+  --animate-check-draw: check-draw 360ms 120ms var(--ease-out) both;
+  --animate-digit-in: digit-in 140ms var(--ease-out);
 
   @keyframes skeleton {
     50% {
@@ -95,6 +101,47 @@
   @keyframes fade-in {
     from {
       opacity: 0;
+    }
+  }
+  @keyframes kiosk-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.85);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.04);
+    }
+  }
+  @keyframes kiosk-shake {
+    20%,
+    60% {
+      transform: translateX(-10px);
+    }
+    40%,
+    80% {
+      transform: translateX(10px);
+    }
+  }
+  @keyframes kiosk-ring {
+    from {
+      opacity: 1;
+      transform: scale(0.8);
+    }
+    to {
+      opacity: 0;
+      transform: scale(1.9);
+    }
+  }
+  @keyframes check-draw {
+    from {
+      stroke-dashoffset: 36;
+    }
+  }
+  @keyframes digit-in {
+    from {
+      opacity: 0;
+      transform: scale(0.6);
     }
   }
   @keyframes toast-in {

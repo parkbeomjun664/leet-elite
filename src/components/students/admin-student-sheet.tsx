@@ -6,6 +6,7 @@ import { Checkbox, Field, Input, Select, Textarea, TimeSelect } from "@/componen
 import { InfoList } from "@/components/ui/panel";
 import { Sheet } from "@/components/ui/sheet";
 import { WEEKDAY_KO } from "@/lib/date";
+import { isKioskCode } from "@/lib/kiosk";
 import { toast } from "@/lib/toast";
 import { STUDENT_STATUS_LABEL, type ScheduleSlot, type StudentStatus } from "@/lib/mock/types";
 
@@ -78,15 +79,15 @@ export function AdminStudentSheet({
 
   const showLeftOn = form.status === "on_leave" || form.status === "withdrawn";
 
-  // 출결 코드 확인 (STU-02): 4~6자리 숫자, 재원·예정 학생끼리 겹치지 않게
+  // 출결 코드 확인 (STU-02): 숫자 4자리 고정(10/5, 키패드가 4자리에서 바로 처리), 재원·예정 학생끼리 겹치지 않게
   const code = form.attendanceCode.trim();
   // 휴·퇴원으로 바꾸는 학생은 코드를 쓰지 않으므로 겹쳐도 괜찮다
   const codeOwner = showLeftOn ? undefined : others.find(
     (o) => (o.status === "enrolled" || o.status === "pending") && o.attendanceCode === code,
   );
-  const codeError = !/^\d{4,6}$/.test(code)
+  const codeError = !isKioskCode(code)
     ? tried || code.length > 0
-      ? "4~6자리 숫자로 입력해 주세요"
+      ? "숫자 4자리로 입력해 주세요"
       : undefined
     : codeOwner
       ? `${codeOwner.name} 학생이 이미 쓰는 코드입니다`
@@ -104,7 +105,7 @@ export function AdminStudentSheet({
   function submit(e: FormEvent) {
     e.preventDefault();
     setTried(true);
-    if (!form.name.trim() || !/^\d{4,6}$/.test(code) || codeOwner || scheduleError || (showLeftOn && !form.leftOn)) return;
+    if (!form.name.trim() || !isKioskCode(code) || codeOwner || scheduleError || (showLeftOn && !form.leftOn)) return;
     // TODO(DB 연결): 서버에 저장 (휴·퇴원이면 계정 비활성화 여부도 묻기, STU-09)
     onSave({
       ...form,
@@ -262,12 +263,12 @@ export function AdminStudentSheet({
 
         {/* 출결 코드 · 사용 프로그램 · 메모 */}
         <Section title="출결 · 프로그램 · 메모">
-          <Field label="출결 코드" htmlFor="as-code" required error={codeError} hint="키패드에서 누르는 번호. 에듀OK 번호 그대로, 새 학생은 휴대폰 뒷 4자리">
+          <Field label="출결 코드" htmlFor="as-code" required error={codeError} hint="키패드에서 누르는 숫자 4자리. 새 학생은 휴대폰 뒷 4자리, 겹치면 다른 4자리">
             <div className="max-w-40">
               <Input
                 id="as-code"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={4}
                 value={form.attendanceCode}
                 onChange={(e) => set("attendanceCode", e.target.value.replace(/\D/g, ""))}
                 className="tabular"

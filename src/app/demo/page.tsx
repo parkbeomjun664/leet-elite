@@ -11,7 +11,7 @@ const ROLES = [
   { href: "/teacher", label: "선생님 화면", desc: "오늘 출결, 학생 상세, 숙제 등록" },
   { href: "/student", label: "학생 화면 (휴대폰)", desc: "오늘 할 숙제, 제출, 메시지" },
   { href: "/parent", label: "학부모 화면 (휴대폰)", desc: "등원·하원, 숙제, 결석 신청" },
-  { href: "/kiosk", label: "출결 키패드 (학원 입구)", desc: "번호를 누르면 등원·하원. 예: 1004" },
+  { href: "/kiosk", label: "출결 키패드 (학원 입구)", desc: "번호 4자리를 누르면 바로 등원·하원. 예: 1234" },
 ];
 
 export default function DemoPage() {
