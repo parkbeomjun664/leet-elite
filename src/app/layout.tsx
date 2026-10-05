@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 import { usingRealData } from "@/lib/mock/data";
 
 export const metadata: Metadata = {
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ko" className="h-full">
       <body className="min-h-full antialiased">
         {children}
+        <Toaster />
         {/* 실제 명단으로 보는 중이면 화면 아래에 항상 표시 (캡처해서 밖으로 보내는 실수 방지) */}
         {usingRealData && (
           <p className="pointer-events-none fixed top-[68px] right-3 z-50 rounded-[var(--radius-control)] bg-ink/85 px-2.5 py-1 text-xs font-semibold text-white">

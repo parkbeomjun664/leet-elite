@@ -42,5 +42,5 @@ test("키패드 휴대폰 세로: 제목이 잘리지 않고 비활성 확인 �
 
   const confirm = page.getByRole("button", { name: "확인" });
   await expect(confirm).toBeDisabled();
-  await expect(confirm).toHaveCSS("background-color", "rgb(238, 238, 238)"); // line-soft
+  await expect(confirm).toHaveCSS("background-color", "rgb(239, 237, 234)"); // line-soft #EFEDEA (10/5 회색 한 벌)
 });
