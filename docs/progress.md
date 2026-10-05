@@ -4,6 +4,14 @@
 형식: 날짜 / 한 일 / 결정사항 / 남은 일. 최신이 위.
 
 ### 2026-10-05
+- **원장님 요청 1·2·3·3' 화면 수정 (오늘 계획 ①)**
+  - 학생 상세(`student-detail.tsx`): 수업 정보 2열 표(칸 사이 가는 선), 최근 2주 출결 삭제(화면·데이터 계산 모두), 그 자리에 메시지 미니 창(최근 4개, 한 줄 입력, [전체 보기] → `/teacher/messages`)
+  - 원장님 홈: 보강·읽지 않은 메시지 목록의 학생 이름 `font-bold text-ink`
+  - "use client" 함수 props 경고 정리(학생 상세는 클라이언트 부품 안에서만 쓰여 표시를 뗌)
+  - 테스트: 화면 흐름 `e2e/student-detail.spec.ts` 2개 추가 → 화면 3개·단위 21개 통과, tsc·lint(오류 0) 통과. PC·휴대폰(375px) 캡처로 확인
+  - 결정: 미니 창은 [학생] [학부모] 전환을 유지하고 학생 대화방을 먼저 보여 줌. 예약 발송은 전체 대화방에서만 → **원장님 확인 필요**
+  - 문서: screens·requirements(HOME-06)·scope-summary·requests 갱신, code-guide에 10/5 배운 것
+  - 남은 일: `/teacher/messages`는 아직 준비 중 화면(5단계)
 - **개발 환경 점검·정리 (오전, 이어받기 메모 이후)**
   - 점검 결과 전부 ✅: 플러그인 4개, 스킬 3개, Supabase MCP, 키 없음, 라이브러리, lint·단위 21·화면 1·빌드, 읽기 차단, gh(로그인됨). 상태줄은 터미널 Claude Code에서만 보임
   - Supabase MCP: 브라우저 인증이 Claude Code의 `resource` 인코딩 문제(주소의 `?`가 두 번 인코딩됨)로 실패 → 개인 액세스 토큰 방식으로 바꿈. 토큰은 윈도우 사용자 환경변수 `SUPABASE_ACCESS_TOKEN`에만(Read-only, dev 프로젝트만, 30일). `.mcp.json`에는 `${SUPABASE_ACCESS_TOKEN}` 변수 이름만

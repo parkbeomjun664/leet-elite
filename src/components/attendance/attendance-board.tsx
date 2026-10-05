@@ -28,6 +28,7 @@ type Props = {
   days: StudentDay[];
   details: Record<string, StudentDetailData>;
   homeworkHref: string;
+  messagesHref: string;
   /** 주소로 바로 열 학생 (?student=s010&mode=attendance) */
   initialOpen?: { studentId: string; mode: "detail" | "attendance" } | null;
 };
@@ -52,7 +53,7 @@ const STATUS_FILTERS: { key: "all" | DayStatus; label: string; color: string }[]
   { key: "absent", label: "결석", color: "text-brand" },
 ];
 
-export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classes, days: initialDays, details, homeworkHref, initialOpen = null }: Props) {
+export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classes, days: initialDays, details, homeworkHref, messagesHref, initialOpen = null }: Props) {
   // null = 아직 모름(첫 화면). 이때는 휴대폰용 창을 띄우지 않는다
   const media = useMediaReady("(min-width: 1024px)");
   const isDesktop = media === true;
@@ -286,6 +287,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
                   day={focusDay}
                   data={details[focusDay.student.id]}
                   homeworkHref={homeworkHref}
+                  messagesHref={messagesHref}
                   onOpenAttendance={() => openAttendance(focusDay.student.id)}
                 />
               </div>
@@ -304,6 +306,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
             day={focusDay}
             data={details[focusDay.student.id]}
             homeworkHref={homeworkHref}
+            messagesHref={messagesHref}
             onOpenAttendance={() => openAttendance(focusDay.student.id)}
           />
         </Sheet>

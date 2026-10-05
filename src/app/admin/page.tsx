@@ -253,7 +253,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                       {m.start}~{end}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="text-sm font-semibold">{s?.name ?? "알 수 없음"}</span>
+                      <span className="text-sm font-bold text-ink">{s?.name ?? "알 수 없음"}</span>
                       <span className="ml-2 text-sm text-sub">{[s?.school, s?.grade].filter(Boolean).join(" ")}</span>
                       <span className="block truncate text-sm text-sub">
                         {m.reason}
@@ -296,7 +296,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                         {day === date ? time : `${day.slice(5).replace("-", "/")} ${time}`}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="text-sm font-semibold">{s?.name ?? "알 수 없음"}</span>
+                        <span className="text-sm font-bold text-ink">{s?.name ?? "알 수 없음"}</span>
                         <span className="ml-2 text-sm text-sub">{m.senderName}</span>
                         <span className="block truncate text-[15px]">{m.body.split("\n")[0]}</span>
                       </span>
