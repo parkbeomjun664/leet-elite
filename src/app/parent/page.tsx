@@ -126,17 +126,17 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
 
       {/* 오늘 등원·하원 (ATT-08): 화면에서 유일한 강조 블록 */}
       {/* 상태별 바탕: 등원 → 초록, 결석 → 분홍, 그 밖에는 흰 카드 (status-colors.ts) */}
-      <section aria-label="오늘 등원·하원" className={cn("rounded-[12px] p-5", STATUS_CARD_CLASS[statusColor(day.status)])}>
+      <section aria-label="오늘 등원·하원" className={cn("rounded-[var(--radius-mcard)] p-5", STATUS_CARD_CLASS[statusColor(day.status)])}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[13px] text-hint">
+          <p className="text-caption text-sub">
             {student.name} · 오늘 {formatDateKo(date).slice(6)}
           </p>
           <DayStatusBadge status={day.status} />
         </div>
-        <h1 className="mt-2 text-[22px] leading-snug font-bold text-ink tabular">{hero.title}</h1>
-        {hero.detail && <p className="mt-1 text-[13px] text-hint tabular">{hero.detail}</p>}
+        <h1 className="mt-2 text-title leading-snug font-bold text-ink tabular">{hero.title}</h1>
+        {hero.detail && <p className="mt-1 text-caption text-sub tabular">{hero.detail}</p>}
         {/* 결석 신청 (ATT-09) TODO: 날짜·사유 입력 창 → 원장님·담당 선생님 알림 */}
-        <button type="button" className="mt-4 -mb-2 flex min-h-12 items-center text-[15px] font-medium text-ink underline underline-offset-4">
+        <button type="button" className="mt-4 -mb-2 flex min-h-12 items-center text-body font-medium text-ink underline underline-offset-4">
           결석 신청하기 ›
         </button>
       </section>
@@ -146,7 +146,7 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
       {/* 숙제·제출 상태 (HW-06, HW-10) */}
       <MobileSection
         title={`숙제 ${homeworkItems.length}`}
-        actions={pending > 0 && <span className="text-[13px] font-medium text-warn">미제출 {pending}</span>}
+        actions={pending > 0 && <span className="text-caption font-medium text-warn">미제출 {pending}</span>}
       >
         <HomeworkList items={homeworkItems} />
       </MobileSection>
@@ -161,10 +161,10 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
               <li
                 key={wd}
                 aria-current={isToday ? "date" : undefined}
-                className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)]", isToday && "bg-mpage")}
+                className={cn("flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)]", isToday && "bg-bg")}
               >
-                <span className={cn("text-[13px]", isToday ? "font-bold text-ink" : "text-hint")}>{WEEKDAY_KO[wd]}</span>
-                <span className={cn("text-[15px] tabular", slot ? "font-medium text-ink" : "text-hint/60")}>{slot ? slot.start : "–"}</span>
+                <span className={cn("text-caption", isToday ? "font-bold text-ink" : "text-sub")}>{WEEKDAY_KO[wd]}</span>
+                <span className={cn("text-body tabular", slot ? "font-medium text-ink" : "text-faint")}>{slot ? slot.start : "–"}</span>
               </li>
             );
           })}
@@ -180,7 +180,7 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
       <MobileSection
         title="메시지"
         actions={
-          <Link href="/parent/messages" className="-my-2 flex min-h-11 items-center gap-2 text-[13px] font-medium text-ink/70">
+          <Link href="/parent/messages" className="-my-2 flex min-h-11 items-center gap-2 text-caption font-medium text-ink/70">
             {unread > 0 && <StatusBadge status="upcoming">새 메시지 {unread}</StatusBadge>}
             전체 보기
           </Link>
@@ -229,10 +229,10 @@ function NewAlerts({ items }: { items: AlertItem[] }) {
           const body = (
             <>
               <span className={cn("size-2 shrink-0 rounded-full", DOT[a.tone])} aria-hidden />
-              <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{a.text}</span>
-              {a.time && <span className="shrink-0 text-[13px] text-hint tabular">{a.time}</span>}
+              <span className="min-w-0 flex-1 truncate text-body font-medium text-ink">{a.text}</span>
+              {a.time && <span className="shrink-0 text-caption text-sub tabular">{a.time}</span>}
               {a.href && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-hint/70">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-faint">
                   <path d="m9 6 6 6-6 6" />
                 </svg>
               )}
@@ -241,7 +241,7 @@ function NewAlerts({ items }: { items: AlertItem[] }) {
           return (
             <li key={a.key} className={ROW_DIVIDER}>
               {a.href ? (
-                <Link href={a.href} className="flex min-h-14 items-center gap-3 px-5 py-4 active:bg-mpage">
+                <Link href={a.href} className="flex min-h-14 items-center gap-3 px-5 py-4 active:bg-bg">
                   {body}
                 </Link>
               ) : (

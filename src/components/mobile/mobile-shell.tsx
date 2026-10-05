@@ -31,7 +31,7 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
     href === home ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <div className="min-h-dvh bg-mpage">
+    <div className="min-h-dvh bg-bg">
       {/* 머리줄: 로고 · 학원 이름 · 사용자 */}
       <header className="sticky top-0 z-30 border-b border-line-soft bg-card pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex h-14 max-w-[560px] items-center justify-between gap-3 px-4">
@@ -39,9 +39,9 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
             {/* 여백을 잘라 낸 투명 로고 (scripts/make-icons.mjs 로 생성) */}
             <Image src="/brand/leet-mark.png" alt="" width={407} height={512} className="h-7 w-auto" />
             <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>
-            <span className="text-[15px] font-semibold text-ink">영어학원</span>
+            <span className="text-body font-semibold text-ink">영어학원</span>
           </Link>
-          <div className="min-w-0 truncate text-[15px] text-sub">{userLabel}</div>
+          <div className="min-w-0 truncate text-body text-sub">{userLabel}</div>
         </div>
       </header>
 
@@ -59,8 +59,8 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
                   href={tab.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex h-full flex-col items-center justify-center gap-1 text-[11px]",
-                    active ? "font-bold text-tab-on" : "font-medium text-tab-off hover:text-tab-on",
+                    "press flex h-full flex-col items-center justify-center gap-1 text-[11px]",
+                    active ? "font-bold text-ink" : "font-medium text-faint hover:text-ink",
                   )}
                 >
                   <TabIcon index={i} />
@@ -126,7 +126,7 @@ export function MobileSection({ title, actions, children }: { title: ReactNode; 
   return (
     <section>
       <div className="mb-2 flex min-h-7 items-center justify-between gap-2 px-1">
-        <h2 className="text-sm font-semibold text-ink/80">{title}</h2>
+        <h2 className="text-body font-semibold text-ink">{title}</h2>
         {actions}
       </div>
       {children}
@@ -136,12 +136,12 @@ export function MobileSection({ title, actions, children }: { title: ReactNode; 
 
 /** 목록이 비었을 때 한 줄 */
 export function MobileEmpty({ children }: { children: ReactNode }) {
-  return <p className={cn(MCARD, "text-[15px] text-hint")}>{children}</p>;
+  return <p className={cn(MCARD, "text-body text-sub")}>{children}</p>;
 }
 
 function Chevron() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-hint/70">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-faint">
       <path d="m9 6 6 6-6 6" />
     </svg>
   );
@@ -158,7 +158,7 @@ export function DayStatusBadge({ status, className }: { status: DayStatus; class
 /** 휴대폰 화면 배지: 상태 색 토큰 (status-colors.ts의 규칙 하나로) */
 export function StatusBadge({ status, className, children }: { status: MobileStatus; className?: string; children: ReactNode }) {
   return (
-    <span className={cn("inline-flex h-7 items-center rounded-[4px] px-2 text-sm font-semibold whitespace-nowrap", STATUS_BADGE_CLASS[statusColor(status)], className)}>
+    <span className={cn("inline-flex h-[26px] items-center rounded-[var(--radius-badge)] px-2 text-caption font-semibold whitespace-nowrap", STATUS_BADGE_CLASS[statusColor(status)], className)}>
       {children}
     </span>
   );
@@ -181,14 +181,14 @@ export function HomeworkList({ items }: { items: HomeworkItem[] }) {
       {items.map((hw) => (
         <li key={hw.id} className={ROW_DIVIDER}>
           {/* TODO(HW-06): 숙제 상세·제출 화면으로 이동 */}
-          <button type="button" className="flex min-h-14 w-full items-center gap-3 px-5 py-4 text-left active:bg-mpage">
+          <button type="button" className="flex min-h-14 w-full items-center gap-3 px-5 py-4 text-left active:bg-bg">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="truncate text-[15px] font-medium text-ink">{hw.title}</span>
+                <span className="truncate text-body font-medium text-ink">{hw.title}</span>
               </div>
-              <p className="mt-1 text-[13px] text-hint tabular">
+              <p className="mt-1 text-caption text-sub tabular">
                 {hw.daily ? "매일 숙제" : "일반 숙제"} · {hw.dateLabel}
-                {hw.hasTeacherComment && <span className="ml-1.5 text-info">· 선생님 코멘트</span>}
+                {hw.hasTeacherComment && <span className="ml-1.5 font-medium text-ink">· 선생님 코멘트</span>}
               </p>
             </div>
             <StatusBadge status={hw.submitted ? "submitted" : "missing"}>{hw.submitted ? "제출함" : "미제출"}</StatusBadge>
@@ -217,10 +217,10 @@ export function MakeupList({ items }: { items: MakeupItem[] }) {
       {items.map((m) => (
         <li key={m.id} className={cn(ROW_DIVIDER, "flex min-h-14 items-center gap-3 px-5 py-4")}>
           <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-medium text-ink tabular">
+            <p className="text-body font-medium text-ink tabular">
               {m.dateLabel} {m.timeLabel}
             </p>
-            <p className="mt-1 truncate text-[13px] text-hint">
+            <p className="mt-1 truncate text-caption text-sub">
               {m.reason}
               {m.teacherNickname && ` · ${m.teacherNickname} 선생님`}
             </p>
@@ -248,15 +248,15 @@ export function MessageList({ items, href }: { items: MessageItem[]; href: strin
     <ul className={MCARD_LIST}>
       {items.map((m) => (
         <li key={m.id} className={ROW_DIVIDER}>
-          <Link href={href} className="flex min-h-14 items-center gap-3 px-5 py-4 active:bg-mpage">
+          <Link href={href} className="flex min-h-14 items-center gap-3 px-5 py-4 active:bg-bg">
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
-                <span className={cn("truncate text-[15px] font-medium", m.fromMe ? "text-hint" : "text-ink")}>
+                <span className={cn("truncate text-body font-medium", m.fromMe ? "text-sub" : "text-ink")}>
                   {m.fromMe ? "나" : m.senderName}
                 </span>
-                <span className="shrink-0 text-[13px] text-hint tabular">{m.timeLabel}</span>
+                <span className="shrink-0 text-caption text-sub tabular">{m.timeLabel}</span>
               </div>
-              <p className={cn("mt-1 line-clamp-2 text-[15px]", m.unread ? "text-ink" : "text-hint")}>{m.body}</p>
+              <p className={cn("mt-1 line-clamp-2 text-body", m.unread ? "text-ink" : "text-sub")}>{m.body}</p>
             </div>
             {m.unread && <span className="size-2 shrink-0 rounded-full bg-ink" aria-label="읽지 않음" />}
             <Chevron />

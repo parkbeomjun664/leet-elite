@@ -23,7 +23,7 @@ describe("휴대폰 화면 상태 색", () => {
     expect(statusColor("no_class")).toBe("neutral");
   });
   it("학부모 등원 카드: 수업 전은 흰 카드, 등원은 초록, 결석은 분홍 바탕", () => {
-    expect(STATUS_CARD_CLASS[statusColor("upcoming")]).toContain("bg-surface");
+    expect(STATUS_CARD_CLASS[statusColor("upcoming")]).toBe("bg-card");
     expect(STATUS_CARD_CLASS[statusColor("checked_in")]).toBe("bg-status-ok-bg");
     expect(STATUS_CARD_CLASS[statusColor("absent")]).toBe("bg-status-alert-bg");
   });

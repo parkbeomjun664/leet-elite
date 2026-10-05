@@ -26,13 +26,13 @@ export const STATUS_BADGE_CLASS: Record<StatusColor, string> = {
   ok: "bg-status-ok-bg text-status-ok-fg",
   warn: "bg-status-warn-bg text-status-warn-fg",
   alert: "bg-status-alert-bg text-status-alert-fg",
-  neutral: "bg-border text-ink/60",
+  neutral: "bg-line-soft text-sub",
 };
 
 /** 학부모 화면 맨 위 "오늘 등원" 카드 바탕: 등원 → 초록, 결석 → 분홍, 그 밖에는 흰 카드 */
 export const STATUS_CARD_CLASS: Record<StatusColor, string> = {
   ok: "bg-status-ok-bg",
-  warn: "bg-surface border border-border",
+  warn: "bg-card",
   alert: "bg-status-alert-bg",
-  neutral: "bg-surface border border-border",
+  neutral: "bg-card",
 };

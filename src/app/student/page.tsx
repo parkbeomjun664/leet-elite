@@ -85,27 +85,27 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
     <div className="space-y-7">
       {/* 오늘 할 숙제 (HW-06): 화면에서 유일한 강조 블록 */}
       {/* 흰 카드 + 1px 테두리 + 왼쪽 4px 브랜드 강조선 (분홍 바탕 대신, 10/2) */}
-      <section aria-label="오늘 할 숙제" className="rounded-[12px] border border-border border-l-4 border-l-brand bg-surface p-5">
+      <section aria-label="오늘 할 숙제" className="rounded-[var(--radius-mcard)] border border-line border-l-4 border-l-brand bg-card p-5">
         {first ? (
           <>
-            <p className="text-[13px] text-hint">
+            <p className="text-caption text-sub">
               오늘 할 숙제 <span className="font-medium text-ink tabular">{pendingItems.length}개</span>
             </p>
-            <h1 className="mt-2 text-[22px] leading-snug font-bold text-ink">{first.title}</h1>
-            <p className="mt-1 text-[13px] text-hint tabular">
+            <h1 className="mt-2 text-title leading-snug font-bold text-ink">{first.title}</h1>
+            <p className="mt-1 text-caption text-sub tabular">
               {first.daily ? "매일 숙제" : "일반 숙제"} · {first.dateLabel}에 받음
             </p>
             {/* TODO(HW-06): 사진·글을 올리는 제출 화면으로 이동 */}
-            <Button variant="primary" size="lg" className="mt-5 h-[52px] w-full text-base">
+            <Button variant="primary" size="lg" className="mt-5 w-full">
               제출하기
             </Button>
             {pendingItems.length > 1 && (
               <ul className="mt-4 space-y-1">
                 {pendingItems.slice(1).map((hw) => (
                   <li key={hw.id} className="flex min-h-12 items-center justify-between gap-3">
-                    <span className="truncate text-[15px] font-medium text-ink">{hw.title}</span>
+                    <span className="truncate text-body font-medium text-ink">{hw.title}</span>
                     {/* TODO(HW-06): 제출 화면 */}
-                    <button type="button" className="h-10 shrink-0 px-2 text-[15px] font-medium text-ink underline underline-offset-4">
+                    <button type="button" className="h-10 shrink-0 px-2 text-body font-medium text-ink underline underline-offset-4">
                       제출
                     </button>
                   </li>
@@ -115,8 +115,8 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
           </>
         ) : (
           <>
-            <p className="text-[13px] text-hint">오늘 할 숙제</p>
-            <h1 className="mt-2 text-[22px] leading-snug font-bold text-ink">
+            <p className="text-caption text-sub">오늘 할 숙제</p>
+            <h1 className="mt-2 text-title leading-snug font-bold text-ink">
               {homeworkItems.length > 0 ? "모두 냈어요" : "받은 숙제가 없어요"}
             </h1>
           </>
@@ -127,19 +127,19 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
       <MobileSection title={`오늘 · ${formatDateKo(date).slice(6)}`} actions={<DayStatusBadge status={day.status} />}>
         <div className={MCARD}>
         {day.slot ? (
-          <p className="text-[22px] leading-tight font-bold text-ink tabular">
+          <p className="text-title leading-tight font-bold text-ink tabular">
             {day.slot.start}~{addMinutes(day.slot.start, day.slot.durationMin)}
           </p>
         ) : (
-          <p className="text-[15px] font-medium text-ink">오늘은 수업이 없어요</p>
+          <p className="text-body font-medium text-ink">오늘은 수업이 없어요</p>
         )}
         {day.record?.checkInAt && (
-          <p className="mt-1.5 text-[13px] text-hint tabular">
+          <p className="mt-1.5 text-caption text-sub tabular">
             등원 {day.record.checkInAt} · 하원 {day.record.checkOutAt ?? "–"}
           </p>
         )}
         {day.record?.status === "absent" && (
-          <p className="mt-1.5 text-[13px] text-hint">결석{day.record.memo ? ` · ${day.record.memo}` : ""}</p>
+          <p className="mt-1.5 text-caption text-sub">결석{day.record.memo ? ` · ${day.record.memo}` : ""}</p>
         )}
         </div>
         {/* 같은 묶음 안의 카드 사이는 12px */}
@@ -161,7 +161,7 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
       </MobileSection>
 
       {/* 내 정보: 맨 아래 한 줄 */}
-      <p className="px-1 pb-2 text-[13px] leading-relaxed text-hint">
+      <p className="px-1 pb-2 text-caption leading-relaxed text-sub">
         {student.name} · {[student.school, student.grade, className].filter(Boolean).join(" · ")}
         {student.programs.length > 0 && (
           <>
