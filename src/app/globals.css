@@ -75,6 +75,8 @@
   --animate-sheet-up: sheet-up var(--duration-slow) var(--ease-out);
   --animate-fade-in: fade-in var(--duration-base) var(--ease-out);
   --animate-toast-in: toast-in var(--duration-base) var(--ease-out);
+  /* 버튼 완료 체크: 작게 시작해 살짝 넘쳤다 자리 잡음 */
+  --animate-pop-in: pop-in var(--duration-slow) cubic-bezier(0.34, 1.56, 0.64, 1) both;
   /* 출결 키패드 전용 (완료 표시만, docs/design.md 6번) */
   --animate-kiosk-pop: kiosk-pop 320ms var(--ease-out);
   --animate-kiosk-shake: kiosk-shake 360ms var(--ease-out);
@@ -150,6 +152,12 @@
     from {
       opacity: 0;
       transform: scale(0.6);
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.5);
     }
   }
   @keyframes toast-in {

@@ -7,27 +7,34 @@ test.use({ viewport: { width: 1440, height: 900 } });
 
 const failSaves = (page: Page) => page.addInitScript(() => (window.__leetFailSave = true));
 const tile = (page: Page, name: string) => page.locator("main li").filter({ has: page.getByText(name, { exact: true }) });
+// 가상 시간표는 요일마다 다르므로 이름을 정해 두지 않고, 지금 [하원] 버튼이 있는(등원한) 첫 학생을 고른다
+async function attendingName(page: Page) {
+  const first = page.locator("main li").filter({ has: page.getByRole("button", { name: "하원", exact: true }) }).first();
+  return first.locator("span.text-heading").first().innerText();
+}
 
 test("하원: 누르는 즉시 하원, 저장되면 성공 토스트", async ({ page }) => {
   await gotoReady(page, "/teacher?at=16:00");
-  const t = tile(page, "표승현");
+  const name = await attendingName(page);
+  const t = tile(page, name);
   await t.getByRole("button", { name: "하원" }).click();
   // 저장(0.4초)이 끝나기 전에 이미 바뀐다
   await expect(t).toContainText("하원 16:00", { timeout: 200 });
   await expect(t.getByRole("button", { name: "출결" })).toBeVisible();
   await expect(page.getByTestId("toast")).toHaveAttribute("data-kind", "success");
-  await expect(page.getByTestId("toast")).toContainText("표승현 하원 처리했어요");
+  await expect(page.getByTestId("toast")).toContainText(`${name} 하원 처리했어요`);
   await expect(t).toContainText("하원 16:00");
 });
 
 test("하원: 저장이 실패하면 등원으로 되돌리고 실패 토스트", async ({ page }) => {
   await failSaves(page);
   await gotoReady(page, "/teacher?at=16:00");
-  const t = tile(page, "표승현");
+  const name = await attendingName(page);
+  const t = tile(page, name);
   await t.getByRole("button", { name: "하원" }).click();
   await expect(t).toContainText("하원 16:00", { timeout: 200 });
   await expect(page.getByTestId("toast")).toHaveAttribute("data-kind", "error");
-  await expect(page.getByTestId("toast")).toContainText("표승현 하원 처리하지 못했어요");
+  await expect(page.getByTestId("toast")).toContainText(`${name} 하원 처리하지 못했어요`);
   await expect(t).not.toContainText("하원 16:00");
   await expect(t.getByRole("button", { name: "하원" })).toBeVisible();
 });
@@ -62,7 +69,7 @@ test("상단 숫자: 하원하면 등원 숫자가 줄고 하원 숫자가 는�
   // "미등원"과 헷갈리지 않게 이름표가 정확히 같은 칸
   const num = (label: string) => group.getByRole("button").filter({ has: page.getByText(label, { exact: true }) }).locator("span").first();
   const before = Number(await num("등원").innerText());
-  await tile(page, "표승현").getByRole("button", { name: "하원" }).click();
+  await tile(page, await attendingName(page)).getByRole("button", { name: "하원" }).click();
   await expect(num("등원")).toHaveText(String(before - 1));
   await expect(num("하원")).toHaveText("1");
 });

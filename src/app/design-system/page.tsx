@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field, Input, Select } from "@/components/ui/field";
-import { CardsDemo, KioskDoneDemo, NumbersDemo, OptimisticDemo, SheetDemo, SkeletonDemo, TabsDemo, TimeSelectDemo, ToastDemo } from "./demos";
+import { ButtonStatesDemo, CardsDemo, KioskDoneDemo, NumbersDemo, OptimisticDemo, SheetDemo, SkeletonDemo, TabsDemo, TimeSelectDemo, ToastDemo } from "./demos";
 
 export const metadata: Metadata = { title: "디자인 시스템" };
 
@@ -42,6 +42,17 @@ const TONES = [
   { who: "학생", tone: "할 일 중심", rule: "맨 위 오늘 할 숙제 + [제출하기] 하나" },
   { who: "학부모", tone: "상태 한눈에", rule: "맨 위 한 문장 \"14:38 등원했어요\" + 상태색 카드" },
   { who: "키패드", tone: "초대형", rule: "숫자 48px 이상, 버튼 72px 이상. 누름 반응·완료 표시만 움직임" },
+];
+
+const PRINCIPLES = [
+  { name: "한 화면 한 목적", rule: "핵심 정보 1개, 주요 행동 1개만 강조. 학생은 오늘 할 숙제, 학부모는 오늘 등원, 선생님은 수업 전·미등원 학생, 키패드는 번호 입력" },
+  { name: "숫자 먼저", rule: "핵심 숫자는 크게(숫자 24), 설명은 작은 회색 라벨. 긴 설명은 접어 두고 펼치기" },
+  { name: "여백으로 묶기", rule: "구분선·테두리 대신 여백과 묶음으로 구역을 나눈다" },
+  { name: "세 폭", rule: "375(휴대폰) · 768(태블릿·키패드) · 1280(PC)에서 깨짐·가로 스크롤 없이. 터치 영역 44px 이상" },
+  { name: "휴대폰 주 버튼", rule: "화면 아래 고정(엄지 자리), 아이폰 아래 여백(safe-area) 반영" },
+  { name: "하단 시트", rule: "휴대폰 상세·입력은 아래에서 올라오는 시트, 아래로 끌어서 닫기 (처음 쓰는 화면에서 만든다)" },
+  { name: "화면 전환", rule: "페이지 이동 때 살짝 밀려오는 전환 (지원하는 브라우저만, 아니면 바로 바뀜)" },
+  { name: "흔들림 0", rule: "이미지·로딩 자리는 크기를 미리 잡고 스켈레톤으로. 목표 LCP 2.5초 · CLS 0.1 · 반응 0.2초 이하" },
 ];
 
 export default function DesignSystemPage() {
@@ -223,6 +234,10 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
+      <Section title="버튼 상태" note="기본 · 누름 · 로딩 · 완료 · 비활성 5가지. 로딩·완료 중에도 버튼 크기는 그대로이고 다시 눌리지 않습니다.">
+        <ButtonStatesDemo />
+      </Section>
+
       <Section title="입력칸" note="관리 화면 40px, 휴대폰·로그인 48px. 초점은 진한 테두리 + 옅은 링, 오류는 빨강.">
         <div className="grid gap-5 md:grid-cols-3">
           <Field label="이름" htmlFor="ds-name">
@@ -286,6 +301,20 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
+      <Section title="에러 · 없는 화면" note="무엇이 안 됐는지 한 문장 + 할 일 + 다음 행동 버튼. 사과하지 않고 빨강 글씨를 쓰지 않습니다.">
+        <ul className="space-y-2 text-body">
+          <li>
+            화면 오류: <b>화면을 불러오지 못했어요</b> → [다시 시도] [처음 화면으로]
+          </li>
+          <li>
+            없는 주소: <b>찾는 화면이 없어요</b> → [처음 화면으로]{" "}
+            <a href="/design-system/없는-화면" className="text-sub underline">
+              직접 보기
+            </a>
+          </li>
+        </ul>
+      </Section>
+
       <Section title="토스트" note="아래 가운데, 한 번에 하나. 성공 2.5초, 실패 4초. 버튼 이름과 같은 말로.">
         <ToastDemo />
       </Section>
@@ -325,6 +354,17 @@ export default function DesignSystemPage() {
 
       <Section title="출결 키패드 완료 화면" note="번호 4자리가 차면 바로 처리되고, 등원·하원이면 화면 전체가 이렇게 바뀝니다. 2.5초 뒤 또는 화면을 누르면 키패드로 돌아갑니다.">
         <KioskDoneDemo />
+      </Section>
+
+      <Section title="화면 원칙 (10/6 보강)" note="새 화면과 DB를 연결하는 화면에 적용합니다. 자세한 것은 docs/design.md 8번.">
+        <ul className="divide-y divide-line-soft">
+          {PRINCIPLES.map((p) => (
+            <li key={p.name} className="grid gap-1 py-3 sm:grid-cols-[180px_1fr]">
+              <b className="text-heading">{p.name}</b>
+              <span className="text-body text-sub">{p.rule}</span>
+            </li>
+          ))}
+        </ul>
       </Section>
 
       <Section title="사용자별 톤" note="같은 부품, 다른 밀도.">

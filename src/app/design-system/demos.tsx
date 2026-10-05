@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { KioskDoneScreen, type DoneResult } from "@/components/kiosk/result-overlay";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonState } from "@/components/ui/button";
 import { TimeSelect } from "@/components/ui/field";
 import { FilterRow, Segment, Tabs } from "@/components/ui/segment";
 import { Sheet, useSheetClose } from "@/components/ui/sheet";
@@ -308,6 +308,50 @@ export function KioskDoneDemo() {
         ) : (
           <p className="grid h-full place-items-center text-body text-sub">위 버튼을 눌러 보세요</p>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** 버튼 5가지 상태: 기본 · 누름 · 로딩 · 완료 · 비활성. 누르면 로딩 → 완료 → 기본으로 돌아온다 */
+export function ButtonStatesDemo() {
+  const [state, setState] = useState<ButtonState>("idle");
+  const run = () => {
+    setState("loading");
+    window.setTimeout(() => setState("done"), 1200);
+    window.setTimeout(() => setState("idle"), 2200);
+  };
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end gap-4">
+        {(
+          [
+            ["기본", "idle", false],
+            ["로딩", "loading", false],
+            ["완료", "done", false],
+            ["비활성", "idle", true],
+          ] as const
+        ).map(([label, s, disabled]) => (
+          <div key={label} className="flex flex-col items-start gap-1.5">
+            <span className="text-caption text-sub">{label}</span>
+            <Button variant="primary" state={s} disabled={disabled}>
+              로그인
+            </Button>
+          </div>
+        ))}
+        <div className="flex flex-col items-start gap-1.5">
+          <span className="text-caption text-sub">누름</span>
+          <span className="text-caption text-sub">누르는 동안 0.97로 줄어듦</span>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 border-t border-line-soft pt-5">
+        <Button variant="primary" size="lg" state={state} onClick={run} data-testid="button-state-demo">
+          출결 저장
+        </Button>
+        <Button size="lg" state={state} onClick={run}>
+          보조 버튼
+        </Button>
+        <span className="text-caption text-sub">← 눌러 보세요. 로딩·완료 중에도 버튼 크기가 그대로이고, 다시 눌리지 않습니다</span>
       </div>
     </div>
   );
