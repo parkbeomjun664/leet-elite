@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { gotoReady } from "./ready";
 
 // 원장님 요청 1·2·3·3' (10/2): 선생님 화면 학생 상세, 원장님 홈 학생 이름
 test.describe("선생님 화면 학생 상세", () => {
   test.use({ viewport: { width: 1440, height: 900 } }); // PC: 오른쪽 칸에 학생 상세가 고정으로 보인다
 
   test("수업 정보 2열 표, 최근 2주 출결 없음, 메시지 미니 창", async ({ page }) => {
-    await page.goto("/teacher?at=16:00");
+    await gotoReady(page, "/teacher?at=16:00");
     const panel = page.locator("aside").filter({ hasText: "수업 정보" });
     await expect(panel).toBeVisible();
 
@@ -39,7 +40,7 @@ test.describe("선생님 화면 학생 상세", () => {
 });
 
 test("원장님 홈: 확인할 일과 오늘 학원 숫자", async ({ page }) => {
-  await page.goto("/admin?at=16:00");
+  await gotoReady(page, "/admin?at=16:00");
   const todo = page.locator("section").filter({ has: page.getByRole("heading", { name: "확인할 일" }) });
   const items = todo.locator("li");
   const count = await items.count();
@@ -54,7 +55,7 @@ test("원장님 홈: 확인할 일과 오늘 학원 숫자", async ({ page }) =>
 });
 
 test("원장님 홈: 학생 이름은 굵고 검게", async ({ page }) => {
-  await page.goto("/admin?at=16:00");
+  await gotoReady(page, "/admin?at=16:00");
   const name = page.locator("span.font-bold.text-ink").first();
   await expect(name).toBeVisible();
   await expect(name).toHaveCSS("font-weight", "700");

@@ -48,3 +48,65 @@ export function SkeletonCards({ count = 6, className }: { count?: number; classN
     </SkeletonGroup>
   );
 }
+
+/** 선생님 홈 모양: 날짜 · 숫자 줄 · 학생 칸 격자 + 오른쪽 상세 칸 (PC) */
+export function SkeletonBoard() {
+  return (
+    <SkeletonGroup className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_500px]">
+      <div className="space-y-5">
+        <Skeleton className="h-7 w-56" />
+        <div className="grid grid-cols-6 gap-3 border-b border-line-soft pb-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <Skeleton className="h-6 w-8" />
+              <Skeleton className="h-3 w-10" />
+            </div>
+          ))}
+        </div>
+        <Skeleton className="h-9 w-72" />
+        <SkeletonCards count={6} />
+      </div>
+      <div className="hidden space-y-4 rounded-[var(--radius-card)] border border-line-soft p-5 lg:block">
+        <Skeleton className="h-5 w-24" />
+        <Skeleton className="h-3 w-40" />
+        <Skeleton className="mt-6 h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    </SkeletonGroup>
+  );
+}
+
+/** 관리 화면 기본 모양: 제목 · 두 묶음 목록 */
+export function SkeletonPage() {
+  return (
+    <SkeletonGroup className="space-y-8">
+      <div className="space-y-2 border-b border-line-soft pb-4">
+        <Skeleton className="h-7 w-56" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+      <div className="grid gap-8 lg:grid-cols-2">
+        <SkeletonRows rows={4} />
+        <SkeletonRows rows={4} />
+      </div>
+    </SkeletonGroup>
+  );
+}
+
+/** 휴대폰 화면 모양: 맨 위 강조 카드 + 흰 카드 목록 */
+export function SkeletonMobile() {
+  return (
+    <SkeletonGroup className="space-y-7">
+      <div className="space-y-3 rounded-[var(--radius-mcard)] bg-card p-5">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-6 w-40" />
+        <Skeleton className="mt-4 h-12 w-full rounded-[var(--radius-control)]" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <div className="rounded-[var(--radius-mcard)] bg-card px-5">
+          <SkeletonRows rows={3} />
+        </div>
+      </div>
+    </SkeletonGroup>
+  );
+}

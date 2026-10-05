@@ -25,12 +25,12 @@ export default function LoginPage() {
 
         {/* 문의 안내: 줄로 나누고 가운데에 짧게 */}
         <div className="mt-8 border-t border-line-soft pt-6 text-center">
-          <p className="text-sm text-sub">아이디나 비밀번호를 잊으셨나요?</p>
+          <p className="text-caption text-sub">아이디나 비밀번호를 잊으셨나요?</p>
           <a
             href={KAKAO_CHANNEL_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-flex min-h-11 items-center gap-1 px-2 text-[15px] font-semibold text-ink hover:text-brand"
+            className="mt-1 inline-flex min-h-11 items-center gap-1 px-2 text-body font-semibold text-ink hover:underline"
           >
             카카오톡으로 학원에 문의하기
             <span aria-hidden className="text-sub">›</span>

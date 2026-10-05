@@ -30,13 +30,8 @@ LEET영어학원 전용 학원 관리 앱(PWA). 에듀OK의 출결·숙제·소�
 | `docs/handover/` | 납품 문서 (DB 구조·초기화 등) |
 
 ## 디자인
-- 색은 `src/app/globals.css`의 토큰만 쓴다. 임의의 hex 금지
-  - 휴대폰(학생·학부모): 바탕 `mpage` #F7F6F4 · 카드 `surface` #FFFFFF · 테두리 `border` #ECEAE6 · 브랜드 `brand` #B3262E(로고·주요 버튼만)
-  - 상태: `status-ok` #EAF5EE/#2E7D4F(등원·제출함) · `status-warn` #FDF3E1/#A6650A(미제출) · `status-alert` #FCEBEC/#B3262E(결석, 분홍은 결석에만)
-  - 상태→색은 `src/lib/status-colors.ts` 함수 하나로
-  - 관리 화면(원장님·선생님): 흰 바탕, 회색 `bg`/`line`/`sub`, 상태색 `ok`/`warn`/`info`
-- 테두리 대신 바탕색 단차·여백으로 구분. 그라데이션·짙은 그림자 금지. 모서리 관리 화면 6~8px, 휴대폰 카드 12px
-- 글씨 위계: 라벨 13px 회색 / 본문 14~15px / 핵심 숫자·제목 22~24px
+- 기준은 **`docs/design.md`** (색·글자·여백·부품·모션). 색은 `src/app/globals.css`의 토큰만 쓴다. 임의의 hex 금지
+- 상태→색은 `src/lib/status-colors.ts` 함수 하나로. 분홍은 결석에만, 빨강은 로고·주 버튼에만
 - 화면은 `src/components/ui/`, `src/components/mobile/`의 공통 부품을 쓴다
 
 ## 코드 규칙

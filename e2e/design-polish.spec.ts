@@ -20,7 +20,7 @@ test("출결 입력: 시간은 24시간제 시·분 선택칸", async ({ page })
 
 test("선생님 홈: 0인 숫자는 회색, 1 이상만 상태색", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/teacher?at=16:00");
+  await gotoReady(page, "/teacher?at=16:00");
   const numbers = page.getByRole("group", { name: "상태로 보기" }).locator("button > span:first-child");
   const cells = await numbers.evaluateAll((els) => els.map((el) => ({ n: el.textContent, color: getComputedStyle(el).color })));
   const zeros = cells.filter((c) => c.n === "0");

@@ -41,15 +41,6 @@
   --color-status-alert-bg: var(--color-brand-tint);
   --color-status-alert-fg: var(--color-brand);
 
-  /* 옛 휴대폰 회색 이름 → 한 벌로. 화면을 옮기는 동안만 남기고 4단계 끝에 지운다 */
-  --color-mpage: var(--color-bg);
-  --color-surface: var(--color-card);
-  --color-border: var(--color-line);
-  --color-mline: var(--color-line-soft);
-  --color-hint: var(--color-sub);
-  --color-tab-on: var(--color-ink);
-  --color-tab-off: var(--color-faint);
-
   /* 글자 5단계: 제목 / 소제목 / 본문 / 보조 / 숫자 (키패드는 따로, design.md 2번) */
   --text-title: 22px;
   --text-title--line-height: 1.3;

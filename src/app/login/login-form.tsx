@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { buttonClass } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
 // TODO(2단계): Supabase 인증 연결. 지금은 화면 확인용
@@ -9,7 +10,7 @@ import { cn } from "@/lib/cn";
 // - 커서가 들어가면: 진한 회색 테두리 (버건디는 에러에만 써서 헷갈리지 않게)
 // - 에러(aria-invalid)면: 버건디 테두리 + 옅은 버건디 빛
 const field =
-  "h-[52px] w-full rounded-[var(--radius-card)] border border-line bg-card px-4 text-base text-ink placeholder:text-sub/70 transition-[border-color,box-shadow] focus:border-ink/50 focus:shadow-[0_0_0_3px_var(--color-line-soft)] focus:outline-none aria-invalid:border-brand aria-invalid:focus:border-brand aria-invalid:focus:shadow-[0_0_0_3px_var(--color-brand-tint)]";
+  "h-12 w-full rounded-[var(--radius-control)] border border-line bg-card px-4 text-body text-ink placeholder:text-faint transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:border-ink/50 focus:shadow-[0_0_0_3px_var(--color-line-soft)] focus:outline-none aria-invalid:border-brand aria-invalid:focus:border-brand aria-invalid:focus:shadow-[0_0_0_3px_var(--color-brand-tint)]";
 
 function EyeIcon({ open }: { open: boolean }) {
   return (
@@ -34,7 +35,7 @@ const EMPTY_MESSAGE: Record<FieldName, string> = {
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <p id={id} role="alert" className="mt-1.5 px-1 text-sm text-brand">
+    <p id={id} role="alert" className="mt-1.5 px-1 text-caption text-brand">
       {message}
     </p>
   );
@@ -141,7 +142,7 @@ export function LoginForm() {
             onBlur={hide}
             onContextMenu={(e) => e.preventDefault()}
             className={cn(
-              "absolute inset-y-0 right-1.5 my-auto grid size-10 touch-none place-items-center rounded-[var(--radius-control)] select-none",
+              "press absolute inset-y-0 right-1.5 my-auto grid size-10 touch-none place-items-center rounded-[var(--radius-control)] select-none",
               peek ? "text-ink" : "text-sub hover:text-ink",
             )}
           >
@@ -153,18 +154,18 @@ export function LoginForm() {
 
       {/* 로그인 상태 유지 (AUTH-06). 기본은 꺼짐: 공용 PC·태블릿에서 다음 사람이 그대로 로그인되지 않게
           TODO(2단계): 체크하면 세션을 오래 유지, 해제하면 브라우저를 닫을 때 로그아웃 */}
-      <label className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 text-[15px] text-ink/80">
-        <input type="checkbox" name="keepSignedIn" className="size-[18px] accent-[var(--color-brand)]" />
+      <label className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-2 text-body text-ink">
+        <input type="checkbox" name="keepSignedIn" className="size-[18px] accent-[var(--color-ink)]" />
         로그인 상태 유지
       </label>
 
       <button
         type="submit"
-        className="mt-2 h-[52px] w-full rounded-[var(--radius-card)] bg-brand text-base font-bold text-white transition-colors hover:bg-brand-dark active:bg-brand-dark"
+        className={buttonClass("primary", "lg", "mt-2 w-full")}
       >
         로그인
       </button>
-      <p role="status" aria-live="polite" className="mt-3 text-center text-sm text-brand empty:hidden">
+      <p role="status" aria-live="polite" className="mt-3 text-center text-caption text-brand empty:hidden">
         {message}
       </p>
     </form>

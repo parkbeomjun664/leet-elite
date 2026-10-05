@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Toaster />
         {/* 실제 명단으로 보는 중이면 화면 아래에 항상 표시 (캡처해서 밖으로 보내는 실수 방지) */}
         {usingRealData && (
-          <p className="pointer-events-none fixed top-[68px] right-3 z-50 rounded-[var(--radius-control)] bg-ink/85 px-2.5 py-1 text-xs font-semibold text-white">
+          <p className="pointer-events-none fixed top-[68px] right-3 z-50 rounded-[var(--radius-control)] bg-ink/85 px-2.5 py-1 text-caption font-semibold text-white">
             실제 명단 사용 중 · 이 컴퓨터에서만 · 캡처 공유 금지
           </p>
         )}
