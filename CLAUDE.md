@@ -25,6 +25,7 @@ LEET영어학원 전용 학원 관리 앱(PWA). 에듀OK의 출결·숙제·소�
 | `docs/data-model.md` | 표 구조, RLS 원칙 |
 | `docs/screens.md` | 화면별 구성·동작 |
 | `docs/decisions.md` | 확정된 결정 — 여기와 다르게 구현하지 않는다 |
+| `docs/design.md` | 디자인 시스템: 색·글자·여백·부품·모션 기준 (화면 작업 전에 읽기) |
 | `docs/requests-2026-10-02.md` | 원장님 추가 요청 1~7 (계획만, 미반영) |
 | `docs/handover/` | 납품 문서 (DB 구조·초기화 등) |
 
