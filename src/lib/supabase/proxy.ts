@@ -27,7 +27,8 @@ export async function updateSession(request: NextRequest) {
   const roleClaim = data?.claims?.app_metadata?.role;
   const role: Role | null = data?.claims && isRole(roleClaim) ? roleClaim : null;
 
-  const route = routeFor(request.nextUrl.pathname, role, request.nextUrl.search);
+  const mustChangePassword = data?.claims?.app_metadata?.must_change_password === true;
+  const route = routeFor(request.nextUrl.pathname, role, request.nextUrl.search, { mustChangePassword });
   if (!route) return response;
 
   const url = new URL(route.redirect, request.url);

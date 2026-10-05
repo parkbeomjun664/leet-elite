@@ -58,3 +58,16 @@ describe("로그인 시도 제한 (AUTH-10)", () => {
     expect(b.fail_count).toBe(1);
   });
 });
+
+import { passwordProblem } from "./password-rule";
+
+describe("새 비밀번호 규칙 (AUTH-03)", () => {
+  it("6자 이상", () => {
+    expect(passwordProblem("abc12", "s1")).toContain("6자");
+    expect(passwordProblem("abc123", "s1")).toBeNull();
+  });
+  it("같은 글자 반복·아이디와 같은 비밀번호는 안 됨", () => {
+    expect(passwordProblem("111111", "s1")).toContain("반복");
+    expect(passwordProblem("01055501234", "01055501234")).toContain("아이디");
+  });
+});

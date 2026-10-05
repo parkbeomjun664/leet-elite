@@ -57,7 +57,7 @@ CLAUDE.md의 "작업 규칙"·"개인정보·보안"에 있는 내용은 여기�
 - 시간 입력은 `<input type="time">` 대신 `TimeSelect`(24시간제 시·분 선택칸)를 쓴다
 - `"use client"`는 서버에서 직접 부르는 입구 부품에만 붙인다. 클라이언트 부품 안에서만 쓰는 부품에 붙이면 함수 props 경고가 난다
 - 화면 흐름 테스트에서 Tailwind 색은 `oklab(… / 0.5)`처럼 돌아온다. 정확한 rgb 대신 "같은 값인지·다른 값인지"로 비교한다
-- 화면 확인용 캡처는 `LEET_REAL_DATA=0`으로 켠 3200번 서버에서 `node scripts/capture-screens.mjs <저장 폴더> [이름 일부]`로 찍는다. 스크립트는 저장소에 있고(10/6), **캡처 파일은 저장소 밖(scratchpad 등)에** 둔다. 원장님께 보낼 캡처만 골라 `docs/preview/`에
+- 화면 확인용 캡처는 `LEET_REAL_DATA=0 LEET_E2E=1`로 켠 3200번 서버에서 `node scripts/capture-screens.mjs <저장 폴더> [이름 일부]`로 찍는다. 스크립트는 저장소에 있고(10/6), **캡처 파일은 저장소 밖(scratchpad 등)에** 둔다. 원장님께 보낼 캡처만 골라 `docs/preview/`에
 - (10/5) Tailwind v4의 `translate-x-*`는 `transform`이 아니라 `translate` 속성이다. 움직이려면 `transition-[translate]`로 적는다
 - (10/5) 저장 중 화면 반영은 `src/lib/use-optimistic-save.ts` 하나로. React 19는 동시에 진행 중인 비동기 저장을 함께 확정하므로, 단위 테스트에서 끝내지 않은 저장을 남기면 다음 테스트가 멈춘다
 - (10/5) 창(Sheet)의 닫힘 움직임: 창 밖 버튼은 `closeRef`, 창 안 버튼은 `useSheetClose()`. 부모가 바로 없애면 닫히는 모습이 안 보인다
@@ -65,7 +65,7 @@ CLAUDE.md의 "작업 규칙"·"개인정보·보안"에 있는 내용은 여기�
 - (10/5) Playwright `page.clock`은 타이머·Date만 멈춘다. CSS 움직임은 실제 시간으로 흐르므로 캡처할 때는 실제로 기다린다
 - (10/5) `/kiosk`는 미리 만들어 두는 정적 페이지라 서버에서 "오늘"을 계산하면 빌드한 날로 굳는다. 오늘 요일·시각은 브라우저에서 계산한다
 - (10/5) 단위 테스트는 실제 명단 파일이 있어도 항상 가상 데이터로 돈다 (`vitest.config.ts`의 `LEET_REAL_DATA: "0"`)
-- (10/6) **로그인 출입 통제(`src/proxy.ts`)가 생겨서** 로그인 없이는 화면이 `/login`으로 간다. 가상 데이터 화면을 로그인 없이 보려면 개발 서버에 `LEET_E2E_NO_AUTH=1`을 준다 (PowerShell: `$env:LEET_E2E_NO_AUTH="1"; npm run dev`). 배포판(production)에서는 이 값을 무시한다. 화면 흐름 테스트(`playwright.config.ts`)와 캡처(3200번 서버)도 이 값으로 켠다
+- (10/6) **로그인 출입 통제(`src/proxy.ts`)가 생겨서** 로그인 없이는 화면이 `/login`으로 간다. 로컬에서는 시험 계정(`admin`·`teacher`…, `docs/handover/database.md` 3-5번)으로 로그인해서 본다. 화면 흐름 테스트는 개발 서버에 `LEET_E2E=1`을 주고 요청 머리글 `x-leet-e2e-no-auth: 1`이 달린 요청만 통과시킨다(`playwright.config.ts`, 배포판에서는 무시). 캡처 스크립트도 같은 머리글을 단다
 - (10/6) Next 16은 **한 폴더에서 개발 서버를 하나만** 켤 수 있다("Another next dev server is already running"). 테스트 전에 켜 둔 서버(3000·3200 등)를 끈다
 - (10/6) `Button`은 서버 화면에서도 쓰이므로 안에서 함수를 새로 만들어 달면 안 된다(서버 화면이 통째로 에러). 받은 `onClick`을 그대로 넘기거나 떼는 것만
 

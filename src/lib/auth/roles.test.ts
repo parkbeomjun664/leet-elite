@@ -37,6 +37,15 @@ describe("화면 출입 규칙", () => {
     expect(routeFor("/admin", "kiosk")).toEqual({ redirect: "/kiosk" });
   });
 
+  it("비밀번호를 바꿔야 하는 계정은 바꾸는 화면에만 (AUTH-03)", () => {
+    const must = { mustChangePassword: true };
+    expect(routeFor("/teacher", "teacher", "", must)).toEqual({ redirect: "/account/password" });
+    expect(routeFor("/", "student", "", must)).toEqual({ redirect: "/account/password" });
+    expect(routeFor("/account/password", "student", "", must)).toBeNull();
+    // 다 바꾼 뒤에는 그 화면도 그냥 열린다 (로그인한 누구나)
+    expect(routeFor("/account/password", "parent")).toBeNull();
+  });
+
   it("로그인 뒤 돌아갈 주소: 같은 사이트·그 역할이 열 수 있는 곳만", () => {
     expect(safeNext("/teacher?at=16:00", "teacher")).toBe("/teacher?at=16:00");
     expect(safeNext("/admin", "teacher")).toBe("/teacher");

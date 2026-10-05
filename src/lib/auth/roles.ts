@@ -23,8 +23,8 @@ const AREAS: { prefix: string; roles: readonly Role[] }[] = [
   { prefix: "/kiosk", roles: ["kiosk", "admin"] },
 ];
 
-// 로그인 없이 열리는 화면: 로그인, 디자인 미리보기(가상 이름만), 시연 입구(시연 계정으로 바꿀 때까지)
-const PUBLIC = ["/login", "/design-system", "/design", "/demo"];
+// 로그인 없이 열리는 화면: 로그인, 디자인 미리보기(가상 이름만)
+const PUBLIC = ["/login", "/design-system", "/design"];
 
 const under = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
 
@@ -34,11 +34,15 @@ const under = (path: string, prefix: string) => path === prefix || path.startsWi
  * - 로그인했는데 /, /login → 역할 첫 화면
  * - 다른 역할의 화면 → 자기 첫 화면
  */
-export function routeFor(path: string, role: Role | null, search = ""): { redirect: string } | null {
+export const PASSWORD_PAGE = "/account/password";
+
+export function routeFor(path: string, role: Role | null, search = "", opts?: { mustChangePassword?: boolean }): { redirect: string } | null {
   if (role === null) {
     if (PUBLIC.some((p) => under(path, p))) return null;
     return { redirect: path === "/" ? "/login" : `/login?next=${encodeURIComponent(path + search)}` };
   }
+  // 첫 로그인·재설정 뒤에는 비밀번호를 바꾸기 전까지 다른 화면에 못 간다 (AUTH-03)
+  if (opts?.mustChangePassword && !under(path, PASSWORD_PAGE)) return { redirect: PASSWORD_PAGE };
   if (path === "/" || under(path, "/login")) return { redirect: HOME[role] };
   const area = AREAS.find((a) => under(path, a.prefix));
   if (area && !area.roles.includes(role)) return { redirect: HOME[role] };
