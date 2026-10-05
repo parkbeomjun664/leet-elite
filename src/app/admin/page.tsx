@@ -27,14 +27,24 @@ function namesPreview(names: string[], limit = 3): string {
   return `${names.slice(0, limit).join(", ")}${names.length > limit ? ` 외 ${names.length - limit}명` : ""}`;
 }
 
-type Card = {
+/** 확인할 일 한 줄: 숫자가 0이면 목록에 넣지 않는다 */
+type Todo = {
+  title: string;
+  value: number;
+  unit: string;
+  detail: string;
+  href: string;
+  action: string;
+  tone: string;
+};
+
+/** 오늘 학원 숫자 한 줄 */
+type Stat = {
   label: string;
   value: number;
   total?: number; // "12 / 30"처럼 전체 수를 같이 보여 줄 때
   unit: string;
-  detail: string;
   href: string;
-  tone?: string;
 };
 
 // 홈에는 최근 메시지 몇 건만
@@ -80,7 +90,6 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   const todayMakeups = makeups
     .filter((m) => m.date === date && m.status !== "cancelled")
     .sort((a, b) => a.start.localeCompare(b.start));
-  const makeupNames = todayMakeups.map((m) => studentById(m.studentId)?.name ?? "알 수 없음");
   const enrolled = students.filter((s) => s.status === "enrolled");
   const days = enrolled.map((s) => studentDay(s, records, date, now));
   const notArrived = days.filter((d) => d.status === "not_arrived");
@@ -106,100 +115,120 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   const inTeachers = teachers.filter((t) => workLogs.some((w) => w.teacherId === t.id && w.checkInAt !== null));
   const outTeachers = teachers.filter((t) => !inTeachers.includes(t));
 
-  // 첫 줄: 바로 확인할 일 4개
-  const cards: Card[] = [
+  // 확인할 일: 원장님이 지금 처리할 것만, 숫자가 있는 것만 (10/5 시안 "빨간 펜 출석부"에서 가져옴)
+  const todos: Todo[] = [
     {
-      label: "새 메시지",
-      value: unread,
-      unit: "건",
-      detail: unread > 0 ? "읽지 않은 학부모 메시지" : "모두 읽었습니다",
-      href: "/admin/messages",
-      tone: unread > 0 ? "text-brand" : undefined,
-    },
-    {
-      label: "오늘 숙제 제출",
-      value: todaySubs.length,
-      unit: "건",
-      detail: todaySubs.length > 0 ? `학생 ${todaySubStudents}명 제출` : "아직 제출이 없습니다",
-      href: "/admin/homework",
-    },
-    {
-      label: "오늘 보강",
-      value: todayMakeups.length,
-      unit: "건",
-      detail: makeupNames.length > 0 ? makeupNames.join(", ") : "오늘 보강 없음",
-      href: "/admin/makeups",
-    },
-    {
-      label: "출결 확인 필요",
+      title: "미등원 학생",
       value: notArrived.length,
       unit: "명",
-      detail:
-        notArrived.length > 0
-          ? `미등원: ${namesPreview(notArrived.map((d) => d.student.name))}`
-          : "미등원 학생 없음",
-      href: "/admin/attendance",
-      tone: notArrived.length > 0 ? "text-warn" : undefined,
-    },
-  ];
-
-  // 둘째 줄: 오늘 운영 현황 3개
-  const statusCards: Card[] = [
-    {
-      label: "오늘 출결",
-      value: arrived,
-      total: withClass,
-      unit: "명",
-      detail: withClass > 0 ? `등원 ${arrived} / 오늘 수업 ${withClass} · 결석 ${absent}` : "오늘 수업 학생 없음",
+      detail: namesPreview(notArrived.map((d) => d.student.name)),
       href: hrefOf("오늘 출결"),
+      action: "출결 보기",
+      tone: "text-warn",
     },
     {
-      label: "숙제 미제출",
+      // unreadCount는 학생 대화방도 센다 (예전 카드와 같은 기준)
+      title: "읽지 않은 메시지",
+      value: unread,
+      unit: "건",
+      detail: namesPreview([...new Set(unreadList.map((m) => studentById(m.studentId)?.name ?? "알 수 없음"))], 2),
+      href: "/admin/messages",
+      action: "메시지 보기",
+      tone: "text-brand",
+    },
+    {
+      // 아무도 출근 전인 아침에는 띄우지 않는다 (누군가 출근했는데 아직 안 온 선생님만)
+      title: "출근하지 않은 선생님",
+      value: inTeachers.length > 0 ? outTeachers.length : 0,
+      unit: "명",
+      detail: namesPreview(outTeachers.map((t) => t.realName)),
+      href: hrefOf("선생님 출퇴근"),
+      action: "출퇴근 보기",
+      tone: "text-warn",
+    },
+    {
+      title: "숙제 미제출 (어제·오늘)",
       value: missingHw.length,
       unit: "명",
-      detail: missingHw.length > 0 ? namesPreview(missingHw.map((s) => s.name)) : "어제·오늘 숙제 모두 제출",
+      detail: namesPreview(missingHw.map((s) => s.name)),
       href: hrefOf("숙제 관리"),
+      action: "숙제 보기",
+      tone: "text-warn",
     },
-    {
-      label: "선생님 출근",
-      value: inTeachers.length,
-      total: teachers.length,
-      unit: "명",
-      detail:
-        inTeachers.length === 0
-          ? "아직 출근 기록 없음"
-          : outTeachers.length > 0
-            ? `미출근: ${namesPreview(outTeachers.map((t) => t.realName))}`
-            : "모두 출근",
-      href: hrefOf("선생님 출퇴근"),
-    },
+  ].filter((t) => t.value > 0);
+
+  // 오늘 학원: 운영 숫자 한눈에
+  const stats: Stat[] = [
+    { label: "오늘 출결 (등원 / 수업)", value: arrived, total: withClass, unit: "명", href: hrefOf("오늘 출결") },
+    { label: "결석", value: absent, unit: "명", href: hrefOf("오늘 출결") },
+    { label: `오늘 숙제 제출 (학생 ${todaySubStudents}명)`, value: todaySubs.length, unit: "건", href: hrefOf("숙제 관리") },
+    { label: "오늘 보강", value: todayMakeups.length, unit: "건", href: "/admin/makeups" },
+    { label: "선생님 출근", value: inTeachers.length, total: teachers.length, unit: "명", href: hrefOf("선생님 출퇴근") },
   ];
 
   return (
     <div className="space-y-8">
       <PageHeader
         title={<span className="tabular">{formatDateKo(date)}</span>}
-        description={`원장님, 오늘 학원 현황입니다. (${now} 기준)`}
+        description={
+          todos.length > 0
+            ? `원장님, 오늘 확인할 일이 ${todos.length}가지 있어요. (${now} 기준)`
+            : `원장님, 지금 확인할 일이 없어요. (${now} 기준)`
+        }
       />
 
-      {/* 현황 카드 7개: 누르면 해당 화면으로 이동. 4개 + 3개 두 줄, 두 줄 모두 같은 폭 */}
-      <section aria-label="오늘 현황" className="space-y-3">
-        <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {cards.map((c) => (
-            <li key={c.label}>
-              <StatusCard card={c} />
-            </li>
-          ))}
-        </ul>
-        {/* 휴대폰·태블릿(2칸)에서는 첫 카드를 한 줄 전체로 써서 혼자 남는 카드가 없게 */}
-        <ul className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          {statusCards.map((c, i) => (
-            <li key={c.label} className={cn(i === 0 && "col-span-2 lg:col-span-1")}>
-              <StatusCard card={c} />
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* 왼쪽: 확인할 일(처리할 것만) / 오른쪽: 오늘 학원 숫자. 예전 현황 카드 7개를 둘로 나눔 (10/5) */}
+      <div className="grid gap-8 lg:grid-cols-5">
+        <section aria-labelledby="todo-title" className="lg:col-span-3">
+          <h2 id="todo-title" className="mb-1 text-[15px] font-semibold">
+            확인할 일
+          </h2>
+          {todos.length === 0 ? (
+            <EmptyLine>지금 처리할 일이 없습니다.</EmptyLine>
+          ) : (
+            <ul className="divide-y divide-line-soft">
+              {todos.map((t) => (
+                <li key={t.title} className="flex items-center gap-4 py-3.5">
+                  <span className={cn("w-16 shrink-0 text-2xl leading-none font-semibold tabular", t.tone)}>
+                    {t.value}
+                    <span className="ml-0.5 text-sm font-medium text-sub">{t.unit}</span>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] font-semibold">{t.title}</span>
+                    <span className="block truncate text-[13px] text-sub">{t.detail}</span>
+                  </span>
+                  <Link
+                    href={t.href}
+                    className="w-[104px] shrink-0 rounded-[var(--radius-control)] border border-line py-2 text-center text-sm font-semibold transition-colors hover:bg-bg"
+                  >
+                    {t.action}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section aria-labelledby="stats-title" className="lg:col-span-2">
+          <h2 id="stats-title" className="mb-1 text-[15px] font-semibold">
+            오늘 학원
+          </h2>
+          <ul className="divide-y divide-line-soft">
+            {stats.map((s) => (
+              <li key={s.label}>
+                <Link href={s.href} className="-mx-2 flex items-baseline justify-between gap-3 rounded-[var(--radius-control)] px-2 py-3 hover:bg-bg">
+                  <span className="text-sm text-sub">{s.label}</span>
+                  <span className="tabular">
+                    <span className="text-xl font-semibold">{s.value}</span>
+                    {s.total !== undefined && <span className="ml-1 text-sm text-sub">/ {s.total}</span>}
+                    <span className="ml-0.5 text-sm text-sub">{s.unit}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
 
       {/* 바로가기 메뉴 3줄 (HOME-02) */}
       <section aria-label="바로가기">
@@ -314,28 +343,5 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         </Panel>
       </div>
     </div>
-  );
-}
-
-/** 현황 카드 한 장 */
-function StatusCard({ card: c }: { card: Card }) {
-  return (
-    <Link
-      href={c.href}
-      className="block h-full rounded-[var(--radius-card)] bg-bg px-4 py-4 transition-colors hover:bg-line-soft"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[13px] text-sub">{c.label}</span>
-        <span className="text-sub" aria-hidden>
-          ›
-        </span>
-      </div>
-      <p className={cn("mt-2 text-2xl leading-tight font-semibold tabular", c.tone ?? "text-ink")}>
-        {c.value}
-        {c.total !== undefined && <span className="ml-1 text-base font-medium text-sub">/ {c.total}</span>}
-        <span className="ml-0.5 text-sm font-medium text-sub">{c.unit}</span>
-      </p>
-      <p className="mt-1 truncate text-[13px] text-sub/80">{c.detail}</p>
-    </Link>
   );
 }

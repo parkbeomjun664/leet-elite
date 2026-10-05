@@ -379,7 +379,8 @@ function MessageSection({ data, messagesHref }: { data: StudentDetailData; messa
                     <p
                       className={cn(
                         "max-w-[88%] rounded-[var(--radius-card)] px-3 py-2 text-sm leading-relaxed",
-                        mine ? "bg-brand-tint text-ink" : "bg-bg",
+                        // 학원 쪽은 회색 한 단계 진하게. 분홍(brand-tint)은 결석 분홍과 헷갈려서 쓰지 않는다 (10/5)
+                        mine ? "bg-line-soft text-ink" : "bg-bg",
                       )}
                     >
                       {m.body}

@@ -35,6 +35,21 @@ test.describe("선생님 화면 학생 상세", () => {
   });
 });
 
+test("원장님 홈: 확인할 일과 오늘 학원 숫자", async ({ page }) => {
+  await page.goto("/admin?at=16:00");
+  const todo = page.locator("section").filter({ has: page.getByRole("heading", { name: "확인할 일" }) });
+  const items = todo.locator("li");
+  const count = await items.count();
+  expect(count).toBeGreaterThan(0);
+  // 머리말의 "n가지"와 목록 줄 수가 같다
+  await expect(page.getByText(`오늘 확인할 일이 ${count}가지 있어요`)).toBeVisible();
+  // 줄마다 처리하러 가는 링크가 있다
+  await expect(items.first().getByRole("link")).toBeVisible();
+
+  const stats = page.locator("section").filter({ has: page.getByRole("heading", { name: "오늘 학원" }) });
+  await expect(stats.getByRole("link")).toHaveCount(5);
+});
+
 test("원장님 홈: 학생 이름은 굵고 검게", async ({ page }) => {
   await page.goto("/admin?at=16:00");
   const name = page.locator("span.font-bold.text-ink").first();
