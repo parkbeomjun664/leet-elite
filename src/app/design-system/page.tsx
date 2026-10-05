@@ -58,7 +58,7 @@ export default function DesignSystemPage() {
           <Button variant="primary">하원 처리</Button>
           <Button>취소</Button>
           <Button variant="ghost">전체 보기</Button>
-          <span className="ml-2 text-caption text-sub">← 직접 눌러 보세요</span>
+          <span className="ml-2 hidden text-caption text-sub sm:inline">← 직접 눌러 보세요</span>
         </div>
       </header>
 
