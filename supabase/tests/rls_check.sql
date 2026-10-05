@@ -114,4 +114,69 @@ begin
   end loop;
 end $$;
 
+-- 선생님 공개 보기(teacher_public): 열은 id·nickname 둘뿐, 학생·학부모는 실명·계정 연결을 볼 수 없고 고칠 수도 없다
+select pg_temp.expect('구조', 'teacher_public 열이 id,nickname뿐', (
+  select count(*) from (
+    select string_agg(attname, ',' order by attnum) as cols from pg_attribute
+    where attrelid = 'public.teacher_public'::regclass and attnum > 0 and not attisdropped
+  ) t where cols = 'id,nickname'), 1);
+
+set role authenticated;
+do $$
+declare
+  uid text;
+  sql text;
+begin
+  -- 학생1, 보호자
+  foreach uid in array array['00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000d1'] loop
+    perform pg_temp.login(uid);
+    if (select string_agg(nickname, ',' order by nickname) from public.teacher_public) <> 'Amy,Ben' then
+      raise exception 'FAIL [%] teacher_public 닉네임이 다름', uid;
+    end if;
+    foreach sql in array array[
+      'select real_name from public.teacher_public',
+      'select profile_id from public.teacher_public',
+      'select is_active from public.teacher_public'
+    ] loop
+      begin
+        execute sql;
+        raise exception 'FAIL [%] 숨긴 열이 보임: %', uid, sql;
+      exception when undefined_column then null;
+      end;
+    end loop;
+    begin
+      update public.teacher_public set nickname = 'x';
+      raise exception 'FAIL [%] teacher_public 수정이 허용됨', uid;
+    exception when insufficient_privilege then null;
+    end;
+    raise notice 'ok   [%] teacher_public: 닉네임만 보이고 실명·계정·사용 여부 열 없음, 수정 거부', uid;
+  end loop;
+end $$;
+reset role;
+
+-- 사용 중지된 선생님은 공개 보기에서 빠진다
+update public.teachers set is_active = false where nickname = 'Ben';
+set role authenticated;
+select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.expect('학생1', '사용 중지 선생님 숨김', (select count(*) from public.teacher_public), 1);
+reset role;
+
+-- 비로그인(anon)은 공개 보기도 못 본다
+set role anon;
+do $$ begin
+  perform count(*) from public.teacher_public;
+  raise exception 'FAIL [비로그인] teacher_public 접근이 허용됨';
+exception when insufficient_privilege then raise notice 'ok   [비로그인] teacher_public 접근 거부';
+end $$;
+reset role;
+
+-- security definer 함수는 모두 search_path가 비어 있게 고정 (다른 스키마의 같은 이름 함수·표로 바꿔치기 방지)
+select pg_temp.expect('구조', 'search_path 고정 안 된 security definer 함수', (
+  select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname in ('public', 'private') and p.prosecdef
+    and not coalesce(p.proconfig @> array['search_path=""'], false)), 0);
+select pg_temp.expect('구조', 'set_student_programs search_path 고정', (
+  select count(*) from pg_proc where oid = 'public.set_student_programs(uuid, text[])'::regprocedure
+    and prosecdef and proconfig @> array['search_path=""']), 1);
+
 \echo '모든 권한 테스트 통과'
