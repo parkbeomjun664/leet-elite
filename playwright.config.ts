@@ -9,6 +9,7 @@ export default defineConfig({
     command: "npx next dev -p 3200",
     url: "http://localhost:3200/login",
     reuseExistingServer: true,
-    env: { LEET_REAL_DATA: "0" },
+    // 출입 통제(로그인)는 끄고 가상 데이터 화면만 본다. 로그인 흐름은 e2e/auth.spec.ts가 따로 확인
+    env: { LEET_REAL_DATA: "0", LEET_E2E_NO_AUTH: "1" },
   },
 });

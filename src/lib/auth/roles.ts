@@ -1,0 +1,53 @@
+// 역할별 출입 규칙 (화면 출입 통제용). 실제 데이터 권한은 DB의 RLS가 따로 막는다 (CLAUDE.md)
+
+export const ROLES = ["admin", "teacher", "student", "parent", "kiosk"] as const;
+export type Role = (typeof ROLES)[number];
+
+export const isRole = (v: unknown): v is Role => typeof v === "string" && (ROLES as readonly string[]).includes(v);
+
+/** 로그인하면 처음 가는 화면 */
+export const HOME: Record<Role, string> = {
+  admin: "/admin",
+  teacher: "/teacher",
+  student: "/student",
+  parent: "/parent",
+  kiosk: "/kiosk",
+};
+
+// 화면 묶음마다 들어갈 수 있는 역할. 원장님은 선생님 화면과 키패드(설치할 때)에도 들어간다
+const AREAS: { prefix: string; roles: readonly Role[] }[] = [
+  { prefix: "/admin", roles: ["admin"] },
+  { prefix: "/teacher", roles: ["teacher", "admin"] },
+  { prefix: "/student", roles: ["student"] },
+  { prefix: "/parent", roles: ["parent"] },
+  { prefix: "/kiosk", roles: ["kiosk", "admin"] },
+];
+
+// 로그인 없이 열리는 화면: 로그인, 디자인 미리보기(가상 이름만), 시연 입구(시연 계정으로 바꿀 때까지)
+const PUBLIC = ["/login", "/design-system", "/design", "/demo"];
+
+const under = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
+
+/**
+ * 이 주소를 열어도 되는지. 안 되면 보낼 곳을 돌려준다
+ * - 로그인 안 함 → /login (보던 주소는 next로 남겨 로그인 뒤 돌아온다)
+ * - 로그인했는데 /, /login → 역할 첫 화면
+ * - 다른 역할의 화면 → 자기 첫 화면
+ */
+export function routeFor(path: string, role: Role | null, search = ""): { redirect: string } | null {
+  if (role === null) {
+    if (PUBLIC.some((p) => under(path, p))) return null;
+    return { redirect: path === "/" ? "/login" : `/login?next=${encodeURIComponent(path + search)}` };
+  }
+  if (path === "/" || under(path, "/login")) return { redirect: HOME[role] };
+  const area = AREAS.find((a) => under(path, a.prefix));
+  if (area && !area.roles.includes(role)) return { redirect: HOME[role] };
+  return null;
+}
+
+/** 로그인 뒤 돌아갈 주소. 다른 사이트 주소나 그 역할이 못 여는 화면이면 첫 화면으로 */
+export function safeNext(next: string | null | undefined, role: Role): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return HOME[role];
+  const path = next.split(/[?#]/)[0];
+  return routeFor(path, role) ? HOME[role] : next;
+}
