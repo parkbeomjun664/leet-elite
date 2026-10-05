@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea, TimeSelect } from "@/components/ui/field";
 import { InfoList } from "@/components/ui/panel";
 import { Sheet } from "@/components/ui/sheet";
 import { WEEKDAY_KO } from "@/lib/date";
+import { toast } from "@/lib/toast";
 import { STUDENT_STATUS_LABEL, type ScheduleSlot, type StudentStatus } from "@/lib/mock/types";
 
 /** 보호자 (읽기 전용, STU-07) */
@@ -65,6 +66,8 @@ export function AdminStudentSheet({
   onClose: () => void;
   onSave: (next: AdminStudent) => void;
 }) {
+  // 저장·취소도 창의 닫힘 움직임을 거쳐 닫는다
+  const closeSheet = useRef<() => void>(null);
   const [form, setForm] = useState<AdminStudent>(student);
   const [tried, setTried] = useState(false); // 저장을 한 번 눌렀는지 (그 뒤부터 필수 항목 오류 표시)
   const set = <K extends keyof AdminStudent>(key: K, value: AdminStudent[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -112,6 +115,8 @@ export function AdminStudentSheet({
       attendanceCode: code,
       leftOn: showLeftOn ? form.leftOn : null,
     });
+    toast.success(`${form.name.trim()} 정보를 저장했어요`);
+    closeSheet.current?.();
   }
 
   return (
@@ -121,9 +126,10 @@ export function AdminStudentSheet({
       title={`${student.name} 정보 수정`}
       subtitle={[student.school, student.grade, STUDENT_STATUS_LABEL[student.status]].filter(Boolean).join(" · ")}
       width="md:w-[560px]"
+      closeRef={closeSheet}
       footer={
         <div className="flex justify-end gap-2">
-          <Button onClick={onClose}>취소</Button>
+          <Button onClick={() => closeSheet.current?.()}>취소</Button>
           <Button variant="primary" type="submit" form={FORM_ID}>
             저장
           </Button>
@@ -184,7 +190,7 @@ export function AdminStudentSheet({
         {/* 반 · 수업 시간 (STU-04) */}
         <Section title="반 · 수업 시간">
           <fieldset>
-            <legend className="mb-1.5 text-sm font-semibold">반 (여러 개 선택 가능)</legend>
+            <legend className="mb-1.5 text-caption font-semibold text-sub">반 (여러 개 선택 가능)</legend>
             <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
               {classes.map((c) => (
                 <Checkbox
@@ -198,9 +204,9 @@ export function AdminStudentSheet({
           </fieldset>
 
           <div className="mt-4">
-            <p className="mb-1.5 text-sm font-semibold">요일별 수업 시간</p>
+            <p className="mb-1.5 text-caption font-semibold text-sub">요일별 수업 시간</p>
             {form.schedule.length === 0 ? (
-              <p className="text-[15px] text-sub">수업 시간이 없습니다.</p>
+              <p className="text-body text-sub">수업 시간이 없습니다.</p>
             ) : (
               <ul className="space-y-2">
                 {form.schedule.map((slot, i) => (
@@ -227,7 +233,7 @@ export function AdminStudentSheet({
                       onChange={(e) => setSlot(i, { durationMin: Number(e.target.value) })}
                       className="tabular"
                     />
-                    <span className="text-[15px] text-sub">분</span>
+                    <span className="text-body text-sub">분</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -240,7 +246,7 @@ export function AdminStudentSheet({
                 ))}
               </ul>
             )}
-            {scheduleError && <p className="mt-2 text-sm text-brand">{scheduleError}</p>}
+            {scheduleError && <p className="mt-2 text-caption text-brand">{scheduleError}</p>}
             <Button
               size="sm"
               className="mt-2"
@@ -269,7 +275,7 @@ export function AdminStudentSheet({
             </div>
           </Field>
           <fieldset className="mt-4">
-            <legend className="mb-1.5 text-sm font-semibold">사용 프로그램</legend>
+            <legend className="mb-1.5 text-caption font-semibold text-sub">사용 프로그램</legend>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               {PROGRAMS.map((p) => (
                 <Checkbox key={p} label={p} checked={form.programs.includes(p)} onChange={() => set("programs", toggle(form.programs, p))} />
@@ -290,20 +296,20 @@ export function AdminStudentSheet({
           }
         >
           {form.guardians.length === 0 ? (
-            <p className="text-[15px] text-sub">연결된 보호자가 없습니다.</p>
+            <p className="text-body text-sub">연결된 보호자가 없습니다.</p>
           ) : (
             <ul className="divide-y divide-line-soft">
               {form.guardians.map((g) => (
                 <li key={g.id} className="py-2.5 first:pt-0 last:pb-0">
                   <p>
-                    <span className="text-base font-bold">{g.name}</span>
-                    {g.relation && <span className="ml-2 text-sm text-sub">{RELATION_LABEL[g.relation]}</span>}
+                    <span className="text-heading font-bold">{g.name}</span>
+                    {g.relation && <span className="ml-2 text-caption text-sub">{RELATION_LABEL[g.relation]}</span>}
                   </p>
-                  <p className="text-[15px] tabular">
+                  <p className="text-body tabular">
                     {g.phone1}
                     {g.phone2 && <span className="text-sub"> · {g.phone2}</span>}
                   </p>
-                  <p className="text-sm text-sub">연결된 자녀: {g.children.map((c) => c.name).join(", ")}</p>
+                  <p className="text-caption text-sub">연결된 자녀: {g.children.map((c) => c.name).join(", ")}</p>
                 </li>
               ))}
             </ul>
@@ -321,7 +327,7 @@ export function AdminStudentSheet({
             ]}
           />
           {samePhone.length > 0 && (
-            <p className="mt-2 text-sm text-warn">
+            <p className="mt-2 text-caption text-warn">
               {samePhone.map((o) => o.name).join(", ")} 학생과 같은 번호입니다. 아이디를 따로 정해야 합니다.
             </p>
           )}
@@ -344,7 +350,7 @@ function Section({ title, actions, children }: { title: string; actions?: ReactN
   return (
     <section className="px-5 py-5">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-base font-bold">{title}</h3>
+        <h3 className="text-heading font-bold">{title}</h3>
         {actions}
       </div>
       {children}

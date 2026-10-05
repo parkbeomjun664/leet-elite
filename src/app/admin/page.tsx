@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EmptyLine, PageHeader, Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
+import { buttonClass } from "@/components/ui/button";
 import { studentDay } from "@/lib/attendance";
 import { addDays, addMinutes, formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
 import { ADMIN_NAV } from "@/lib/nav";
@@ -134,7 +135,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       detail: namesPreview([...new Set(unreadList.map((m) => studentById(m.studentId)?.name ?? "알 수 없음"))], 2),
       href: "/admin/messages",
       action: "메시지 보기",
-      tone: "text-brand",
+      tone: "text-ink", // 빨강은 결석·오류에만 (10/5)
     },
     {
       // 아무도 출근 전인 아침에는 띄우지 않는다 (누군가 출근했는데 아직 안 온 선생님만)
@@ -180,7 +181,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       {/* 왼쪽: 확인할 일(처리할 것만) / 오른쪽: 오늘 학원 숫자. 예전 현황 카드 7개를 둘로 나눔 (10/5) */}
       <div className="grid gap-8 lg:grid-cols-5">
         <section aria-labelledby="todo-title" className="lg:col-span-3">
-          <h2 id="todo-title" className="mb-1 text-[15px] font-semibold">
+          <h2 id="todo-title" className="mb-1 text-heading font-semibold">
             확인할 일
           </h2>
           {todos.length === 0 ? (
@@ -189,17 +190,17 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
             <ul className="divide-y divide-line-soft">
               {todos.map((t) => (
                 <li key={t.title} className="flex items-center gap-4 py-3.5">
-                  <span className={cn("w-16 shrink-0 text-2xl leading-none font-semibold tabular", t.tone)}>
+                  <span className={cn("w-16 shrink-0 text-figure leading-none font-bold tabular", t.tone)}>
                     {t.value}
-                    <span className="ml-0.5 text-sm font-medium text-sub">{t.unit}</span>
+                    <span className="ml-0.5 text-caption text-sub">{t.unit}</span>
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-semibold">{t.title}</span>
-                    <span className="block truncate text-[13px] text-sub">{t.detail}</span>
+                    <span className="block text-body font-semibold">{t.title}</span>
+                    <span className="block truncate text-caption text-sub">{t.detail}</span>
                   </span>
                   <Link
                     href={t.href}
-                    className="w-[104px] shrink-0 rounded-[var(--radius-control)] border border-line py-2 text-center text-sm font-semibold transition-colors hover:bg-bg"
+                    className={buttonClass("secondary", "md", "w-[104px] shrink-0")}
                   >
                     {t.action}
                   </Link>
@@ -210,18 +211,18 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         </section>
 
         <section aria-labelledby="stats-title" className="lg:col-span-2">
-          <h2 id="stats-title" className="mb-1 text-[15px] font-semibold">
+          <h2 id="stats-title" className="mb-1 text-heading font-semibold">
             오늘 학원
           </h2>
           <ul className="divide-y divide-line-soft">
             {stats.map((s) => (
               <li key={s.label}>
-                <Link href={s.href} className="-mx-2 flex items-baseline justify-between gap-3 rounded-[var(--radius-control)] px-2 py-3 hover:bg-bg">
-                  <span className="text-sm text-sub">{s.label}</span>
+                <Link href={s.href} className="press -mx-2 flex items-baseline justify-between gap-3 rounded-[var(--radius-control)] px-2 py-3 hover:bg-bg">
+                  <span className="text-body text-sub">{s.label}</span>
                   <span className="tabular">
-                    <span className="text-xl font-semibold">{s.value}</span>
-                    {s.total !== undefined && <span className="ml-1 text-sm text-sub">/ {s.total}</span>}
-                    <span className="ml-0.5 text-sm text-sub">{s.unit}</span>
+                    <span className="text-figure font-bold">{s.value}</span>
+                    {s.total !== undefined && <span className="ml-1 text-caption text-sub">/ {s.total}</span>}
+                    <span className="ml-0.5 text-caption text-sub">{s.unit}</span>
                   </span>
                 </Link>
               </li>
@@ -232,19 +233,19 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
 
       {/* 바로가기 메뉴 3줄 (HOME-02) */}
       <section aria-label="바로가기">
-        <h2 className="mb-3 text-[15px] font-semibold">바로가기</h2>
+        <h2 className="mb-3 text-heading font-semibold">바로가기</h2>
         <div className="grid grid-cols-3 gap-1">
           {MENU_ROWS.flat().map((m) => (
             <Link
               key={m.label}
               href={hrefOf(m.navLabel)}
-              className="flex min-h-14 items-center justify-between gap-2 rounded-[var(--radius-card)] px-3 py-3 transition-colors hover:bg-bg sm:px-4"
+              className="press-card flex min-h-14 items-center justify-between gap-2 rounded-[var(--radius-card)] px-3 py-3 hover:bg-bg sm:px-4"
             >
               <span className="min-w-0">
-                <span className="block text-sm font-semibold">{m.label}</span>
-                <span className="mt-0.5 hidden truncate text-[13px] text-sub sm:block">{m.desc}</span>
+                <span className="block text-body font-semibold">{m.label}</span>
+                <span className="mt-0.5 hidden truncate text-caption text-sub sm:block">{m.desc}</span>
               </span>
-              <span className="hidden text-sub/60 sm:inline" aria-hidden>
+              <span className="hidden text-faint sm:inline" aria-hidden>
                 ›
               </span>
             </Link>
@@ -253,19 +254,19 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       </section>
 
       {/* 오늘 보강 · 읽지 않은 메시지 */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <Panel
           title={
             <>
-              오늘 보강 <span className="ml-1 text-[13px] font-medium text-sub tabular">{todayMakeups.length}</span>
+              오늘 보강 <span className="ml-1 text-caption font-normal text-sub tabular">{todayMakeups.length}</span>
             </>
           }
           actions={
-            <Link href="/admin/makeups" className="text-sm font-semibold text-brand hover:underline">
+            <Link href="/admin/makeups" className="text-caption font-semibold text-ink hover:underline">
               전체 보기
             </Link>
           }
-          bodyClassName="px-4 py-1"
+          bodyClassName="py-1"
         >
           {todayMakeups.length === 0 ? (
             <EmptyLine>오늘 보강 일정이 없습니다.</EmptyLine>
@@ -278,13 +279,13 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                 const state = m.status === "done" || end <= now ? "끝남" : m.start <= now ? "진행 중" : "예정";
                 return (
                   <li key={m.id} className="flex items-center gap-3 py-2.5">
-                    <span className="w-24 shrink-0 text-[15px] tabular">
+                    <span className="w-24 shrink-0 text-body tabular">
                       {m.start}~{end}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="text-sm font-bold text-ink">{s?.name ?? "알 수 없음"}</span>
-                      <span className="ml-2 text-sm text-sub">{[s?.school, s?.grade].filter(Boolean).join(" ")}</span>
-                      <span className="block truncate text-sm text-sub">
+                      <span className="text-body font-bold text-ink">{s?.name ?? "알 수 없음"}</span>
+                      <span className="ml-2 text-caption text-sub">{[s?.school, s?.grade].filter(Boolean).join(" ")}</span>
+                      <span className="block truncate text-caption text-sub">
                         {m.reason}
                         {t && ` · ${t.nickname}`}
                       </span>
@@ -300,15 +301,15 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         <Panel
           title={
             <>
-              읽지 않은 학부모 메시지 <span className="ml-1 text-[13px] font-medium text-sub tabular">{unreadList.length}</span>
+              읽지 않은 학부모 메시지 <span className="ml-1 text-caption font-normal text-sub tabular">{unreadList.length}</span>
             </>
           }
           actions={
-            <Link href="/admin/messages" className="text-sm font-semibold text-brand hover:underline">
+            <Link href="/admin/messages" className="text-caption font-semibold text-ink hover:underline">
               전체 보기
             </Link>
           }
-          bodyClassName="px-4 py-1"
+          bodyClassName="py-1"
         >
           {unreadList.length === 0 ? (
             <EmptyLine>읽지 않은 메시지가 없습니다.</EmptyLine>
@@ -320,21 +321,21 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                 return (
                   <li key={m.id}>
                     {/* TODO: 해당 학생 대화방으로 바로 이동 */}
-                    <Link href="/admin/messages" className="-mx-4 flex items-start gap-3 px-4 py-2.5 hover:bg-bg/60">
-                      <span className="w-24 shrink-0 pt-0.5 text-[15px] text-sub tabular">
+                    <Link href="/admin/messages" className="-mx-2 flex items-start gap-3 rounded-[var(--radius-control)] px-2 py-2.5 transition-colors duration-[var(--duration-fast)] hover:bg-bg">
+                      <span className="w-24 shrink-0 pt-0.5 text-body text-sub tabular">
                         {day === date ? time : `${day.slice(5).replace("-", "/")} ${time}`}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="text-sm font-bold text-ink">{s?.name ?? "알 수 없음"}</span>
-                        <span className="ml-2 text-sm text-sub">{m.senderName}</span>
-                        <span className="block truncate text-[15px]">{m.body.split("\n")[0]}</span>
+                        <span className="text-body font-bold text-ink">{s?.name ?? "알 수 없음"}</span>
+                        <span className="ml-2 text-caption text-sub">{m.senderName}</span>
+                        <span className="block truncate text-body">{m.body.split("\n")[0]}</span>
                       </span>
                     </Link>
                   </li>
                 );
               })}
               {unreadList.length > UNREAD_LIMIT && (
-                <li className="py-2.5 text-[15px] text-sub">
+                <li className="py-2.5 text-body text-sub">
                   외 <span className="tabular">{unreadList.length - UNREAD_LIMIT}</span>건은 메시지 화면에서 확인
                 </li>
               )}

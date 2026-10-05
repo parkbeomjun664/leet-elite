@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from "react";
 import { cn } from "@/lib/cn";
 
 // 닫힘 움직임 시간 (globals.css --duration-fast와 같게)
@@ -26,6 +26,7 @@ export function Sheet({
   children,
   footer,
   width = "md:w-[520px]",
+  closeRef,
 }: {
   open: boolean;
   onClose: () => void;
@@ -34,6 +35,8 @@ export function Sheet({
   children: ReactNode;
   footer?: ReactNode;
   width?: string;
+  /** 창 밖(footer 등)에서 닫힘 움직임을 거쳐 닫을 때: closeRef.current?.() */
+  closeRef?: Ref<() => void>;
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const [closing, setClosing] = useState(false);
@@ -49,6 +52,7 @@ export function Sheet({
     }, CLOSE_MS);
   }, [onClose]);
 
+  useImperativeHandle(closeRef, () => requestClose, [requestClose]);
   useEffect(() => () => clearTimeout(timer.current), []);
 
   useEffect(() => {

@@ -108,12 +108,12 @@ export function StudentTable({
           ))}
         </FilterRow>
         <FilterRow label="검색">
-          <span className="text-[15px] text-sub">
+          <span className="text-body text-sub">
             <b className="font-bold text-ink tabular">{visible.length}</b>명
           </span>
           <label className="ml-auto min-w-0 flex-1 sm:w-56 sm:flex-none">
             <span className="sr-only">이름·학교 검색</span>
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="이름·학교 검색" className="h-9" />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="이름·학교 검색" />
           </label>
         </FilterRow>
       </div>
@@ -162,7 +162,7 @@ export function StudentTable({
                       setEditId(r.id);
                     }
                   }}
-                  className={cn("cursor-pointer", checked && "bg-brand-tint/40 hover:bg-brand-tint/60")}
+                  className={cn("cursor-pointer", checked && "bg-bg")} // 선택한 줄: 옅은 회색 (분홍은 결석에만, 10/5)
                 >
                   {/* 체크박스를 눌러도 상세 창은 열리지 않게 */}
                   <Td className="w-10 pr-0" onClick={(e) => e.stopPropagation()}>
@@ -174,7 +174,7 @@ export function StudentTable({
                     />
                   </Td>
                   <Td className="whitespace-nowrap">
-                    <span className="text-base font-bold">{r.name}</span>
+                    <span className="font-bold">{r.name}</span>
                     {r.status === "pending" && (
                       <Badge tone="warn" className="ml-2">
                         예정
@@ -208,15 +208,15 @@ export function StudentTable({
 
       {/* 선택한 학생 일괄 처리 (에듀OK 하단 버튼 줄) */}
       {selectedCount > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 backdrop-blur">
+        <div className="fixed inset-x-0 bottom-0 z-20 animate-sheet-up border-t border-line-soft bg-card/95 shadow-float backdrop-blur">
           <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-2 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
-            <span className="mr-2 text-[15px]">
+            <span className="mr-2 text-body">
               선택한 학생 <b className="tabular">{selectedCount}</b>명
             </span>
             {/* TODO: 반 일괄 변경 (CLS), 선택한 학생에게 메시지 (MSG-01) */}
             <Button variant="primary">반 변경</Button>
             <Button>메시지 보내기</Button>
-            <button type="button" onClick={() => setSelected(new Set())} className="ml-auto text-sm text-sub hover:text-ink">
+            <button type="button" onClick={() => setSelected(new Set())} className="ml-auto text-caption text-sub hover:text-ink">
               선택 해제
             </button>
           </div>
@@ -233,7 +233,7 @@ export function StudentTable({
           onClose={() => setEditId(null)}
           onSave={(next) => {
             setRows((prev) => prev.map((r) => (r.id === next.id ? next : r)));
-            setEditId(null);
+            // 창은 저장 뒤 닫힘 움직임을 거쳐 onClose로 닫힌다
           }}
         />
       )}

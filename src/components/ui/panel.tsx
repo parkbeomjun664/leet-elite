@@ -46,7 +46,7 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
 export function SectionTitle({ children, count, actions }: { children: ReactNode; count?: number; actions?: ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-2">
-      <h2 className="flex items-baseline gap-2 text-body font-semibold">
+      <h2 className="flex items-baseline gap-2 text-heading font-semibold">
         {children}
         {count !== undefined && <span className="text-caption text-sub tabular">{count}</span>}
       </h2>
