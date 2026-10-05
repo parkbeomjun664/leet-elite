@@ -59,7 +59,7 @@ LEET영어학원 전용 학원 관리 앱(PWA). 에듀OK의 출결·숙제·소�
   - `_private` 내용을 코드·문서·커밋 메시지에 옮겨 적지 않는다
 - 원장님 원본 자료(`../요구사항_원장님.txt`, `../_beta-src/`)는 참고만 한다
 - 키는 `.env.local`에만. Supabase MCP는 dev 프로젝트 read-only로만 (`.mcp.json`), 운영 프로젝트 키는 쓰지 않는다
-- 커밋 전 검사: `git diff --cached | grep -nE "sbp_|sb_secret_|sb_publishable_[A-Za-z0-9]{10}|010-?[0-9]{4}-?[0-9]{4}"` (010-555x 제외)
+- 커밋 전 검사: `git diff --cached | grep -nE "sbp_[A-Za-z0-9]{8}|sb_secret_|sb_publishable_[A-Za-z0-9]{10}|010-?[0-9]{4}-?[0-9]{4}"` (010-555x 제외)
 
 ## 명령어
 | 명령 | 용도 |
