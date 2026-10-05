@@ -52,7 +52,7 @@ create table public.students (
   status public.student_status not null default 'enrolled',
   enrolled_on date not null default current_date,
   left_on date,
-  attendance_code text not null check (attendance_code ~ '^[0-9]{4,6}$'),
+  attendance_code text not null check (attendance_code ~ '^[0-9]{4}$'),
   programs text[] not null default '{}', -- 클래스카드·클래스5·오토보카 STU-03
   memo text not null default '',
   created_at timestamptz not null default now(),

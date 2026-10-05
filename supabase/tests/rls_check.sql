@@ -101,4 +101,17 @@ update public.students set status = 'withdrawn' where name = '학생3';
 insert into public.students (name, attendance_code) values ('새학생', '1003');
 select pg_temp.expect('원장(설정)', '퇴원생 코드 재사용', (select count(*) from public.students where attendance_code = '1003'), 2);
 
+-- 출결 코드는 숫자 4자리만 (10/5): 5자리·3자리·숫자 아닌 값은 저장 거부
+do $$
+declare c text;
+begin
+  foreach c in array array['12345', '123', '12a4'] loop
+    begin
+      insert into public.students (name, attendance_code) values ('자리수', c);
+      raise exception 'FAIL 출결 코드 % 허용됨', c;
+    exception when check_violation then raise notice 'ok   출결 코드 % 거부', c;
+    end;
+  end loop;
+end $$;
+
 \echo '모든 권한 테스트 통과'
