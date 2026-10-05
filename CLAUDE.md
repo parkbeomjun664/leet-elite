@@ -20,6 +20,7 @@ LEET영어학원 전용 학원 관리 앱(PWA). 에듀OK의 출결·숙제·소�
 | 문서 | 내용 |
 |---|---|
 | `docs/progress.md` | 세션 기록, 단계별 일정 |
+| `docs/workflow.md` | 작업 방식: 하루 진행, 작업일지 형식, 원장님께 보내는 것, 개발 환경 주의사항 |
 | `docs/requirements.md` | 요구사항 (ID: AUTH, HOME, STU, CLS, TCH, ATT, KIOSK, HW, MKP, MSG, NOTI) |
 | `docs/data-model.md` | 표 구조, RLS 원칙 |
 | `docs/screens.md` | 화면별 구성·동작 |
@@ -43,7 +44,7 @@ LEET영어학원 전용 학원 관리 앱(PWA). 에듀OK의 출결·숙제·소�
 - 주석과 화면 문구는 한국어
 - Supabase 작업은 `supabase`·`supabase-postgres-best-practices` 스킬, React 성능은 `vercel-react-best-practices` 기준을 따른다
 
-## 작업 규칙
+## 작업 규칙 (작업 방식은 `docs/workflow.md` 참고)
 - 기능 단위나 되돌리기 어려운 작업(DB 적용·로그인·배포·외부 설정)은 **계획을 먼저 보여 주고 확인받는다**. 작은 수정은 바로 한다
 - 기능을 추가하면 테스트를 함께 쓰고, 끝나면 테스트 결과를 보고한다
 - 파일 전체를 다시 읽지 말고 필요한 부분만 읽는다 (Grep으로 찾고 범위를 정해 Read)
@@ -58,7 +59,7 @@ LEET영어학원 전용 학원 관리 앱(PWA). 에듀OK의 출결·숙제·소�
   - `_private` 내용을 코드·문서·커밋 메시지에 옮겨 적지 않는다
 - 원장님 원본 자료(`../요구사항_원장님.txt`, `../_beta-src/`)는 참고만 한다
 - 키는 `.env.local`에만. Supabase MCP는 dev 프로젝트 read-only로만 (`.mcp.json`), 운영 프로젝트 키는 쓰지 않는다
-- 커밋 전 검사: `git diff --cached | grep -nE "sb_secret_|sb_publishable_[A-Za-z0-9]{10}|010-?[0-9]{4}-?[0-9]{4}"` (010-555x 제외)
+- 커밋 전 검사: `git diff --cached | grep -nE "sbp_|sb_secret_|sb_publishable_[A-Za-z0-9]{10}|010-?[0-9]{4}-?[0-9]{4}"` (010-555x 제외)
 
 ## 명령어
 | 명령 | 용도 |

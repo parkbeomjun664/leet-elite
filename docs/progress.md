@@ -4,6 +4,17 @@
 형식: 날짜 / 한 일 / 결정사항 / 남은 일. 최신이 위.
 
 ### 2026-10-05
+- **다음 세션 시작점 (11:15 정리)**
+  - 작업 시간 08:03 – 약 11:15. 1단계(기획·설계) 진행률 약 98%, 남은 것은 범위 확인서 확정뿐
+  - 오늘 한 일(아래 항목들): 개발 환경 점검·정리 → 원장님 요청 1·2·3·3' 화면 → 리디자인 시안 + 원장님 홈 개편 → 교재비 계획 보완 → 디자인 다듬기 5가지. 작업 방식은 `docs/workflow.md`로 정리
+  - 푸시: a875465까지 푸시함. **디자인 다듬기(e235861) 이후 커밋은 아직 푸시 안 함** → 범준님께 물어보기
+  - 다음 할 일 (순서대로)
+    1. 범위 확인서 갱신: 캡처 다시 찍기(선생님 학생 상세·원장님 홈·키패드·학생 정보 수정 바뀜, `LEET_REAL_DATA=0`), `scope-summary.md` 4번 표의 "원장님 첫 화면 현황 7가지" 문구 수정, 추가 요청 1~7 반영(5 레포트·7 교재비는 "별도 협의") → PDF 다시 만들기 → 범준님 확인 후 발송
+    2. DB 1차를 Supabase dev에 적용 (범준님과 함께, MCP는 read-only라 대시보드나 CLI로)
+    3. 로그인 연결 (AUTH-09·10) → 역할별 접근 막기 → 학생·반·선생님 화면 DB 연결 (2단계, 현재 약 30%)
+  - 원장님께 확인할 것: 미니 창 학부모 대화방 전환 유지 여부, 예약 발송은 전체 대화방에서만, 새 원장님 홈("확인할 일"), 교재비 질문 3가지(교재 목록에서 골라 담기·반 전체 청구·선생님 등록 권한)
+  - 범준님 결정: 레포트(요청 5)·교재비(요청 7) 추가 비용·일정
+  - 기억할 것: Supabase 토큰 만료 11/4경 (`docs/workflow.md` 5번), 시안 캔버스는 claude.ai 아티팩트 "LEET 리디자인 시안"(비공개)
 - **디자인 다듬기 (지금 기준 유지, 전체 점검)**
   - 화면 12개 캡처 점검 → 범준님이 고른 5가지 반영: 분홍 오해 3곳, 상태색 한 벌, 선생님 숫자 0 회색, 24시간제 시간 고르기(`TimeSelect`), 키패드 흰 상단·휴대폰 세로
   - 테스트: 단위 3개(시간 선택지) + 화면 흐름 3개(`e2e/design-polish.spec.ts`) 추가 → 단위 24개·화면 7개 통과, tsc·lint 통과
@@ -31,9 +42,9 @@
 - **이어받기 메모 (08:05, 새 세션용)**
   - 오늘 시작 08:03 (작업일지 시작 시각). 작업이 하나 끝날 때마다 그날 작업일지(작업내역 블록)를 갱신해서 보여 준다
   - 원장님 10/5 08:01 답장: "아직 리뷰 못했어요~ 그래도 가능해요" → 범위 확정 전이므로 확정과 무관한 작업부터
-  - 오늘 계획: ① 원장님 요청 1·2·3·3' 화면 수정 (`docs/requests-2026-10-02.md`) ② DB 1차를 Supabase dev에 적용 (범준님과 함께, `/mcp` supabase-dev 로그인 후) ③ 로그인 연결 (AUTH-09·10)
+  - 오늘 계획: ① 원장님 요청 1·2·3·3' 화면 수정 (`docs/requests-2026-10-02.md`) ② DB 1차를 Supabase dev에 적용 (범준님과 함께, `/mcp` supabase-dev 로그인 후) ③ 로그인 연결 (AUTH-09·10) → ① 완료, ②③은 다음 세션으로 (디자인을 먼저 잡기로 함)
   - 미룰 것: 5번 레포트·7번 교재비(새 기능, 비용·일정 결정 후), 4번 보강 알림·6번 메시지 사진(5단계)
-  - 범준님이 할 것: `/mcp`에서 supabase-dev 승인·로그인, context7 확인, gh 설치(`winget install --id GitHub.cli -e`)·`gh auth login`
+  - 범준님이 할 것: `/mcp`에서 supabase-dev 승인·로그인, context7 확인, gh 설치(`winget install --id GitHub.cli -e`)·`gh auth login` → 모두 완료 (Supabase는 토큰 방식으로 바꿈)
 - **한 일**
   - 개발 환경 정리: Claude Code 플러그인 4개(frontend-design, typescript-lsp, context7, feature-dev, 프로젝트 범위), 스킬 3개(supabase, supabase-postgres-best-practices, vercel-react-best-practices, `.claude/skills/`)
   - 라이브러리 추가: lucide-react, react-hook-form, zod, @hookform/resolvers, @testing-library/react·dom, jsdom, @playwright/test
