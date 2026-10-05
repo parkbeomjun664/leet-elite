@@ -11,16 +11,16 @@ export const metadata: Metadata = { title: "스타일 가이드" };
 // 모든 화면은 여기 있는 부품과 색만 쓴다. 새 부품을 만들면 여기에도 추가한다. (CLAUDE.md 디자인 규칙)
 
 const COLORS = [
-  { name: "brand", label: "메인 (버건디)", cls: "bg-brand", hex: "#B72F34" },
+  { name: "brand", label: "메인 (로고·주요 버튼·결석)", cls: "bg-brand", hex: "#B3262E" },
   { name: "brand-dark", label: "진한 메인", cls: "bg-brand-dark", hex: "#92262A" },
   { name: "brand-tint", label: "메인 연한 바탕", cls: "bg-brand-tint", hex: "#FBECEE" },
-  { name: "bg", label: "화면 바탕", cls: "bg-bg", hex: "#F6F4F3" },
+  { name: "bg", label: "화면 바탕", cls: "bg-bg", hex: "#FAFAFA" },
   { name: "card", label: "카드", cls: "bg-card", hex: "#FFFFFF" },
-  { name: "line", label: "테두리", cls: "bg-line", hex: "#E5DEDC" },
-  { name: "ink", label: "글자", cls: "bg-ink", hex: "#252525" },
-  { name: "sub", label: "보조 글자", cls: "bg-sub", hex: "#74696A" },
-  { name: "ok", label: "상태: 정상·등원·제출", cls: "bg-ok", hex: "#2F7D5B" },
-  { name: "warn", label: "상태: 주의·미등원·미제출", cls: "bg-warn", hex: "#B7791F" },
+  { name: "line", label: "테두리", cls: "bg-line", hex: "#E5E5E5" },
+  { name: "ink", label: "글자", cls: "bg-ink", hex: "#1A1A1A" },
+  { name: "sub", label: "보조 글자", cls: "bg-sub", hex: "#767676" },
+  { name: "ok", label: "상태: 정상·등원·제출", cls: "bg-ok", hex: "#2E7D4F" },
+  { name: "warn", label: "상태: 주의·미등원·미제출", cls: "bg-warn", hex: "#A6650A" },
   { name: "info", label: "상태: 안내·하원·매일 숙제", cls: "bg-info", hex: "#2B6CB0" },
 ];
 

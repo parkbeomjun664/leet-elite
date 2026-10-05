@@ -181,6 +181,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
         <div role="group" aria-label="상태로 보기" className="grid grid-cols-6 border-y border-line">
           {STATUS_FILTERS.map((f) => {
             const active = status === f.key;
+            const n = count(f.key);
             return (
               <button
                 key={f.key}
@@ -189,7 +190,8 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
                 onClick={() => setStatus(active && f.key !== "all" ? "all" : f.key)}
                 className={cn("relative py-3 text-center transition-colors", active ? "bg-bg" : "hover:bg-bg/50")}
               >
-                <span className={cn("block text-2xl leading-tight font-semibold tabular", f.color)}>{count(f.key)}</span>
+                {/* 0이면 회색: 색은 확인할 숫자(미등원 1, 결석 2 등)에만 남긴다 (10/5) */}
+                <span className={cn("block text-2xl leading-tight font-semibold tabular", n === 0 ? "text-ink/50" : f.color)}>{n}</span>
                 <span className={cn("text-[13px] whitespace-nowrap", active ? "font-semibold text-ink" : "text-sub")}>{f.label}</span>
                 {active && <span className="absolute inset-x-0 bottom-0 h-[3px] bg-ink" />}
               </button>
@@ -427,7 +429,7 @@ function Tile({ day, selecting, selected, focusId, onToggle, onOpen, onAttendanc
     <li
       className={cn(
         "rounded-[var(--radius-card)] px-4 py-3 transition-colors",
-        checked || focused ? "bg-brand/[0.06] shadow-[inset_0_0_0_1px_rgba(183,47,52,0.25)]" : "bg-bg hover:bg-line-soft",
+        checked || focused ? "bg-card shadow-[inset_0_0_0_1.5px_var(--color-ink)]" : "bg-bg hover:bg-line-soft",
       )}
     >
       <div className="flex items-center gap-2">

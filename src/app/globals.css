@@ -3,9 +3,9 @@
 @import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 
 /*
- * LEET Elite 디자인 토큰 (원장님 요구사항 12. 디자인 방향)
- * Main #B72F34 · Dark #92262A · Background #F6F4F3 · Card #FFFFFF
- * Border #E5DEDC · Text #252525 · Sub text #74696A
+ * LEET Elite 디자인 토큰 (원장님 요구사항 12. 디자인 방향에서 시작, 10/2·10/5 정리)
+ * 브랜드 #B3262E (로고·주요 버튼, 결석) · 상태색 한 벌(ok·warn·info) · 회색 3단계
+ * 기준: docs/decisions.md
  */
 @theme {
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
@@ -25,22 +25,24 @@
   --color-mpage: #f7f6f4; /* 페이지 바탕 */
   --color-surface: #ffffff; /* 모든 카드 */
   --color-border: #eceae6;
-  --color-status-ok-bg: #eaf5ee; /* 등원·제출함 */
-  --color-status-ok-fg: #2e7d4f;
-  --color-status-warn-bg: #fdf3e1; /* 미제출 */
-  --color-status-warn-fg: #a6650a;
-  --color-status-alert-bg: #fcebec; /* 결석 (분홍은 이때만) */
-  --color-status-alert-fg: #b3262e;
+  /* 휴대폰 상태색 이름: 값은 아래 "상태 색" 한 벌을 그대로 쓴다 (10/5 두 벌 → 한 벌) */
+  --color-status-ok-bg: var(--color-ok-tint); /* 등원·제출함 */
+  --color-status-ok-fg: var(--color-ok);
+  --color-status-warn-bg: var(--color-warn-tint); /* 미제출 */
+  --color-status-warn-fg: var(--color-warn);
+  --color-status-alert-bg: var(--color-brand-tint); /* 결석 (분홍은 이때만) */
+  --color-status-alert-fg: var(--color-brand);
   --color-tab-on: #222222; /* 하단 탭 선택 */
   --color-tab-off: #9a9a9a;
   --color-mline: #f0f0f2; /* 휴대폰 카드 안 항목 구분선 */
   --color-ink: #1a1a1a;
   --color-sub: #767676;
 
-  /* 상태 색: 출결·제출 등 상태 표시에만 사용 (브랜드 색과 구분) */
-  --color-ok: #2f7d5b;
-  --color-ok-tint: #e6f2ec;
-  --color-warn: #b7791f;
+  /* 상태 색 (관리 화면·휴대폰 공통 한 벌, 10/5): 초록 = 등원·제출 / 주황 = 미등원·미제출 / 파랑 = 하원 / 결석은 brand
+     출결·제출 등 상태 표시에만 쓴다 */
+  --color-ok: #2e7d4f;
+  --color-ok-tint: #eaf5ee;
+  --color-warn: #a6650a;
   --color-warn-tint: #fdf3e1;
   --color-info: #2b6cb0;
   --color-info-tint: #e8f0fa;

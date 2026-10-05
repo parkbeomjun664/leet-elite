@@ -238,16 +238,15 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
 
   return (
     <div className="flex min-h-dvh flex-col pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] pl-[env(safe-area-inset-left,0px)]">
-      {/* 상단 줄: 로고 · 학원 이름 · 날짜와 시계 */}
-      <header className="bg-brand-dark pt-[env(safe-area-inset-top,0px)] text-white">
-        <div className="flex h-16 items-center justify-between gap-4 px-4 md:h-[72px] md:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-[var(--radius-control)] bg-card md:size-11">
-              {/* 원본 PNG가 흰 배경이라 흰 네모 위에서 곱하기 합성 */}
-              <Image src="/brand/leet-mark.png" alt="" width={407} height={512} priority className="h-7 w-auto md:h-8" />
-            </span>
+      {/* 상단 줄: 로고 · 학원 이름 · 날짜와 시계. 10/5: 버건디 바 → 흰 바탕 (다른 화면의 흰 메뉴와 통일)
+          휴대폰 세로(아이폰 시험)에서는 학원 이름을 빼고 "출결"만 보여 잘리지 않게 */}
+      <header className="border-b border-line bg-card pt-[env(safe-area-inset-top,0px)] text-ink">
+        <div className="flex h-16 items-center justify-between gap-3 px-4 md:h-[72px] md:px-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            {/* 원본 PNG가 흰 배경이라 흰 바탕 위에 그대로 둔다 */}
+            <Image src="/brand/leet-mark.png" alt="" width={407} height={512} priority className="h-8 w-auto shrink-0 md:h-9" />
             <p className="truncate text-lg font-bold md:text-xl">
-              LEET영어학원 <span className="font-semibold text-white/80">출결</span>
+              <span className="hidden text-brand sm:inline">LEET영어학원 </span>출결
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-3 md:gap-5">
@@ -262,15 +261,15 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
               aria-label={soundOn ? "소리 켜짐 (누르면 끄기)" : "소리 꺼짐 (누르면 켜기)"}
               title="태블릿 음량도 켜 두세요"
               className={cn(
-                "flex h-10 items-center gap-1.5 rounded-[var(--radius-control)] border px-3 text-[15px] font-semibold transition-colors hover:bg-white/10",
-                soundOn ? "border-white/40 text-white" : "border-white/25 text-white/70",
+                "flex h-10 items-center gap-1.5 rounded-[var(--radius-control)] border border-line px-3 text-[15px] font-semibold transition-colors hover:bg-bg",
+                soundOn ? "text-ink" : "text-sub",
               )}
             >
               <SpeakerIcon on={soundOn} />
               <span className="hidden sm:inline">{soundOn ? "소리 켜짐" : "소리 꺼짐"}</span>
             </button>
             <div className="flex flex-col items-end leading-tight sm:flex-row sm:items-baseline sm:gap-3">
-              <span className="text-[13px] text-white/80 sm:text-[15px]">{date ? formatDateKo(date) : " "}</span>
+              <span className="text-[13px] text-sub sm:text-[15px]">{date ? formatDateKo(date) : " "}</span>
               <span className="text-xl font-bold tabular md:text-[28px]">{time || " "}</span>
             </div>
           </div>
@@ -348,7 +347,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
           <Key
             onClick={submit}
             disabled={digits.length < MIN_LEN}
-            className="bg-brand text-2xl font-bold text-white active:bg-brand-dark disabled:bg-brand/35 md:text-[28px]"
+            className="bg-brand text-2xl font-bold text-white active:bg-brand-dark disabled:bg-line-soft disabled:text-sub md:text-[28px]"
           >
             확인
           </Key>

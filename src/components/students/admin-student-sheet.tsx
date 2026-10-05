@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Checkbox, Field, Input, Select, Textarea, TimeSelect } from "@/components/ui/field";
 import { InfoList } from "@/components/ui/panel";
 import { Sheet } from "@/components/ui/sheet";
 import { WEEKDAY_KO } from "@/lib/date";
@@ -217,14 +217,7 @@ export function AdminStudentSheet({
                         </option>
                       ))}
                     </Select>
-                    <Input
-                      aria-label="시작 시간"
-                      type="time"
-                      step={300}
-                      value={slot.start}
-                      onChange={(e) => setSlot(i, { start: e.target.value })}
-                      className="tabular"
-                    />
+                    <TimeSelect label="시작 시간" minuteStep={5} value={slot.start} onChange={(v) => setSlot(i, { start: v })} />
                     <Input
                       aria-label="수업 시간(분)"
                       type="number"

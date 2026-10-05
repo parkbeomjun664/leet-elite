@@ -50,3 +50,19 @@ export function addMinutes(time: string, minutes: number): string {
   const total = h * 60 + m + minutes;
   return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
+
+/**
+ * 24시간제 시간 고르기의 선택지 (10/5). 브라우저 기본 시간 칸은 휴대폰 설정에 따라 "오후 02:30"으로 보여서 직접 만든다.
+ * 지금 값이 간격에 맞지 않아도(예: 5분 간격인데 14:57) 그 값은 선택지에 넣어 둔다.
+ */
+export function timeSelectOptions(value: string, minuteStep = 1): { hours: string[]; minutes: string[] } {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const hours = Array.from({ length: 24 }, (_, h) => pad(h));
+  const minutes = Array.from({ length: Math.ceil(60 / minuteStep) }, (_, i) => pad(i * minuteStep));
+  const current = value.slice(3, 5);
+  if (/^\d{2}$/.test(current) && !minutes.includes(current)) {
+    minutes.push(current);
+    minutes.sort();
+  }
+  return { hours, minutes };
+}

@@ -1,8 +1,11 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { timeSelectOptions } from "@/lib/date";
 
-const control =
-  "w-full rounded-[var(--radius-control)] border border-line bg-card px-3 text-[15px] text-ink placeholder:text-sub/70 focus:border-brand focus:outline-none disabled:bg-line-soft disabled:text-sub";
+// 폭을 뺀 입력칸 모양 (시간 고르기처럼 폭이 정해진 칸용). cn은 클래스 충돌을 정리하지 않아서 w-full을 따로 둔다
+const controlBase =
+  "rounded-[var(--radius-control)] border border-line bg-card px-3 text-[15px] text-ink placeholder:text-sub/70 focus:border-brand focus:outline-none disabled:bg-line-soft disabled:text-sub";
+const control = `w-full ${controlBase}`;
 
 /** 이름표 + 입력 + 도움말/오류를 묶는 틀 */
 export function Field({
@@ -48,6 +51,54 @@ export function Select({ className, children, ...rest }: ComponentProps<"select"
     <select className={cn(control, "h-10 pr-8", className)} {...rest}>
       {children}
     </select>
+  );
+}
+
+/**
+ * 24시간제 시간 고르기: 시 · 분 선택칸 두 개 (값 "HH:MM"). 휴대폰 설정과 상관없이 항상 "14:30"으로 보인다 (10/5)
+ * id는 시 칸에 붙어서 Field의 이름표와 연결된다
+ */
+export function TimeSelect({
+  id,
+  value,
+  onChange,
+  label,
+  minuteStep = 1,
+  size = "md",
+  className,
+}: {
+  id?: string;
+  value: string;
+  onChange: (value: string) => void;
+  /** 화면 읽기용 이름 (예: "등원 시각"). 시·분 칸에 "… 시", "… 분"으로 붙는다 */
+  label: string;
+  minuteStep?: number;
+  size?: "md" | "lg";
+  className?: string;
+}) {
+  const { hours, minutes } = timeSelectOptions(value, minuteStep);
+  const [h = "00", m = "00"] = value.split(":");
+  const sizing = size === "lg" ? "h-12 text-base" : "h-10";
+  return (
+    <div className={cn("flex items-center gap-1.5", className)}>
+      <select id={id} aria-label={`${label} 시`} value={h} onChange={(e) => onChange(`${e.target.value}:${m}`)} className={cn(controlBase, "w-[84px] shrink-0 tabular", sizing)}>
+        {hours.map((x) => (
+          <option key={x} value={x}>
+            {x}
+          </option>
+        ))}
+      </select>
+      <span className="text-sub" aria-hidden>
+        :
+      </span>
+      <select aria-label={`${label} 분`} value={m} onChange={(e) => onChange(`${h}:${e.target.value}`)} className={cn(controlBase, "w-[84px] shrink-0 tabular", sizing)}>
+        {minutes.map((x) => (
+          <option key={x} value={x}>
+            {x}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 

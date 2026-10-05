@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { Field, Input, TimeSelect } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import type { Attendance } from "@/lib/mock/types";
 
@@ -114,7 +114,7 @@ function TimeField({ label, value, onChange, onNow }: { label: string; value: st
   return (
     <Field label={label} htmlFor={id}>
       <div className="flex items-center gap-2">
-        <Input id={id} type="time" value={value} onChange={(e) => onChange(e.target.value)} required inputSize="lg" className="w-40 tabular" />
+        <TimeSelect id={id} label={label} value={value} onChange={onChange} size="lg" />
         <Button onClick={onNow}>지금</Button>
       </div>
     </Field>

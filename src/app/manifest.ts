@@ -13,7 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone", // 주소창 없이 앱처럼
     orientation: "any",
     background_color: "#F6F4F3",
-    theme_color: "#B72F34",
+    theme_color: "#B3262E",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
