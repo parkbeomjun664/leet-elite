@@ -67,7 +67,7 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "press flex h-full flex-col items-center justify-center gap-1 text-[11px]",
-                    active ? "font-bold text-ink" : "font-medium text-faint hover:text-ink",
+                    active ? "font-bold text-ink" : "font-medium text-sub hover:text-ink",
                   )}
                 >
                   <TabIcon index={i} />

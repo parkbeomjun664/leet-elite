@@ -319,6 +319,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
             <div
               key={result?.kind === "unknown" ? `shake-${resultSeq}` : "slots"}
               className={cn("mt-5 flex gap-2 md:gap-3", result?.kind === "unknown" && "animate-kiosk-shake")}
+              role="group"
               aria-label={`입력한 번호 ${digits.length}자리`}
             >
               {Array.from({ length: KIOSK_CODE_LEN }, (_, i) => {

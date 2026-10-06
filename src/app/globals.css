@@ -12,7 +12,7 @@
 
   /* 중립 회색 한 벌 (10/5 관리 화면·휴대폰 통합) */
   --color-ink: #1a1a1a; /* 본문·제목, 선택 테두리 */
-  --color-sub: #6e6d6a; /* 보조 글씨·라벨 (흰 바탕·bg 위 대비 4.5 이상) */
+  --color-sub: #6a6966; /* 보조 글씨·라벨 (흰 바탕·bg·line-soft 배지 위 모두 대비 4.5 이상, 10/6 axe 검사로 #6e6d6a에서 조정) */
   --color-faint: #a3a19d; /* 아이콘·입력 안내·비활성. 읽어야 하는 글씨에는 쓰지 않는다 */
   --color-line: #e4e2de; /* 입력칸·보조 버튼 테두리 */
   --color-line-soft: #efedea; /* 목록 구분선, 스켈레톤, 비활성 바탕 */
@@ -27,7 +27,7 @@
   /* 상태 색 (관리 화면·휴대폰 공통 한 벌): 초록 = 등원·제출 / 주황 = 미등원·미제출 / 파랑 = 하원·예정 / 결석은 brand */
   --color-ok: #2e7d4f;
   --color-ok-tint: #eaf5ee;
-  --color-warn: #a6650a;
+  --color-warn: #9c5f09; /* 10/6: 옅은 주황 바탕 위 대비 4.5 이상 (#a6650a는 4.25) */
   --color-warn-tint: #fdf3e1;
   --color-info: #2b6cb0;
   --color-info-tint: #e8f0fa;

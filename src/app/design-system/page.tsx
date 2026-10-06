@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "디자인 시스템" };
 
 const NEUTRALS = [
   { name: "ink", hex: "#1A1A1A", use: "본문·제목·선택 테두리", cls: "bg-ink" },
-  { name: "sub", hex: "#6E6D6A", use: "보조 글씨·라벨", cls: "bg-sub" },
+  { name: "sub", hex: "#6A6966", use: "보조 글씨·라벨", cls: "bg-sub" },
   { name: "faint", hex: "#A3A19D", use: "아이콘·안내·비활성", cls: "bg-faint" },
   { name: "line", hex: "#E4E2DE", use: "입력칸·보조 버튼 테두리", cls: "bg-line" },
   { name: "line-soft", hex: "#EFEDEA", use: "구분선·스켈레톤", cls: "bg-line-soft" },
@@ -23,7 +23,7 @@ const NEUTRALS = [
 
 const STATUS = [
   { name: "ok", label: "등원 · 제출함", fg: "#2E7D4F", bg: "#EAF5EE", tone: "ok" as const },
-  { name: "warn", label: "미등원 · 미제출", fg: "#A6650A", bg: "#FDF3E1", tone: "warn" as const },
+  { name: "warn", label: "미등원 · 미제출", fg: "#9C5F09", bg: "#FDF3E1", tone: "warn" as const },
   { name: "info", label: "하원 · 예정", fg: "#2B6CB0", bg: "#E8F0FA", tone: "info" as const },
   { name: "brand", label: "결석", fg: "#B3262E", bg: "#FBECEE", tone: "brand" as const },
 ];
