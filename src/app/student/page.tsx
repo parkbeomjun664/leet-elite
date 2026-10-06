@@ -4,6 +4,7 @@ import {
   MakeupList,
   MessageList,
   MobileSection,
+  MobileStickyAction,
   type HomeworkItem,
   type MakeupItem,
   type MessageItem,
@@ -88,17 +89,17 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
       <section aria-label="오늘 할 숙제" className="rounded-[var(--radius-mcard)] border border-line border-l-4 border-l-brand bg-card p-5">
         {first ? (
           <>
-            <p className="text-caption text-sub">
-              오늘 할 숙제 <span className="font-medium text-ink tabular">{pendingItems.length}개</span>
-            </p>
-            <h1 className="mt-2 text-title leading-snug font-bold text-ink">{first.title}</h1>
+            {/* 숫자 먼저: 남은 숙제 수를 크게, 설명은 작은 회색 라벨 (docs/design.md 8번) */}
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-caption text-sub">오늘 할 숙제</p>
+              <p className="text-caption text-sub">
+                <span className="text-figure font-bold text-ink tabular">{pendingItems.length}</span>개 남음
+              </p>
+            </div>
+            <h1 className="mt-1 text-title leading-snug font-bold text-ink">{first.title}</h1>
             <p className="mt-1 text-caption text-sub tabular">
               {first.daily ? "매일 숙제" : "일반 숙제"} · {first.dateLabel}에 받음
             </p>
-            {/* TODO(HW-06): 사진·글을 올리는 제출 화면으로 이동 */}
-            <Button variant="primary" size="lg" className="mt-5 w-full">
-              제출하기
-            </Button>
             {pendingItems.length > 1 && (
               <ul className="mt-4 space-y-1">
                 {pendingItems.slice(1).map((hw) => (
@@ -159,6 +160,16 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
       <MobileSection title="학원 메시지">
         <MessageList items={messageItems} href="/student/messages" />
       </MobileSection>
+
+      {/* 주 버튼은 아래 탭 바로 위에 고정 (엄지 자리). 남은 숙제가 있을 때만 */}
+      {first && (
+        <MobileStickyAction>
+          {/* TODO(HW-06): 사진·글을 올리는 제출 화면으로 이동 */}
+          <Button variant="primary" size="lg" className="w-full">
+            제출하기
+          </Button>
+        </MobileStickyAction>
+      )}
 
       {/* 내 정보: 맨 아래 한 줄 */}
       <p className="px-1 pb-2 text-caption leading-relaxed text-sub">

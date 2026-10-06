@@ -7,11 +7,13 @@ import {
   MakeupList,
   MessageList,
   MobileSection,
+  MobileStickyAction,
   type HomeworkItem,
   type MakeupItem,
   type MessageItem,
 } from "@/components/mobile/mobile-shell";
 import { MCARD, MCARD_LIST, ROW_DIVIDER } from "@/components/mobile/styles";
+import { Button } from "@/components/ui/button";
 import { studentDay, type DayStatus } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
 import { STATUS_CARD_CLASS, statusColor } from "@/lib/status-colors";
@@ -135,10 +137,6 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
         </div>
         <h1 className="mt-2 text-title leading-snug font-bold text-ink tabular">{hero.title}</h1>
         {hero.detail && <p className="mt-1 text-caption text-sub tabular">{hero.detail}</p>}
-        {/* 결석 신청 (ATT-09) TODO: 날짜·사유 입력 창 → 원장님·담당 선생님 알림 */}
-        <button type="button" className="mt-4 -mb-2 flex min-h-12 items-center text-body font-medium text-ink underline underline-offset-4">
-          결석 신청하기 ›
-        </button>
       </section>
 
       <NewAlerts items={alerts.slice(0, 3)} />
@@ -188,6 +186,14 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
       >
         <MessageList items={messageItems} href="/parent/messages" />
       </MobileSection>
+
+      {/* 학부모의 주 행동: 결석 신청 (ATT-09). 아래 탭 위에 고정. 빨강은 쓰지 않는다(결석 분홍과 헷갈리지 않게)
+          TODO: 날짜·사유 입력 하단 시트 → 원장님·담당 선생님 알림 */}
+      <MobileStickyAction>
+        <Button size="lg" className="w-full">
+          {student.name} 결석 신청하기
+        </Button>
+      </MobileStickyAction>
     </div>
   );
 }
