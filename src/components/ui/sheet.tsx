@@ -133,7 +133,8 @@ export function Sheet({
             // 휴대폰: 하단 시트 (화면 92%까지, 위 모서리 12)
             "inset-x-0 bottom-0 max-h-[92dvh] rounded-t-[var(--radius-mcard)] animate-sheet-up",
             // 768 이상: 오른쪽 패널
-            "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:w-full md:rounded-none md:animate-sheet-in",
+            // 폭은 width(기본 md:w-[520px])가 정한다. 여기서 폭을 또 주면 cn()이 겹친 클래스를 정리하지 않아 어긋난다
+            "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:rounded-none md:animate-sheet-in",
             closing && "translate-y-full md:translate-x-6 md:translate-y-0 md:opacity-0",
             width,
           )}
