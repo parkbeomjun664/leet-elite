@@ -1,3 +1,4 @@
+import type { Database } from "./database.types";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { KEEP_COOKIE, sessionCookieOptions } from "./cookies";
@@ -9,7 +10,7 @@ import { KEEP_COOKIE, sessionCookieOptions } from "./cookies";
 export async function createClient(opts?: { keep?: boolean }) {
   const cookieStore = await cookies();
   const keep = opts?.keep ?? cookieStore.get(KEEP_COOKIE)?.value === "1";
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+  return createServerClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (cookiesToSet) => {

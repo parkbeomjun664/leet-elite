@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
 
 // 로그인 흐름 (AUTH-01·03·06·07·09·10). 출입 통제를 건너뛰는 머리글 없이, dev Supabase에 실제로 로그인한다
-// 시험 계정: scripts/seed-dev-accounts.mjs (비밀번호는 .env.local의 E2E_PASSWORD, 없으면 계정이 필요한 테스트는 건너뜀)
+// 시험 계정: scripts/seed-dev.mts (비밀번호는 .env.local의 E2E_PASSWORD, 없으면 계정이 필요한 테스트는 건너뜀)
 test.use({ extraHTTPHeaders: {}, viewport: { width: 1280, height: 900 } });
 test.describe.configure({ mode: "serial" });
 

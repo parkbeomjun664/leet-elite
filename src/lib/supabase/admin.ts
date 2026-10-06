@@ -1,3 +1,4 @@
+import type { Database } from "./database.types";
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
@@ -8,7 +9,7 @@ import { createClient } from "@supabase/supabase-js";
 export function createAdminClient() {
   const key = process.env.SUPABASE_SECRET_KEY;
   if (!key) throw new Error("SUPABASE_SECRET_KEY가 없습니다 (.env.local 또는 Vercel 환경변수)");
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
+  return createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

@@ -32,7 +32,9 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
   const admin = createAdminClient();
   const ip = await clientIp();
   const idKey = id ?? "(invalid)";
-  const { data: attempt, error: attemptError } = await admin.rpc("login_attempt_begin", { p_id: idKey, p_ip: ip }).single<{ allowed: boolean; locked: boolean }>();
+  // DB 함수는 IP가 null이면 IP 규칙을 건너뛴다. 생성된 타입에는 인자가 문자열로만 나와서 맞춰 준다 (database.types.ts 머리말)
+  const p_ip = ip as string;
+  const { data: attempt, error: attemptError } = await admin.rpc("login_attempt_begin", { p_id: idKey, p_ip }).single<{ allowed: boolean; locked: boolean }>();
   if (attemptError || !attempt) {
     console.error("[login] 시도 기록을 남기지 못함", attemptError?.message);
     return { error: UNAVAILABLE, ...again };
@@ -59,7 +61,7 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
   }
 
   // 성공: 그 아이디의 횟수를 지우고 IP 횟수는 하나 덜어 낸다 (학원 와이파이에서 여러 학생이 로그인해도 막히지 않게)
-  const { error: successError } = await admin.rpc("login_attempt_success", { p_id: idKey, p_ip: ip });
+  const { error: successError } = await admin.rpc("login_attempt_success", { p_id: idKey, p_ip });
   if (successError) console.error("[login] 성공 기록을 남기지 못함", successError.message);
 
   // 첫 로그인이면 비밀번호부터 바꾼다 (AUTH-03). 화면 출입(proxy)은 토큰 표시를 보므로 둘 중 하나라도 켜져 있으면

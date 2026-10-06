@@ -43,9 +43,13 @@
    - `20261002000000_core_people_classes.sql`: 1차 표·권한
    - `20261005235327_service_role_grants_policy_perf.sql`: 서버 전용 관리자(service_role) 표 권한(로그인 시도 기록·계정 만들기), 정책 성능(`(select auth.uid())`)
    - `20261006231930_login_attempt_atomic.sql`: 로그인 시도 제한을 DB 함수 한 번으로(`login_attempt_begin`·`login_attempt_success`, 서버만 호출). 동시 요청에도 횟수가 정확히 올라간다
-5. (dev·시연 DB만) 가상 시험 계정 만들기: `admin`·`teacher`·`student`·`parent`·`kiosk`·`newbie`(첫 로그인 비밀번호 변경 시험). 비밀번호는 환경변수로만 받고 저장소에 남기지 않는다
+5. (dev·시연 DB만) 시험 계정 + 가상 학원 명단 넣기 (10/7부터 `scripts/seed-dev.mts` 하나로)
+   - 계정: `admin`·`teacher`(가상 Jenny 선생님)·`student`(가상 조나윤, 출결 1234)·`parent`(가상 표승현맘, 자녀 2명)·`kiosk`·`newbie`(첫 로그인 비밀번호 변경 시험)
+   - 명단: 화면 개발용 가상 데이터(`src/lib/mock/data.ts`)의 선생님 4·반 9·학생 68·보호자 65와 시간표·반 소속·보호자 연결. 실제 명단 파일이 있어도 쓰지 않는다
+   - 실행할 때마다 명단을 처음 가상 상태로 되돌린다 (시험으로 고친 내용 원상 복구). 비밀번호는 환경변수로만 받고 저장소에 남기지 않는다
    ```powershell
-   $env:SEED_PASSWORD="시연 비밀번호"; node --env-file=.env.local scripts/seed-dev-accounts.mjs --ref=<dev 프로젝트 ref>
+   $env:SEED_PASSWORD="시연 비밀번호"; node --env-file=.env.local --import tsx scripts/seed-dev.mts --ref=<dev 프로젝트 ref>
+   # 비밀번호는 그대로 두고 명단만 되돌릴 때: SEED_PASSWORD 없이 (Remove-Item Env:SEED_PASSWORD 후) 같은 명령
    ```
    화면 흐름 테스트(`e2e/auth.spec.ts`)는 같은 비밀번호를 `.env.local`의 `E2E_PASSWORD`로 읽는다. 운영 DB에는 실행하지 않는다(`--ref` 확인)
 4. 대시보드 Advisors(보안·성능)에서 새 경고가 없는지 봅니다. 일부러 둔 경고는 아래 표

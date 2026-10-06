@@ -1,3 +1,4 @@
+import type { Database } from "./database.types";
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { isRole, routeFor, type Role } from "@/lib/auth/roles";
@@ -11,7 +12,7 @@ export async function updateSession(request: NextRequest) {
   const keep = request.cookies.get(KEEP_COOKIE)?.value === "1";
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+  const supabase = createServerClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (cookiesToSet) => {

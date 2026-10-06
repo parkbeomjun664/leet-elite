@@ -1,42 +1,19 @@
-import type { AdminStudent } from "@/components/students/admin-student-sheet";
+import { Users } from "lucide-react";
 import { StudentTable } from "@/components/students/student-table";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/panel";
-import { classes, guardiansOf, studentById, students } from "@/lib/mock/data";
+import { loadAdminStudents } from "@/lib/data/students";
+
+// 재원생 목록 (STU-06). 10/7부터 실제 DB에서 읽는다 (시험 모드에서만 가상 데이터, src/lib/data/source.ts)
+// 매 요청마다 새로 읽는다 (원장님이 고친 내용이 바로 보이게)
+export const dynamic = "force-dynamic";
 
 export default async function AdminStudents({ searchParams }: PageProps<"/admin/students">) {
-  // 바로 열기: /admin/students?edit=s003 → 그 학생 수정 창을 연 채로 시작
+  // 바로 열기: /admin/students?edit=<학생 id> → 그 학생 수정 창을 연 채로 시작
   const { edit } = await searchParams;
+  const { rows, classes } = await loadAdminStudents();
 
-  // 재원생 화면: 재원 + 예정만 (휴·퇴원생은 별도 화면, STU-09)
-  const list = students.filter((s) => s.status === "enrolled" || s.status === "pending");
-
-  // 화면에 필요한 값만 골라 넘긴다 (직렬화 가능한 값)
-  const rows: AdminStudent[] = list.map((s) => ({
-    id: s.id,
-    name: s.name,
-    school: s.school,
-    grade: s.grade,
-    phone: s.phone,
-    status: s.status,
-    enrolledOn: s.enrolledOn,
-    leftOn: s.leftOn,
-    classIds: [...s.classIds],
-    schedule: s.schedule.map((x) => ({ ...x })),
-    attendanceCode: s.attendanceCode,
-    programs: [...s.programs],
-    memo: s.memo,
-    guardians: guardiansOf(s.id).map((g) => ({
-      id: g.id,
-      name: g.name,
-      relation: g.relation,
-      phone1: g.phone1,
-      phone2: g.phone2,
-      children: g.studentIds.map((id) => ({ id, name: studentById(id)?.name ?? "알 수 없음" })),
-    })),
-  }));
-
-  const classChips = [...classes].sort((a, b) => a.sortOrder - b.sortOrder).map((c) => ({ id: c.id, name: c.name }));
   const enrolledCount = rows.filter((r) => r.status === "enrolled").length;
   const pendingCount = rows.length - enrolledCount;
   const initialEditId = typeof edit === "string" && rows.some((r) => r.id === edit) ? edit : null;
@@ -48,14 +25,20 @@ export default async function AdminStudents({ searchParams }: PageProps<"/admin/
         description={`재원 ${enrolledCount}명${pendingCount ? ` · 입학 예정 ${pendingCount}명` : ""} (휴·퇴원생은 따로 봅니다)`}
         actions={
           <>
-            {/* TODO: 엑셀(CSV) 내보내기 */}
+            {/* TODO: 엑셀(CSV) 내보내기 (10/22) */}
             <Button variant="secondary">엑셀로 내보내기</Button>
-            {/* TODO: 학생 등록 화면 (STU-01) */}
+            {/* TODO: 학생 등록 화면 (STU-01, 10/12) */}
             <Button variant="primary">학생 등록</Button>
           </>
         }
       />
-      <StudentTable students={rows} classes={classChips} initialEditId={initialEditId} />
+      {rows.length === 0 ? (
+        <div className="rounded-[var(--radius-card)] bg-bg">
+          <EmptyState icon={Users} title="아직 등록된 학생이 없어요" description="위의 [학생 등록]으로 첫 학생을 등록해 주세요" />
+        </div>
+      ) : (
+        <StudentTable students={rows} classes={classes} initialEditId={initialEditId} />
+      )}
     </div>
   );
 }
