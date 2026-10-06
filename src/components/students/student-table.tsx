@@ -121,6 +121,42 @@ export function StudentTable({
       {visible.length === 0 ? (
         <EmptyLine>조건에 맞는 학생이 없습니다.</EmptyLine>
       ) : (
+        <>
+        {/* 휴대폰·태블릿(1024 미만): 표 대신 카드 목록. 가로 스크롤 없이 (docs/design.md 8번) */}
+        <ul aria-label="재원생" className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:hidden">
+          {visible.map((r) => {
+            const checked = selected.has(r.id);
+            return (
+              <li key={r.id} className={cn("flex items-stretch rounded-[var(--radius-card)] bg-bg", checked && "ring-1 ring-ink/40")}>
+                <span className="flex items-center pl-3">
+                  <Checkbox label={<span className="sr-only">{r.name} 선택</span>} checked={checked} onChange={() => toggleOne(r.id)} />
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setEditId(r.id)}
+                  aria-label={`${r.name} 상세 보기`}
+                  className="press-card flex min-h-16 min-w-0 flex-1 items-center gap-3 py-3 pr-3 pl-2 text-left"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="truncate text-body font-bold">{r.name}</span>
+                      {r.status === "pending" && <Badge tone="warn">예정</Badge>}
+                      <span className="truncate text-caption text-sub">{[r.school, r.grade].filter(Boolean).join(" ")}</span>
+                    </span>
+                    <span className="mt-0.5 block truncate text-caption text-sub tabular">
+                      {[r.classIds.map(className).filter(Boolean).join(", "), scheduleLabel(r.schedule)].filter(Boolean).join(" · ") || "–"}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className="block text-caption text-sub">출결</span>
+                    <span className="block text-body font-semibold tabular">{r.attendanceCode}</span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="hidden lg:block">
         <Table>
           <thead>
             <tr>
@@ -204,6 +240,8 @@ export function StudentTable({
             })}
           </tbody>
         </Table>
+        </div>
+        </>
       )}
 
       {/* 선택한 학생 일괄 처리 (에듀OK 하단 버튼 줄) */}

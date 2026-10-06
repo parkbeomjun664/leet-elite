@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { EmptyLine, PageHeader, Panel } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
@@ -189,20 +190,22 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           ) : (
             <ul className="divide-y divide-line-soft">
               {todos.map((t) => (
-                <li key={t.title} className="flex items-center gap-4 py-3.5">
-                  <span className={cn("w-16 shrink-0 text-figure leading-none font-bold tabular", t.tone)}>
-                    {t.value}
-                    <span className="ml-0.5 text-caption text-sub">{t.unit}</span>
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-body font-semibold">{t.title}</span>
-                    <span className="block truncate text-caption text-sub">{t.detail}</span>
-                  </span>
-                  <Link
-                    href={t.href}
-                    className={buttonClass("secondary", "md", "w-[104px] shrink-0")}
-                  >
-                    {t.action}
+                <li key={t.title}>
+                  {/* 줄 전체를 누른다. 휴대폰은 오른쪽 화살표, 넓은 화면은 [○○ 보기] 모양 (docs/design.md 8번) */}
+                  <Link href={t.href} className="press-card -mx-2 flex items-center gap-3 rounded-[var(--radius-control)] px-2 py-3.5 hover:bg-bg sm:gap-4">
+                    <span className={cn("min-w-16 shrink-0 text-figure leading-none font-bold whitespace-nowrap tabular", t.tone)}>
+                      {t.value}
+                      <span className="ml-0.5 text-caption text-sub">{t.unit}</span>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-body font-semibold">{t.title}</span>
+                      <span className="block truncate text-caption text-sub">{t.detail}</span>
+                    </span>
+                    {/* 숨기기는 바깥 칸에서 (버튼 모양의 inline-flex와 hidden이 겹치면 cn()이 정리하지 않는다) */}
+                    <span className="hidden shrink-0 sm:block">
+                      <span className={buttonClass("secondary", "md", "w-[104px]")}>{t.action}</span>
+                    </span>
+                    <ChevronRight aria-hidden className="size-5 shrink-0 text-faint sm:hidden" />
                   </Link>
                 </li>
               ))}
