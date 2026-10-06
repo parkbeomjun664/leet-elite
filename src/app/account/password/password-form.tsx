@@ -13,7 +13,8 @@ export function PasswordForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<PasswordState, FormData>(changePassword, {});
   const bad = (f: PasswordState["field"]) => (!pending && state.field === f ? true : undefined);
   return (
-    <form action={action} className="space-y-2.5">
+    // 브라우저 기본 검사(영어·기기마다 다른 말풍선) 대신 서버의 한국어 안내를 보여 준다
+    <form action={action} noValidate className="space-y-2.5">
       {next && <input type="hidden" name="next" value={next} />}
       <label className="block">
         <span className="mb-1 block px-1 text-caption text-sub">새 비밀번호 ({PASSWORD_MIN}자 이상)</span>
