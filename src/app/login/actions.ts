@@ -2,7 +2,6 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { afterFailure, type Attempt, ID_RULE, IP_RULE, isLocked } from "@/lib/auth/lockout";
 import { normalizeLoginId, toLoginEmail } from "@/lib/auth/login-id";
 import { isRole, safeNext } from "@/lib/auth/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,9 +11,12 @@ import { LOCKED_HINT, LOGIN_ERROR, type LoginState, UNAVAILABLE } from "./messag
 
 // 로그인 (AUTH-01·06·09·10). 실패 이유(없는 아이디·틀린 비밀번호·사용 중지·잠금)는 화면에서 구분하지 않는다
 
-async function clientIp() {
+// 요청한 기기의 IP. Vercel이 직접 채우는 머리글을 먼저 본다 (사용자가 꾸민 값이 아니게). 모르면 null → IP 제한은 건너뛴다
+async function clientIp(): Promise<string | null> {
   const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+  const raw = h.get("x-vercel-forwarded-for") ?? h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0];
+  const ip = raw?.trim() ?? "";
+  return /^[0-9a-fA-F:.]{3,45}$/.test(ip) ? ip : null;
 }
 
 export async function login(_prev: LoginState, form: FormData): Promise<LoginState> {
@@ -23,36 +25,20 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
   const password = String(form.get("password") ?? "");
   const keep = form.get("keepSignedIn") === "on";
   const next = String(form.get("next") ?? "");
-
-  const admin = createAdminClient();
-  const now = new Date();
-  // 아이디 기록과 IP 기록은 같은 표에 열쇠만 달리해 둔다 ("ip:1.2.3.4")
-  const ipKey = `ip:${await clientIp()}`;
-  const idKey = id ?? "(invalid)";
   const again = { loginId: rawId, keep };
-  const { data: rows, error: readError } = await admin.from("login_attempts").select("login_id, fail_count, locked_until, updated_at").in("login_id", [idKey, ipKey]);
-  if (readError) {
-    console.error("[login] 시도 기록을 읽지 못함", readError.message);
+
+  // 비밀번호를 확인하기 "전에" 시도 횟수를 먼저 올리고(DB 함수 한 번, 동시 요청도 차례로 셈), 잠겨 있으면 확인하지 않는다
+  // 규칙(아이디 30분 5번, IP 10분 20번, 10분 잠금)은 supabase/migrations/20261006231930_login_attempt_atomic.sql
+  const admin = createAdminClient();
+  const ip = await clientIp();
+  const idKey = id ?? "(invalid)";
+  const { data: attempt, error: attemptError } = await admin.rpc("login_attempt_begin", { p_id: idKey, p_ip: ip }).single<{ allowed: boolean; locked: boolean }>();
+  if (attemptError || !attempt) {
+    console.error("[login] 시도 기록을 남기지 못함", attemptError?.message);
     return { error: UNAVAILABLE, ...again };
   }
-  const rec = (key: string) => rows.find((r) => r.login_id === key) as Attempt | undefined;
-
-  if (isLocked(rec(idKey), now) || isLocked(rec(ipKey), now)) {
-    return { error: LOGIN_ERROR, hint: LOCKED_HINT, ...again };
-  }
-
-  const fail = async (): Promise<LoginState> => {
-    const nextId = afterFailure(rec(idKey), now, ID_RULE);
-    const nextIp = afterFailure(rec(ipKey), now, IP_RULE);
-    const { error: writeError } = await admin.from("login_attempts").upsert([
-      { login_id: idKey, ...nextId },
-      { login_id: ipKey, ...nextIp },
-    ]);
-    if (writeError) console.error("[login] 시도 기록을 쓰지 못함", writeError.message);
-    return isLocked(nextId, now) || isLocked(nextIp, now) ? { error: LOGIN_ERROR, hint: LOCKED_HINT, ...again } : { error: LOGIN_ERROR, ...again };
-  };
-
-  if (!id || !password) return fail();
+  const fail = (): LoginState => (attempt.locked ? { error: LOGIN_ERROR, hint: LOCKED_HINT, ...again } : { error: LOGIN_ERROR, ...again });
+  if (!attempt.allowed || !id || !password) return fail();
 
   // "로그인 상태 유지"를 먼저 정해 두어야 아래에서 만드는 로그인 쿠키의 기한이 맞게 붙는다
   const cookieStore = await cookies();
@@ -72,11 +58,14 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
     return fail();
   }
 
-  // 성공하면 그 아이디의 틀린 횟수를 지운다 (IP 기록은 남긴다)
-  await admin.from("login_attempts").delete().eq("login_id", idKey);
+  // 성공: 그 아이디의 횟수를 지우고 IP 횟수는 하나 덜어 낸다 (학원 와이파이에서 여러 학생이 로그인해도 막히지 않게)
+  const { error: successError } = await admin.rpc("login_attempt_success", { p_id: idKey, p_ip: ip });
+  if (successError) console.error("[login] 성공 기록을 남기지 못함", successError.message);
 
-  // 첫 로그인이면 비밀번호부터 바꾼다 (AUTH-03)
-  if (profile.must_change_password) redirect(`/account/password?next=${encodeURIComponent(safeNext(next, role))}`);
+  // 첫 로그인이면 비밀번호부터 바꾼다 (AUTH-03). 화면 출입(proxy)은 토큰 표시를 보므로 둘 중 하나라도 켜져 있으면
+  if (profile.must_change_password || data.user.app_metadata?.must_change_password === true) {
+    redirect(`/account/password?next=${encodeURIComponent(safeNext(next, role))}`);
+  }
   redirect(safeNext(next, role));
 }
 

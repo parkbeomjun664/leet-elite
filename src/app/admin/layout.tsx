@@ -2,7 +2,7 @@ import { TopBar } from "@/components/top-bar";
 import { PageTransition } from "@/components/page-transition";
 import { ADMIN_NAV } from "@/lib/nav";
 
-// TODO(2단계): 로그인 정보에서 이름을 가져오고, 원장님이 아니면 접근 차단
+// 원장님만 들어오는 것은 src/proxy.ts가 막는다. TODO(2단계): 상단 이름을 로그인 정보로
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
     <>

@@ -185,6 +185,48 @@ exception when insufficient_privilege then raise notice 'ok   [원장님] 로그
 end $$;
 reset role;
 
+-- 로그인 시도 제한 함수 (3차): 아이디 5번째에 잠금 표시, 6번째는 시도 자체를 막음, 성공하면 초기화, IP 20번
+set role service_role;
+do $$
+declare r record; i int;
+begin
+  for i in 1..4 loop
+    select * into r from public.login_attempt_begin('e2e-x', null);
+    if not r.allowed or r.locked then raise exception 'FAIL 로그인 시도 %번째가 막힘', i; end if;
+  end loop;
+  select * into r from public.login_attempt_begin('e2e-x', null);
+  if not (r.allowed and r.locked) then raise exception 'FAIL 5번째: 시도는 되고 잠금 표시여야 함'; end if;
+  select * into r from public.login_attempt_begin('e2e-x', null);
+  if r.allowed then raise exception 'FAIL 잠긴 뒤에도 시도가 허용됨'; end if;
+  if (select fail_count from public.login_attempts where login_id = 'e2e-x') <> 5 then raise exception 'FAIL 잠긴 동안 횟수가 더 올라감'; end if;
+  perform public.login_attempt_success('e2e-y', null);
+  -- 성공하면 그 아이디 기록이 지워진다
+  perform public.login_attempt_begin('e2e-y', null);
+  perform public.login_attempt_success('e2e-y', null);
+  if exists (select 1 from public.login_attempts where login_id = 'e2e-y') then raise exception 'FAIL 성공했는데 기록이 남음'; end if;
+  -- IP: 서로 다른 아이디 20번이면 잠금, 성공하면 IP 횟수를 하나 덜어 낸다
+  for i in 1..19 loop perform public.login_attempt_begin('e2e-ip' || i, '1.2.3.4'); end loop;
+  perform public.login_attempt_success('e2e-ip1', '1.2.3.4');
+  if (select fail_count from public.login_attempts where login_id = 'ip:1.2.3.4') <> 18 then raise exception 'FAIL 성공했는데 IP 횟수가 그대로'; end if;
+  perform public.login_attempt_begin('e2e-ip20', '1.2.3.4');
+  select * into r from public.login_attempt_begin('e2e-ip21', '1.2.3.4');
+  if not r.locked then raise exception 'FAIL IP 20번째에 잠금 표시가 없음'; end if;
+  select * into r from public.login_attempt_begin('e2e-ip22', '1.2.3.4');
+  if r.allowed then raise exception 'FAIL IP가 잠긴 뒤에도 허용됨'; end if;
+  raise notice 'ok   [서버] 로그인 시도 제한: 5번째 잠금 표시·6번째 거부·성공 초기화·IP 20번';
+end $$;
+delete from public.login_attempts;
+reset role;
+
+-- 로그인 시도 제한 함수는 서버만 부른다
+set role authenticated;
+do $$ begin
+  perform public.login_attempt_begin('x', null);
+  raise exception 'FAIL [로그인한 사람] 로그인 시도 함수를 부를 수 있음';
+exception when insufficient_privilege then raise notice 'ok   [로그인한 사람] 로그인 시도 함수 부르기 거부';
+end $$;
+reset role;
+
 -- security definer 함수는 모두 search_path가 비어 있게 고정 (다른 스키마의 같은 이름 함수·표로 바꿔치기 방지)
 select pg_temp.expect('구조', 'search_path 고정 안 된 security definer 함수', (
   select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace

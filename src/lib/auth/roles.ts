@@ -51,7 +51,9 @@ export function routeFor(path: string, role: Role | null, search = "", opts?: { 
 
 /** 로그인 뒤 돌아갈 주소. 다른 사이트 주소나 그 역할이 못 여는 화면이면 첫 화면으로 */
 export function safeNext(next: string | null | undefined, role: Role): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return HOME[role];
+  // "/"로 시작하고 두 번째 글자가 / 나 \ 가 아니며, 공백·보이지 않는 글자(탭·줄바꿈 등)가 없는 주소만
+  // (브라우저는 "/<탭>/evil.com"의 탭을 지우고 "//evil.com"으로 읽을 수 있다)
+  if (!next || !/^\/(?![/\\])[^\s\u0000-\u001f\u007f]*$/.test(next)) return HOME[role];
   const path = next.split(/[?#]/)[0];
   return routeFor(path, role) ? HOME[role] : next;
 }

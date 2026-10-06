@@ -53,5 +53,10 @@ describe("화면 출입 규칙", () => {
     expect(safeNext("//evil.example", "admin")).toBe("/admin");
     expect(safeNext("/\\evil.example", "admin")).toBe("/admin");
     expect(safeNext(null, "student")).toBe("/student");
+    // 보이지 않는 글자가 섞이면 거부 (브라우저가 지우고 //evil.example 로 읽을 수 있다)
+    expect(safeNext("/\t/evil.example", "admin")).toBe("/admin");
+    expect(safeNext("/\n/evil.example", "admin")).toBe("/admin");
+    expect(safeNext("/admin students", "admin")).toBe("/admin");
+    expect(safeNext("/", "teacher")).toBe("/teacher");
   });
 });

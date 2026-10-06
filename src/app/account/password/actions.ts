@@ -25,7 +25,16 @@ export async function changePassword(_prev: PasswordState, form: FormData): Prom
   if (problem) return { error: problem, field: "password" };
   if (password !== confirm) return { error: "두 칸의 비밀번호가 달라요.", field: "confirm" };
 
-  const { error } = await supabase.auth.updateUser({ password });
+  // 사용 중지된 계정은 바꿀 수 없다 (AUTH-05). 내 계정 줄은 RLS(own_profile)로 읽힌다
+  const { data: profile } = await supabase.from("profiles").select("is_active, must_change_password").eq("id", user.id).single();
+  if (!profile?.is_active) {
+    await supabase.auth.signOut();
+    redirect("/login");
+  }
+  // 지난번에 비밀번호는 바뀌고 표시만 덜 꺼진 경우(DB는 꺼짐, 토큰은 켜짐): 비밀번호는 다시 바꾸지 않고 마무리만 한다
+  const onlyFinish = !profile.must_change_password && user.app_metadata?.must_change_password === true;
+
+  const { error } = onlyFinish ? { error: null } : await supabase.auth.updateUser({ password });
   if (error) {
     // 지금 비밀번호와 같으면 Supabase가 거절한다
     if (error.code === "same_password") return { error: "지금 비밀번호와 다르게 정해 주세요.", field: "password" };
@@ -34,12 +43,12 @@ export async function changePassword(_prev: PasswordState, form: FormData): Prom
   }
 
   const admin = createAdminClient();
-  const [profile, meta] = await Promise.all([
+  const [profileUpdate, meta] = await Promise.all([
     admin.from("profiles").update({ must_change_password: false, updated_at: new Date().toISOString() }).eq("id", user.id),
     admin.auth.admin.updateUserById(user.id, { app_metadata: { ...user.app_metadata, must_change_password: false } }),
   ]);
-  if (profile.error || meta.error) {
-    console.error("[password] 표시를 끄지 못함", profile.error?.message, meta.error?.message);
+  if (profileUpdate.error || meta.error) {
+    console.error("[password] 표시를 끄지 못함", profileUpdate.error?.message, meta.error?.message);
     return { error: "비밀번호는 바뀌었지만 마무리하지 못했어요. 다시 눌러 주세요." };
   }
   // 토큰을 새로 받아야 proxy가 바뀐 표시를 본다

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#B3262E",
+  themeColor: "#B3262E", // 브랜드 빨강 (globals.css --color-brand와 같은 값으로 맞춘다)
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

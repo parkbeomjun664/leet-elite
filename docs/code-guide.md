@@ -82,3 +82,12 @@ leet-elite/
   - **화면 흐름 테스트는 "준비 끝"을 기다린다**: 서버가 먼저 그린 화면은 React가 연결(하이드레이션)되기 전에는 눌러도 반영되지 않거나 되돌아간다. 그리고 `loading.tsx`가 있으면 스켈레톤이 먼저 오고 본문이 뒤따른다. 그래서 `<html data-hydrated>` 표시와 스켈레톤(`aria-busy`)이 사라지는 것을 기다린 뒤 누른다 (`e2e/ready.ts`)
   - **출결 완료 화면은 "한 번에 하나씩"**: 토스 송금 완료 화면처럼 체크 원 → 이름 → "등원했어요" → 시각 순으로 0.1초씩 늦게 올라온다. 각 줄에 같은 움직임(`rise-in`)을 주고 시작 시각(delay)만 다르게 한다. 체크 원은 살짝 넘쳤다 돌아오는 곡선(`cubic-bezier(0.34, 1.56, 0.64, 1)`)이라 튕기는 느낌이 난다 (`src/components/kiosk/result-overlay.tsx`)
   - **소리는 파일 없이 만든다**: Web Audio로 음 높이(Hz)와 길이를 정해 짧은 음을 낸다. 도(1046)-미(1318)-솔(1568)이 등원, 거꾸로 내려가면 하원. 브라우저는 사람이 화면을 한 번 누르기 전에는 소리를 막아서 첫 키를 누를 때 소리 장치를 켠다 (`keypad.tsx`의 `playSound`)
+- **10/6** 로그인·DB 연결, 반응형, 품질 자동 검사
+  - **출입 통제 = 건물 입구의 경비실**: `src/proxy.ts`는 모든 화면 요청 앞에서 출입증(로그인 토큰)을 확인한다. 출입증이 없으면 로그인 화면으로, 다른 층(역할) 출입증이면 자기 층으로 보낸다. 규칙은 `src/lib/auth/roles.ts`의 `routeFor` 하나에 모아 단위 테스트로 지킨다. 경비실은 "화면"만 막고, 진짜 금고(데이터)는 DB의 RLS가 따로 잠근다
+  - **서버 함수(Server Action)**: 맨 위에 `"use server"`가 붙은 함수는 브라우저에서 불러도 서버에서 돈다(`src/app/login/actions.ts`). 비밀 키·잠금 기록처럼 브라우저에 보이면 안 되는 일을 여기서 한다. 화면은 `useActionState`로 결과(실패 문구)를 받는다
+  - **비밀 키는 서버 안에만**: `NEXT_PUBLIC_`으로 시작하는 환경변수는 브라우저로 간다. 비밀 키는 이 이름을 붙이지 않고, `src/lib/supabase/admin.ts`는 맨 위 `import "server-only"`로 브라우저 코드에서 부르면 빌드가 막히게 했다
+  - **"자동 노출 끔"의 뜻**: 새 표를 만들면 아무도(서버 관리자 역할까지) 못 쓴다. 그래서 마이그레이션마다 `grant`로 누가 쓸 수 있는지 직접 적는다
+  - **하단 시트 끌기**: 손가락을 따라 움직이는 동안은 React로 다시 그리지 않고 `style.translate`만 바꾼다. 놓으면 거리·속도로 닫을지 정한다 (`src/components/ui/sheet.tsx`)
+  - **화면 전환**: React `<ViewTransition key={주소}>`로 감싸면 주소가 바뀔 때 새 본문이 들어오는 움직임을 CSS(`::view-transition-new`)로 줄 수 있다 (`src/components/page-transition.tsx`)
+  - **글꼴과 화면 밀림**: `font-display: swap`은 "먼저 다른 글꼴로 보여 주고 도착하면 바꿔 끼움"이라 글자 폭이 바뀌며 화면이 밀린다. `optional`은 "바로 오면 쓰고 늦으면 이번엔 안 씀"이라 밀리지 않는다 (`src/app/pretendard.css`)
+  - **품질 자동 검사 3종**: 접근성(axe, `e2e/a11y.spec.ts`), 스크린샷 비교(`e2e/visual.spec.ts`), Lighthouse(`scripts/lighthouse.mjs`). 스크린샷은 날짜가 바뀌면 화면이 달라지므로 테스트 서버의 "오늘"을 `LEET_TODAY`로 고정한다

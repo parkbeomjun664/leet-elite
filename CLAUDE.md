@@ -60,11 +60,12 @@ LEET영어학원 전용 학원 관리 앱(PWA). 에듀OK의 출결·숙제·소�
 ## 명령어
 | 명령 | 용도 |
 |---|---|
-| `npm run dev` | 개발 서버 http://localhost:3000 (시연 시각: `/teacher?at=16:00`) |
+| `npm run dev` | 개발 서버 http://localhost:3000. 로그인 필요 (dev DB 시험 계정, `docs/handover/database.md` 3-5번). 시연 시각: `/teacher?at=16:00` |
 | `npm run build` | 빌드 |
 | `npm test` | 단위 테스트 (vitest) |
-| `npm run test:e2e` | 화면 흐름 테스트 (Playwright, 설치된 Chrome 사용, 가상 데이터) |
+| `npm run test:e2e` | 화면 흐름 테스트 (Playwright, 설치된 Chrome 사용, 가상 데이터). 접근성(axe)·스크린샷 비교 포함, 날짜는 2026-10-05로 고정 |
+| `npm run lighthouse` | Lighthouse 점수 (빌드판 `npx next start -p 3300`을 켠 뒤. `docs/workflow.md` 6-1번) |
 | `npm run lint` / `npx tsc --noEmit` | 코드 규칙·타입 검사 |
 | 권한 테스트 | `docs/handover/database.md` 4번 |
 
-시연 주소: https://leet-elite.vercel.app (로그인 1234/1234, 가상 데이터)
+시연 주소: https://leet-elite.vercel.app (dev DB 시험 계정 admin·teacher·student·parent·kiosk로 로그인, 화면 내용은 아직 가상 데이터)
