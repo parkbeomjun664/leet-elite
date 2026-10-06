@@ -478,7 +478,8 @@ function Tile({ day, selecting, selected, focusId, onToggle, onOpen, onAttendanc
             className="size-4 shrink-0 accent-[var(--color-ink)]"
           />
         )}
-        <button type="button" onClick={() => onOpen(student.id)} className="flex min-w-0 flex-1 items-baseline gap-2 text-left">
+        {/* 누르는 범위는 위아래로 넓혀 44px 이상 (보이는 크기는 그대로) */}
+        <button type="button" onClick={() => onOpen(student.id)} className="-my-3 flex min-w-0 flex-1 items-baseline gap-2 py-3 text-left">
           <span className="truncate text-heading font-bold">{student.name}</span>
           <span className="truncate text-caption text-sub">{meta}</span>
         </button>
@@ -518,7 +519,7 @@ function TileButton({ onClick, children }: { onClick: () => void; children: Reac
     <button
       type="button"
       onClick={onClick}
-      className="press h-8 shrink-0 rounded-[var(--radius-control)] bg-card px-3 text-caption font-semibold text-ink shadow-chip hover:bg-bg active:bg-line-soft"
+      className="press h-11 shrink-0 md:h-8 rounded-[var(--radius-control)] bg-card px-3 text-caption font-semibold text-ink shadow-chip hover:bg-bg active:bg-line-soft"
     >
       {children}
     </button>
@@ -536,7 +537,7 @@ function IconButton({ label, children }: { label: string; children: ReactNode })
     <button
       type="button"
       aria-label={label}
-      className="press grid size-8 place-items-center rounded-[var(--radius-control)] text-xl text-sub hover:bg-bg hover:text-ink"
+      className="press grid size-11 place-items-center rounded-[var(--radius-control)] text-xl text-sub hover:bg-bg hover:text-ink md:size-8"
     >
       {children}
     </button>

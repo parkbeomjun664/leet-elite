@@ -19,7 +19,7 @@ const VARIANT: Record<Variant, string> = {
 
 // 높이: sm 32(카드 안) / md 40(기본) / lg 48(휴대폰 주 버튼·로그인·시트 아래)
 const SIZE: Record<Size, string> = {
-  sm: "h-8 px-3 text-caption",
+  sm: "h-11 px-3 text-caption md:h-8", // 휴대폰은 손가락 44px, 768 이상은 32
   md: "h-10 px-4 text-body",
   lg: "h-12 px-5 text-body",
 };

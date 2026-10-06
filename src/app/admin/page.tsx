@@ -265,7 +265,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
             </>
           }
           actions={
-            <Link href="/admin/makeups" className="text-caption font-semibold text-ink hover:underline">
+            <Link href="/admin/makeups" className="-my-3 inline-flex min-h-11 items-center text-caption font-semibold text-ink hover:underline">
               전체 보기
             </Link>
           }
@@ -308,7 +308,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
             </>
           }
           actions={
-            <Link href="/admin/messages" className="text-caption font-semibold text-ink hover:underline">
+            <Link href="/admin/messages" className="-my-3 inline-flex min-h-11 items-center text-caption font-semibold text-ink hover:underline">
               전체 보기
             </Link>
           }

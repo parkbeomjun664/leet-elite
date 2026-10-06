@@ -45,7 +45,7 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
   return (
     <header className="sticky top-0 z-30 border-b border-line-soft bg-card">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-6 px-4">
-        <Link href={home.href} className="flex shrink-0 items-center gap-2" aria-label="홈으로">
+        <Link href={home.href} className="flex min-h-11 shrink-0 items-center gap-2" aria-label="홈으로">
           {/* 여백을 잘라 낸 투명 로고 (scripts/make-icons.mjs 로 생성) */}
           <Image src="/brand/leet-mark.png" alt="" width={407} height={512} className="h-7 w-auto" />
           <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>

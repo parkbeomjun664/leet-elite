@@ -128,9 +128,13 @@ export function StudentTable({
             const checked = selected.has(r.id);
             return (
               <li key={r.id} className={cn("flex items-stretch rounded-[var(--radius-card)] bg-bg", checked && "ring-1 ring-ink/40")}>
-                <span className="flex items-center pl-3">
-                  <Checkbox label={<span className="sr-only">{r.name} 선택</span>} checked={checked} onChange={() => toggleOne(r.id)} />
-                </span>
+                {/* 체크박스는 카드 높이만큼 누를 수 있게 (상자 16px만 누르기 어렵다) */}
+                <Checkbox
+                  label={<span className="sr-only">{r.name} 선택</span>}
+                  checked={checked}
+                  onChange={() => toggleOne(r.id)}
+                  className="self-stretch pr-1 pl-3"
+                />
                 <button
                   type="button"
                   onClick={() => setEditId(r.id)}

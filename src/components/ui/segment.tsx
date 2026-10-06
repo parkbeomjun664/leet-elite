@@ -37,7 +37,7 @@ export function Segment({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "press h-9 rounded-[var(--radius-control)] px-3 text-body",
+        "press h-11 rounded-[var(--radius-control)] px-3 text-body md:h-9", // 휴대폰은 손가락 44px
         active ? "bg-ink font-semibold text-white" : "text-ink hover:bg-bg",
       )}
     >
