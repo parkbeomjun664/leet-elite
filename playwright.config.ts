@@ -21,6 +21,7 @@ export default defineConfig({
     command: "npx next dev -p 3200",
     url: "http://localhost:3200/login",
     reuseExistingServer: true,
-    env: { LEET_REAL_DATA: "0", LEET_E2E: "1" },
+    // LEET_TODAY: 서버의 "오늘"을 고정 (스크린샷 비교·요일 따라 달라지는 시간표). 브라우저 쪽은 테스트에서 page.clock으로 같은 날에
+    env: { LEET_REAL_DATA: "0", LEET_E2E: "1", LEET_TODAY: "2026-10-05" },
   },
 });

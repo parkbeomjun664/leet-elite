@@ -201,7 +201,11 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
         <div className="flex items-center gap-1">
           {/* TODO: 날짜 이동 연결 (지난 날짜 출결 조회) */}
           <IconButton label="이전 날짜">‹</IconButton>
-          <h1 className="px-1 text-title leading-none font-bold tracking-tight tabular">{dateLabel}</h1>
+          {/* 휴대폰 폭에서는 연도를 숨겨 한 줄로 ("10월 5일 (월)") */}
+          <h1 className="px-1 text-title leading-none font-bold tracking-tight whitespace-nowrap tabular">
+            <span className="max-sm:sr-only">{dateLabel.slice(0, dateLabel.indexOf("년") + 2)}</span>
+            {dateLabel.slice(dateLabel.indexOf("년") + 2)}
+          </h1>
           <IconButton label="다음 날짜">›</IconButton>
           <Button size="sm" className="ml-2">
             오늘

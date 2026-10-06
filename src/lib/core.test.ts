@@ -69,3 +69,19 @@ describe("에듀OK 명단 해석 (real-roster.ts)", () => {
     expect(weekdaysFromMemo("고혁 친구")).toBeNull();
   });
 });
+
+import { todayKST as todayForTest, weekdayKST as weekdayForTest } from "./date";
+describe("화면 테스트용 고정 날짜 (LEET_TODAY)", () => {
+  it("개발·테스트에서 LEET_TODAY를 주면 그날이 오늘, 날짜를 넘기면 그 날짜", () => {
+    const prev = process.env.LEET_TODAY;
+    process.env.LEET_TODAY = "2026-10-05";
+    try {
+      expect(todayForTest()).toBe("2026-10-05");
+      expect(weekdayForTest()).toBe(1); // 월요일
+      expect(todayForTest(new Date("2026-01-01T03:00:00Z"))).toBe("2026-01-01");
+    } finally {
+      if (prev === undefined) delete process.env.LEET_TODAY;
+      else process.env.LEET_TODAY = prev;
+    }
+  });
+});

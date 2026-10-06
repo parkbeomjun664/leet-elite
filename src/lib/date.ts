@@ -10,9 +10,23 @@ const WEEKDAY_INDEX: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, 
 
 export const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
+/**
+ * 화면 테스트용 고정 날짜: 개발 서버를 LEET_TODAY=YYYY-MM-DD로 켜면 서버의 "오늘"이 그날이 된다 (스크린샷 비교가 날마다 달라지지 않게)
+ * 배포판(production)과 브라우저에서는 쓰이지 않는다 (브라우저 쪽은 테스트에서 page.clock으로 맞춘다)
+ */
+function fixedToday(): string | null {
+  if (typeof process === "undefined" || process.env.NODE_ENV === "production") return null;
+  const v = process.env.LEET_TODAY;
+  return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+}
+
 /** 한국 날짜 "YYYY-MM-DD" */
-export function todayKST(now: Date = new Date()): string {
-  return dateFmt.format(now);
+export function todayKST(now?: Date): string {
+  if (!now) {
+    const fixed = fixedToday();
+    if (fixed) return fixed;
+  }
+  return dateFmt.format(now ?? new Date());
 }
 
 /** 한국 시각 "HH:MM" */
@@ -21,8 +35,10 @@ export function nowTimeKST(now: Date = new Date()): string {
 }
 
 /** 한국 기준 요일 0=일 ~ 6=토 */
-export function weekdayKST(now: Date = new Date()): number {
-  return WEEKDAY_INDEX[weekdayFmt.format(now)];
+export function weekdayKST(now?: Date): number {
+  const fixed = now ? null : fixedToday();
+  if (fixed) return weekdayOf(fixed);
+  return WEEKDAY_INDEX[weekdayFmt.format(now ?? new Date())];
 }
 
 /** "YYYY-MM-DD"의 요일 (날짜 문자열 자체를 기준으로 계산하므로 시간대 영향 없음) */
