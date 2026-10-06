@@ -14,22 +14,25 @@ if (!out) {
 mkdirSync(out, { recursive: true });
 
 const BASE = "http://localhost:3200";
-const PC = { width: 1440, height: 900 };
-const PHONE = { width: 390, height: 844 };
+// 기준 폭 세 가지 (docs/design.md 8번): 휴대폰 375 · 태블릿·키패드 768 · PC 1280
+const PHONE = { width: 375, height: 812 };
+const TABLET = { width: 768, height: 1024 };
+const PC = { width: 1280, height: 860 };
+const ALL = [PHONE, TABLET, PC];
 
 // [이름, 주소, 크기들]
 const SCREENS = [
-  ["login", "/login", [PC, PHONE]],
-  ["demo", "/demo", [PC]],
-  ["teacher-home", "/teacher?at=16:00", [PC, PHONE]],
-  ["teacher-detail", "/teacher?at=16:00&student=s010", [PHONE]],
-  ["teacher-attendance", "/teacher?at=16:00&student=s010&mode=attendance", [PC, PHONE]],
-  ["admin-home", "/admin", [PC, PHONE]],
-  ["admin-students", "/admin/students", [PC, PHONE]],
-  ["admin-edit", "/admin/students?edit=s010", [PC, PHONE]],
-  ["kiosk", "/kiosk", [PC, PHONE]],
-  ["student-home", "/student?at=16:00", [PHONE]],
-  ["parent-home", "/parent?at=16:00", [PHONE]],
+  ["login", "/login", ALL],
+  ["password", "/account/password", ALL],
+  ["teacher-home", "/teacher?at=16:00", ALL],
+  ["teacher-detail", "/teacher?at=16:00&student=s010", [PHONE, TABLET]],
+  ["teacher-attendance", "/teacher?at=16:00&student=s010&mode=attendance", ALL],
+  ["admin-home", "/admin", ALL],
+  ["admin-students", "/admin/students", ALL],
+  ["admin-edit", "/admin/students?edit=s010", ALL],
+  ["kiosk", "/kiosk", ALL],
+  ["student-home", "/student?at=16:00", ALL],
+  ["parent-home", "/parent?at=16:00", ALL],
   ["coming-soon", "/teacher/messages", [PC]],
   ["coming-soon-m", "/student/messages", [PHONE]],
   ["design-system", "/design-system", [PC]],
@@ -47,7 +50,7 @@ for (const [name, path, sizes] of SCREENS) {
     await page.waitForTimeout(600);
     // 개발 서버의 Next 표시(N 동그라미)는 캡처에서 숨긴다
     await page.addStyleTag({ content: "nextjs-portal{display:none!important}" });
-    const tag = viewport.width > 800 ? "pc" : "m";
+    const tag = String(viewport.width);
     await page.screenshot({ path: `${out}/${name}-${tag}.png`, fullPage: true });
     await page.close();
     console.log("찍음", name, tag);

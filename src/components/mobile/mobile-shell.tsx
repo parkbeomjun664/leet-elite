@@ -8,6 +8,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
+import { PageTransition } from "@/components/page-transition";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { DAY_STATUS_LABEL, type DayStatus } from "@/lib/attendance";
@@ -35,7 +36,7 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
     <div className="min-h-dvh bg-bg">
       {/* 머리줄: 로고 · 학원 이름 · 사용자 */}
       <header className="sticky top-0 z-30 border-b border-line-soft bg-card pt-[env(safe-area-inset-top,0px)]">
-        <div className="mx-auto flex h-14 max-w-[560px] items-center justify-between gap-3 px-4">
+        <div className="mx-auto flex h-14 max-w-[480px] items-center justify-between gap-3 px-4">
           <Link href={home} className="flex min-h-11 items-center gap-1.5" aria-label="홈으로">
             {/* 여백을 잘라 낸 투명 로고 (scripts/make-icons.mjs 로 생성) */}
             <Image src="/brand/leet-mark.png" alt="" width={407} height={512} className="h-7 w-auto" />
@@ -50,11 +51,13 @@ export function MobileShell({ tabs, userLabel, children }: ShellProps) {
       </header>
 
       {/* 본문: 아래 탭에 가리지 않도록 탭 높이 + 안전 영역만큼 띄운다 */}
-      <main className="mx-auto max-w-[560px] px-5 pt-6 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">{children}</main>
+      <main className="mx-auto max-w-[480px] px-5 pt-6 pb-[calc(88px+env(safe-area-inset-bottom,0px))]">
+        <PageTransition>{children}</PageTransition>
+      </main>
 
       {/* 아래 탭 */}
       <nav aria-label="주 메뉴" className="fixed inset-x-0 bottom-0 z-30 border-t border-line-soft bg-card pb-[env(safe-area-inset-bottom,0px)]">
-        <ul className="mx-auto grid h-16 max-w-[560px]" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+        <ul className="mx-auto grid h-16 max-w-[480px]" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map((tab, i) => {
             const active = isActive(tab.href);
             return (
@@ -268,5 +271,20 @@ export function MessageList({ items, href }: { items: MessageItem[]; href: strin
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * 휴대폰 화면의 주 버튼을 아래 탭 바로 위에 고정 (엄지 자리, docs/design.md 8번)
+ * 같은 높이의 빈 자리를 본문에 남겨, 고정 버튼이 마지막 내용을 가리지 않게 한다. 화면마다 하나만
+ */
+export function MobileStickyAction({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <div aria-hidden className="h-[72px]" />
+      <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom,0px))] z-20 border-t border-line-soft bg-bg/95 backdrop-blur-sm">
+        <div className="mx-auto max-w-[480px] px-5 py-3">{children}</div>
+      </div>
+    </>
   );
 }
