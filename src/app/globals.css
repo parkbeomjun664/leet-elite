@@ -1,6 +1,7 @@
 @import "tailwindcss";
-/* Pretendard: 한글 글자 범위별로 나눠 필요한 부분만 내려받는 방식(dynamic subset), 자체 호스팅 */
-@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
+/* Pretendard: 한글 글자 범위별로 나눠 필요한 부분만 내려받는 방식(dynamic subset), 자체 호스팅
+   font-display optional 판 (scripts/make-font-css.mjs로 생성, 글꼴이 늦게 와도 화면이 밀리지 않게) */
+@import "./pretendard.css";
 
 /*
  * LEET Elite 디자인 토큰. 기준 문서: docs/design.md (10/5 디자인 시스템)
