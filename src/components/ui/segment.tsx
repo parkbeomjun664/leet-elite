@@ -112,15 +112,16 @@ export function Tabs<T extends string>({
  * 켜고 끄는 알약 (여러 개 고르기: 반 소속, 사용 프로그램). 켜지면 검정 + ✓
  * 거르기 알약(Segment)과 달리 하나만 고르는 것이 아니라 각각 켜고 끈다 (aria-pressed)
  */
-export function ToggleChip({ on, onToggle, children }: { on: boolean; onToggle: () => void; children: ReactNode }) {
+export function ToggleChip({ on, onToggle, children, disabled }: { on: boolean; onToggle: () => void; children: ReactNode; disabled?: boolean }) {
   return (
     <button
       type="button"
       aria-pressed={on}
       onClick={onToggle}
+      disabled={disabled}
       className={cn(
-        "press h-11 rounded-[var(--radius-control)] px-3 text-body md:h-9", // 휴대폰은 손가락 44px
-        on ? "bg-ink font-semibold text-white" : "bg-line-soft text-ink hover:bg-line",
+        "press h-11 rounded-[var(--radius-control)] px-3 text-body disabled:cursor-not-allowed disabled:opacity-60 md:h-9", // 휴대폰은 손가락 44px
+        on ? "bg-ink font-semibold text-white" : "bg-line-soft text-ink enabled:hover:bg-line",
       )}
     >
       {on && <span aria-hidden>✓ </span>}

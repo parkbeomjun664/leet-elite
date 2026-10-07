@@ -45,3 +45,61 @@ test("선생님 계정은 재원생 화면에 못 들어간다 (자기 첫 화�
   await page.goto("/admin/students");
   await expect(page).toHaveURL(/\/teacher$/);
 });
+
+// 10/8 학생 기본 정보 저장 (STU-01~03): 고치면 DB에 남고, 새로고침해도 그대로. 끝나면 원래대로 되돌린다
+test("원장님: 메모·사용 프로그램을 고쳐 저장하면 새로고침해도 남는다", async ({ page }) => {
+  await loginAs(page, "admin", "/admin/students");
+  const marker = `시험 메모 ${Date.now()}`;
+  const open = async () => {
+    await page.getByRole("row", { name: "조나윤 상세 보기" }).click();
+    const d = page.getByRole("dialog");
+    await expect(d).toBeVisible();
+    return d;
+  };
+
+  let dialog = await open();
+  const memo = dialog.getByLabel("메모");
+  const before = await memo.inputValue();
+  const chip = dialog.getByRole("button", { name: "클래스5" });
+  const chipBefore = await chip.getAttribute("aria-pressed");
+  await memo.fill(marker);
+  await chip.click();
+  await dialog.getByRole("button", { name: "저장" }).click();
+  await expect(page.getByTestId("toast")).toContainText("조나윤 정보를 저장했어요");
+  await expect(dialog).toHaveCount(0);
+
+  // 새로고침해도 DB에서 그대로 읽힌다
+  await page.reload();
+  dialog = await open();
+  await expect(dialog.getByLabel("메모")).toHaveValue(marker);
+  await expect(dialog.getByRole("button", { name: "클래스5" })).toHaveAttribute("aria-pressed", chipBefore === "true" ? "false" : "true");
+
+  // 원래대로 되돌리기
+  await dialog.getByLabel("메모").fill(before);
+  await dialog.getByRole("button", { name: "클래스5" }).click();
+  await dialog.getByRole("button", { name: "저장" }).click();
+  await expect(page.getByTestId("toast")).toContainText("저장했어요");
+});
+
+test("원장님: 다른 재원생이 쓰는 출결 번호로는 저장되지 않는다", async ({ page }) => {
+  await loginAs(page, "admin", "/admin/students");
+  await page.getByRole("row", { name: "조나윤 상세 보기" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel(/출결 코드/).fill("1001");
+  await dialog.getByRole("button", { name: "저장" }).click();
+  await expect(dialog.getByText("1001번은 조민재 학생이 쓰고 있어요")).toBeVisible();
+  await expect(dialog).toBeVisible(); // 창은 열린 채로 고치게
+  await dialog.getByRole("button", { name: "취소" }).click();
+  // 저장되지 않았다
+  await page.reload();
+  await expect(page.getByRole("row", { name: "조나윤 상세 보기" })).toContainText("1234");
+});
+
+test("오늘 저장하지 않는 칸은 잠겨 있고 열리는 날짜를 안내", async ({ page }) => {
+  await loginAs(page, "admin", "/admin/students");
+  await page.getByRole("row", { name: "조나윤 상세 보기" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("반과 수업 시간 저장은 10/9에 열려요")).toBeVisible();
+  await expect(dialog.getByLabel("상태")).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: /^OB-초저/ })).toBeDisabled();
+});

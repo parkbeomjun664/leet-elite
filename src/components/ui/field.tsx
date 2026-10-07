@@ -67,6 +67,7 @@ export function TimeSelect({
   minuteStep = 1,
   size = "md",
   className,
+  disabled,
 }: {
   id?: string;
   value: string;
@@ -76,13 +77,14 @@ export function TimeSelect({
   minuteStep?: number;
   size?: "md" | "lg";
   className?: string;
+  disabled?: boolean;
 }) {
   const { hours, minutes } = timeSelectOptions(value, minuteStep);
   const [h = "00", m = "00"] = value.split(":");
   const sizing = size === "lg" ? "h-12" : "h-10";
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
-      <select id={id} aria-label={`${label} 시`} value={h} onChange={(e) => onChange(`${e.target.value}:${m}`)} className={cn(controlBase, "w-[84px] shrink-0 tabular", sizing)}>
+      <select id={id} disabled={disabled} aria-label={`${label} 시`} value={h} onChange={(e) => onChange(`${e.target.value}:${m}`)} className={cn(controlBase, "w-[84px] shrink-0 tabular", sizing)}>
         {hours.map((x) => (
           <option key={x} value={x}>
             {x}
@@ -92,7 +94,7 @@ export function TimeSelect({
       <span className="text-sub" aria-hidden>
         :
       </span>
-      <select aria-label={`${label} 분`} value={m} onChange={(e) => onChange(`${h}:${e.target.value}`)} className={cn(controlBase, "w-[84px] shrink-0 tabular", sizing)}>
+      <select disabled={disabled} aria-label={`${label} 분`} value={m} onChange={(e) => onChange(`${h}:${e.target.value}`)} className={cn(controlBase, "w-[84px] shrink-0 tabular", sizing)}>
         {minutes.map((x) => (
           <option key={x} value={x}>
             {x}
