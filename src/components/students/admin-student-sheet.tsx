@@ -1,9 +1,12 @@
 "use client";
 
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Trash2 } from "lucide-react";
+import { ComingSoonButton } from "@/components/coming-soon-button";
 import { Button } from "@/components/ui/button";
-import { Checkbox, Field, Input, Select, Textarea, TimeSelect } from "@/components/ui/field";
+import { Field, Input, Select, Textarea, TimeSelect } from "@/components/ui/field";
 import { InfoList } from "@/components/ui/panel";
+import { ToggleChip } from "@/components/ui/segment";
 import { Sheet } from "@/components/ui/sheet";
 import { WEEKDAY_KO } from "@/lib/date";
 import { isKioskCode } from "@/lib/kiosk";
@@ -129,9 +132,12 @@ export function AdminStudentSheet({
       width="md:w-[560px]"
       closeRef={closeSheet}
       footer={
-        <div className="flex justify-end gap-2">
-          <Button onClick={() => closeSheet.current?.()}>취소</Button>
-          <Button variant="primary" type="submit" form={FORM_ID}>
+        // 휴대폰: [취소] [저장 ────] 저장을 넓게(엄지 자리) / 768 이상: 오른쪽에 나란히
+        <div className="flex gap-2 md:justify-end">
+          <Button onClick={() => closeSheet.current?.()} className="max-md:h-12">
+            취소
+          </Button>
+          <Button variant="primary" type="submit" form={FORM_ID} className="flex-1 max-md:h-12 md:flex-none">
             저장
           </Button>
         </div>
@@ -192,14 +198,11 @@ export function AdminStudentSheet({
         <Section title="반 · 수업 시간">
           <fieldset>
             <legend className="mb-1.5 text-caption font-semibold text-sub">반 (여러 개 선택 가능)</legend>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+            <div className="flex flex-wrap gap-1.5">
               {classes.map((c) => (
-                <Checkbox
-                  key={c.id}
-                  label={c.name}
-                  checked={form.classIds.includes(c.id)}
-                  onChange={() => set("classIds", toggle(form.classIds, c.id))}
-                />
+                <ToggleChip key={c.id} on={form.classIds.includes(c.id)} onToggle={() => set("classIds", toggle(form.classIds, c.id))}>
+                  {c.name}
+                </ToggleChip>
               ))}
             </div>
           </fieldset>
@@ -211,7 +214,10 @@ export function AdminStudentSheet({
             ) : (
               <ul className="space-y-2">
                 {form.schedule.map((slot, i) => (
-                  <li key={i} className="grid grid-cols-[84px_minmax(0,1fr)_88px_auto_auto] items-center gap-2">
+                  // 한 줄: [요일] [시]:[분]  [80]분  (삭제). 휴대폰은 두 줄이 되므로 옅은 바탕으로 한 덩어리로 묶는다
+                  <li key={i} className="flex flex-wrap items-center gap-2 max-md:rounded-[var(--radius-control)] max-md:bg-bg max-md:p-2">
+                    {/* 폭은 바깥 칸에서 (입력칸 부품의 w-full과 겹치지 않게, workflow.md 6번) */}
+                    <div className="w-[76px] shrink-0">
                     <Select
                       aria-label="요일"
                       value={slot.weekday}
@@ -224,25 +230,30 @@ export function AdminStudentSheet({
                         </option>
                       ))}
                     </Select>
+                    </div>
                     <TimeSelect label="시작 시간" minuteStep={5} value={slot.start} onChange={(v) => setSlot(i, { start: v })} />
-                    <Input
-                      aria-label="수업 시간(분)"
-                      type="number"
-                      min={10}
-                      step={10}
-                      value={slot.durationMin}
-                      onChange={(e) => setSlot(i, { durationMin: Number(e.target.value) })}
-                      className="tabular"
-                    />
-                    <span className="text-body text-sub">분</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-[72px]">
+                        <Input
+                          aria-label="수업 시간(분)"
+                          type="number"
+                          min={10}
+                          step={10}
+                          value={slot.durationMin}
+                          onChange={(e) => setSlot(i, { durationMin: Number(e.target.value) })}
+                          className="tabular"
+                        />
+                      </span>
+                      <span className="text-body text-sub">분</span>
+                    </span>
+                    <button
+                      type="button"
                       onClick={() => set("schedule", form.schedule.filter((_, j) => j !== i))}
                       aria-label={`${WEEKDAY_KO[slot.weekday]}요일 수업 삭제`}
+                      className="press ml-auto grid size-11 place-items-center rounded-[var(--radius-control)] text-sub hover:bg-line-soft hover:text-ink md:size-9"
                     >
-                      삭제
-                    </Button>
+                      <Trash2 aria-hidden className="size-[18px]" />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -277,9 +288,11 @@ export function AdminStudentSheet({
           </Field>
           <fieldset className="mt-4">
             <legend className="mb-1.5 text-caption font-semibold text-sub">사용 프로그램</legend>
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <div className="flex flex-wrap gap-1.5">
               {PROGRAMS.map((p) => (
-                <Checkbox key={p} label={p} checked={form.programs.includes(p)} onChange={() => set("programs", toggle(form.programs, p))} />
+                <ToggleChip key={p} on={form.programs.includes(p)} onToggle={() => set("programs", toggle(form.programs, p))}>
+                  {p}
+                </ToggleChip>
               ))}
             </div>
           </fieldset>
@@ -292,8 +305,10 @@ export function AdminStudentSheet({
         <Section
           title="보호자"
           actions={
-            // TODO: 보호자 추가·연결 화면
-            <Button size="sm">보호자 추가</Button>
+            // 보호자 추가·연결 화면 (STU-07, 일별 계획 10/20)
+            <ComingSoonButton size="sm" feature="보호자 추가" opensOn="10/20">
+              보호자 추가
+            </ComingSoonButton>
           }
         >
           {form.guardians.length === 0 ? (
@@ -332,13 +347,17 @@ export function AdminStudentSheet({
               {samePhone.map((o) => o.name).join(", ")} 학생과 같은 번호입니다. 아이디를 따로 정해야 합니다.
             </p>
           )}
-          {/* TODO(2단계): 계정 발급·비밀번호 재설정·사용 중지 (AUTH-02, STU-09) */}
+          {/* 계정 발급(STU-08, 10/16)·비밀번호 재설정·사용 중지(AUTH-04·05, 10/19). 열리기 전에는 날짜 안내 */}
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm">계정 발급</Button>
-            <Button size="sm">비밀번호 재설정</Button>
-            <Button size="sm" variant="danger">
+            <ComingSoonButton size="sm" feature="계정 발급" opensOn="10/16">
+              계정 발급
+            </ComingSoonButton>
+            <ComingSoonButton size="sm" feature="비밀번호 재설정" opensOn="10/19">
+              비밀번호 재설정
+            </ComingSoonButton>
+            <ComingSoonButton size="sm" variant="danger" feature="사용 중지" opensOn="10/19">
               사용 중지
-            </Button>
+            </ComingSoonButton>
           </div>
         </Section>
       </form>

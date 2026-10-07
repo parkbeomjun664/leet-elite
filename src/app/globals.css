@@ -225,6 +225,16 @@ body {
     outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
+  /* 누를 수 있는 것에는 손가락 커서 (Tailwind v4는 버튼에 기본으로 주지 않는다, 10/7) */
+  button:not(:disabled):not([aria-disabled="true"]),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label:has(> input[type="checkbox"], > input[type="radio"]),
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    cursor: pointer;
+  }
   /* 창(패널)처럼 코드로 초점을 옮기는 요소에는 테두리를 그리지 않는다 */
   [tabindex="-1"]:focus-visible {
     outline: none;

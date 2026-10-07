@@ -1,6 +1,6 @@
 import { Users } from "lucide-react";
 import { StudentTable } from "@/components/students/student-table";
-import { Button } from "@/components/ui/button";
+import { ComingSoonButton } from "@/components/coming-soon-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/panel";
 import { loadAdminStudents } from "@/lib/data/students";
@@ -25,10 +25,13 @@ export default async function AdminStudents({ searchParams }: PageProps<"/admin/
         description={`재원 ${enrolledCount}명${pendingCount ? ` · 입학 예정 ${pendingCount}명` : ""} (휴·퇴원생은 따로 봅니다)`}
         actions={
           <>
-            {/* TODO: 엑셀(CSV) 내보내기 (10/22) */}
-            <Button variant="secondary">엑셀로 내보내기</Button>
-            {/* TODO: 학생 등록 화면 (STU-01, 10/12) */}
-            <Button variant="primary">학생 등록</Button>
+            {/* 열리기 전에는 누르면 날짜 안내 (일별 계획: 내보내기 10/22, 학생 등록 10/12) */}
+            <ComingSoonButton variant="secondary" feature="엑셀 내보내기" opensOn="10/22">
+              엑셀로 내보내기
+            </ComingSoonButton>
+            <ComingSoonButton variant="primary" feature="학생 등록" opensOn="10/12">
+              학생 등록
+            </ComingSoonButton>
           </>
         }
       />

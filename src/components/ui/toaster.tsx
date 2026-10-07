@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, CircleCheck } from "lucide-react";
+import { CircleAlert, CircleCheck, Clock } from "lucide-react";
 import { useEffect, useSyncExternalStore } from "react";
 import { getToast, subscribeToast } from "@/lib/toast";
 
@@ -18,7 +18,7 @@ export function Toaster() {
     <div className="pointer-events-none fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom,0px))] z-50 flex justify-center px-4 md:bottom-8">
       {/* 화면 읽기 프로그램: 성공은 조용히(status), 실패는 바로(alert) */}
       <div role="status" aria-live="polite" className="sr-only">
-        {item?.kind === "success" ? item.message : ""}
+        {item?.kind === "success" || item?.kind === "info" ? item.message : ""}
       </div>
       <div role="alert" className="sr-only">
         {item?.kind === "error" ? item.message : ""}
@@ -32,6 +32,8 @@ export function Toaster() {
         >
           {item.kind === "success" ? (
             <CircleCheck aria-hidden className="size-5 shrink-0 text-ok-on-dark" />
+          ) : item.kind === "info" ? (
+            <Clock aria-hidden className="size-5 shrink-0 text-white/70" />
           ) : (
             <CircleAlert aria-hidden className="size-5 shrink-0 text-brand-on-dark" />
           )}
