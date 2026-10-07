@@ -148,7 +148,7 @@ export function StudentTable({
           {visible.map((r) => {
             const checked = selected.has(r.id);
             return (
-              <li key={r.id} className={cn("surface flex items-stretch", checked && "ring-1 ring-ink")}>
+              <li key={r.id} className={cn("flex items-stretch rounded-[var(--radius-card)] bg-bg", checked && "bg-card ring-[1.5px] ring-ink")}>
                 {/* [여러 명 선택]일 때는 카드 전체가 선택 버튼(체크 표시는 모양만), 아니면 누르면 수정 창 */}
                 <button
                   type="button"

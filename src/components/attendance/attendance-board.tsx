@@ -214,7 +214,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
 
         {/* 오늘 숫자 = 상태 필터. 누른 숫자의 학생만 보여 준다 */}
         {/* 지금 보고 있는 칸은 검은 밑줄(누르면 미끄러져 옮겨 감). 한 번 더 누르면 "오늘 수업"(전체)으로 */}
-        <div role="group" aria-label="상태로 보기" className="surface relative grid grid-cols-6 overflow-hidden">
+        <div role="group" aria-label="상태로 보기" className="relative grid grid-cols-6 border-y border-line-soft">
           {STATUS_FILTERS.map((f) => {
             const active = status === f.key;
             return (
@@ -273,7 +273,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
             {arrived.length > 0 && <TileSection title="오늘 등원" items={arrived} {...tileProps} />}
             {expected.length > 0 && <TileSection title="오늘 수업 · 등원 전" items={expected} {...tileProps} />}
             {visible.length === 0 && (
-              <EmptyState icon={SearchX} title="조건에 맞는 학생이 없어요" description="반이나 상태를 바꾸거나 이름을 다시 확인해 주세요" className="surface" />
+              <EmptyState icon={SearchX} title="조건에 맞는 학생이 없어요" description="반이나 상태를 바꾸거나 이름을 다시 확인해 주세요" className="py-8" />
             )}
           </>
         ) : (
@@ -317,8 +317,8 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
       {/* ── 오른쪽: 학생 상세 (PC에서만, 스크롤해도 따라옴) ── */}
       <aside className="hidden lg:block">
         {/* 상단 메뉴(64px, 고정) 바로 아래에 붙고, 화면 높이만큼 채운다 (오른쪽이 비어 보이지 않게) */}
-        {/* 바깥 테두리는 이 칸 하나만. 안쪽은 구분선만 (docs/design.md 4번 카드) */}
-        <div className="sticky top-[88px] flex h-[calc(100dvh-112px)] flex-col overflow-hidden rounded-[var(--radius-card)] border border-line-soft bg-card">
+        {/* 상자 없이 왼쪽 1px 선으로만 목록과 나눈다 (10/7 오후) */}
+        <div className="sticky top-[88px] flex h-[calc(100dvh-112px)] flex-col overflow-hidden border-l border-line-soft bg-card">
           {focusDay ? (
             // 학생을 바꾸면 내용이 살짝 나타난다 (200ms)
             <div key={focusDay.student.id} className="flex min-h-0 flex-1 animate-fade-in flex-col">
@@ -469,8 +469,8 @@ function Tile({ day, selecting, selected, focusId, onToggle, onOpen, onAttendanc
     <li
       className={cn(
         "rounded-[var(--radius-card)] px-4 py-3 transition-[background-color,box-shadow] duration-[var(--duration-fast)]",
-        // 연회색 바탕 위 흰 칸 + 얇은 테두리, 고른 칸은 검은 테두리 (10/7)
-        checked || focused ? "bg-card shadow-[inset_0_0_0_1.5px_var(--color-ink)]" : "bg-card shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-faint)]",
+        // 흰 바탕 위 옅은 회색 칸(누르는 단위라 칸 모양은 남긴다), 고른 칸은 흰 바탕 + 검은 테두리 (10/7 오후)
+        checked || focused ? "bg-card shadow-[inset_0_0_0_1.5px_var(--color-ink)]" : "bg-bg hover:bg-line-soft/70",
       )}
     >
       <div className="flex items-center gap-2">
@@ -524,7 +524,7 @@ function TileButton({ onClick, children }: { onClick: () => void; children: Reac
     <button
       type="button"
       onClick={onClick}
-      className="press h-11 shrink-0 md:h-8 rounded-[var(--radius-control)] bg-line-soft px-3 text-caption font-semibold text-ink hover:bg-line active:bg-line" // 흰 칸 위라 연회색 버튼 (10/7)
+      className="press h-11 shrink-0 md:h-8 rounded-[var(--radius-control)] bg-card px-3 text-caption font-semibold text-ink shadow-chip hover:bg-bg active:bg-line-soft" // 회색 칸 위 흰 버튼
     >
       {children}
     </button>

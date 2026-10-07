@@ -166,7 +166,15 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
               key={st.label}
               className={cn("border-line-soft", i % 3 !== 0 && "border-l", i >= 3 && "border-t sm:border-t-0", "sm:border-l sm:first:border-l-0")}
             >
-              <Link href={st.href} className="flex h-full flex-col gap-1 px-4 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-bg sm:px-5">
+              {/* 줄의 첫 칸은 왼쪽 여백 없이 (날짜·라벨과 같은 선에 맞춘다): 휴대폰은 1·4번째, 넓은 화면은 1번째 */}
+              <Link
+                href={st.href}
+                className={cn(
+                  "flex h-full flex-col gap-1 px-4 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-bg sm:px-5",
+                  i % 3 === 0 && "max-sm:pl-0",
+                  i === 0 && "sm:pl-0",
+                )}
+              >
                 <span className={cn("text-figure leading-none font-bold tabular", st.value === 0 ? "text-sub" : st.alert ? "text-brand" : "text-ink")}>
                   {st.value}
                   {st.total !== undefined && <span className="text-caption font-normal text-sub"> / {st.total}</span>}

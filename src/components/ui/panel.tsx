@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-/** 구역 카드: 흰 카드(surface) 안에 제목 줄(선택)과 본문 (10/7: 연회색 바탕 위 흰 카드로 경계를 만든다) */
+/** 구역: 작은 회색 라벨(제목) + 1px 선 아래 본문. 상자는 쓰지 않는다 (10/7 오후, docs/design.md 1-1) */
 export function Panel({
   title,
   actions,
@@ -16,14 +16,14 @@ export function Panel({
   bodyClassName?: string;
 }) {
   return (
-    <section className={cn("surface", className)}>
+    <section className={className}>
       {(title || actions) && (
-        <header className="flex min-h-12 items-center justify-between gap-3 border-b border-line-soft px-5 py-2.5">
-          {title && <h2 className="text-heading font-semibold">{title}</h2>}
+        <header className="flex min-h-11 items-center justify-between gap-3 border-b border-line-soft pb-1.5">
+          {title && <h2 className="text-caption font-semibold text-sub">{title}</h2>}
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </header>
       )}
-      <div className={cn("px-5 py-4", bodyClassName)}>{children}</div>
+      <div className={cn("py-3", bodyClassName)}>{children}</div>
     </section>
   );
 }

@@ -36,7 +36,7 @@ export default async function AdminStudents({ searchParams }: PageProps<"/admin/
         }
       />
       {rows.length === 0 ? (
-        <div className="surface">
+        <div className="border-y border-line-soft">
           <EmptyState icon={Users} title="아직 등록된 학생이 없어요" description="위의 [학생 등록]으로 첫 학생을 등록해 주세요" />
         </div>
       ) : (

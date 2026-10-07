@@ -5,7 +5,8 @@ import { cn } from "@/lib/cn";
 
 export function Table({ className, ...rest }: ComponentProps<"table">) {
   return (
-    <div className="overflow-x-auto rounded-[var(--radius-card)] border border-line-soft bg-card">
+    // 상자 없이 위아래 1px 선만 (10/7 오후)
+    <div className="overflow-x-auto border-y border-line-soft bg-card">
       <table className={cn("w-full border-collapse text-body", className)} {...rest} />
     </div>
   );
