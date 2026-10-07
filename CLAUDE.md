@@ -20,6 +20,7 @@ LEET영어학원 전용 학원 관리 앱(PWA). 에듀OK의 출결·숙제·소�
 | 문서 | 내용 |
 |---|---|
 | `docs/progress.md` | 세션 기록, 단계별 일정 |
+| `docs/backlog.md` | 여유 작업 목록: 하루 계획이 일찍 끝났을 때 고르는 일 (요구사항 빠진 것·사용성·디자인·QA·문서) |
 | `docs/workflow.md` | 작업 방식: 하루 진행, 작업일지 형식, 원장님께 보내는 것, 개발 환경 주의사항 |
 | `docs/requirements.md` | 요구사항 (ID: AUTH, HOME, STU, CLS, TCH, ATT, KIOSK, HW, MKP, MSG, NOTI) |
 | `docs/data-model.md` | 표 구조, RLS 원칙 |
