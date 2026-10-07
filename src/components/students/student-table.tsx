@@ -116,7 +116,8 @@ export function StudentTable({
         </label>
       </div>
       {/* 걸렀을 때만 결과 수, 휴대폰·태블릿은 [여러 명 선택] */}
-      <div className="flex min-h-11 items-center justify-between gap-3">
+      {/* PC(1024~)에서는 [여러 명 선택]이 없으므로, 거르지 않을 때는 이 줄을 숨긴다 (빈칸이 생기지 않게) */}
+      <div className={cn("flex min-h-11 items-center justify-between gap-3", classId === "all" && !query.trim() && "lg:hidden")}>
         <p className="text-caption text-sub" aria-live="polite">
           {classId !== "all" || query.trim() ? (
             <>
@@ -147,7 +148,7 @@ export function StudentTable({
           {visible.map((r) => {
             const checked = selected.has(r.id);
             return (
-              <li key={r.id} className={cn("flex items-stretch rounded-[var(--radius-card)] bg-bg", checked && "ring-1 ring-ink/40")}>
+              <li key={r.id} className={cn("surface flex items-stretch", checked && "ring-1 ring-ink")}>
                 {/* [여러 명 선택]일 때는 카드 전체가 선택 버튼(체크 표시는 모양만), 아니면 누르면 수정 창 */}
                 <button
                   type="button"

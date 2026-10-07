@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-/** 흰 바탕 묶음 상자. 제목 줄(선택)과 본문 */
+/** 구역 카드: 흰 카드(surface) 안에 제목 줄(선택)과 본문 (10/7: 연회색 바탕 위 흰 카드로 경계를 만든다) */
 export function Panel({
   title,
   actions,
@@ -16,15 +16,14 @@ export function Panel({
   bodyClassName?: string;
 }) {
   return (
-    // 상자 없이 제목 + 구분선으로 묶는다 (10/5: 한 화면에 상자·맨바탕이 섞이지 않게)
-    <section className={cn("bg-card", className)}>
+    <section className={cn("surface", className)}>
       {(title || actions) && (
-        <header className="flex min-h-12 items-center justify-between gap-3 border-b border-line-soft py-2.5">
+        <header className="flex min-h-12 items-center justify-between gap-3 border-b border-line-soft px-5 py-2.5">
           {title && <h2 className="text-heading font-semibold">{title}</h2>}
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </header>
       )}
-      <div className={cn("py-4", bodyClassName)}>{children}</div>
+      <div className={cn("px-5 py-4", bodyClassName)}>{children}</div>
     </section>
   );
 }
@@ -32,7 +31,7 @@ export function Panel({
 /** 화면 맨 위 제목 줄 */
 export function PageHeader({ title, description, actions }: { title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line-soft pb-4">
+    <div className="flex flex-wrap items-end justify-between gap-3 pb-1">
       <div>
         <h1 className="text-title font-bold tracking-tight">{title}</h1>
         {description && <p className="mt-1 text-body text-sub">{description}</p>}

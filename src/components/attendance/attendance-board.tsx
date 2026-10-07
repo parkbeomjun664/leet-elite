@@ -214,7 +214,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
 
         {/* 오늘 숫자 = 상태 필터. 누른 숫자의 학생만 보여 준다 */}
         {/* 지금 보고 있는 칸은 검은 밑줄(누르면 미끄러져 옮겨 감). 한 번 더 누르면 "오늘 수업"(전체)으로 */}
-        <div role="group" aria-label="상태로 보기" className="relative grid grid-cols-6 border-b border-line-soft">
+        <div role="group" aria-label="상태로 보기" className="surface relative grid grid-cols-6 overflow-hidden">
           {STATUS_FILTERS.map((f) => {
             const active = status === f.key;
             return (
@@ -232,7 +232,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
           })}
           <span
             aria-hidden
-            className="absolute bottom-[-1px] left-0 h-0.5 w-1/6 bg-ink transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]"
+            className="absolute bottom-0 left-0 h-0.5 w-1/6 bg-ink transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]"
             style={{ transform: `translateX(${STATUS_FILTERS.findIndex((f) => f.key === status) * 100}%)` }}
           />
         </div>
@@ -273,7 +273,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
             {arrived.length > 0 && <TileSection title="오늘 등원" items={arrived} {...tileProps} />}
             {expected.length > 0 && <TileSection title="오늘 수업 · 등원 전" items={expected} {...tileProps} />}
             {visible.length === 0 && (
-              <EmptyState icon={SearchX} title="조건에 맞는 학생이 없어요" description="반이나 상태를 바꾸거나 이름을 다시 확인해 주세요" className="rounded-[var(--radius-card)] bg-bg" />
+              <EmptyState icon={SearchX} title="조건에 맞는 학생이 없어요" description="반이나 상태를 바꾸거나 이름을 다시 확인해 주세요" className="surface" />
             )}
           </>
         ) : (
@@ -469,7 +469,8 @@ function Tile({ day, selecting, selected, focusId, onToggle, onOpen, onAttendanc
     <li
       className={cn(
         "rounded-[var(--radius-card)] px-4 py-3 transition-[background-color,box-shadow] duration-[var(--duration-fast)]",
-        checked || focused ? "bg-card shadow-[inset_0_0_0_1.5px_var(--color-ink)]" : "bg-bg hover:bg-line-soft/70",
+        // 연회색 바탕 위 흰 칸 + 얇은 테두리, 고른 칸은 검은 테두리 (10/7)
+        checked || focused ? "bg-card shadow-[inset_0_0_0_1.5px_var(--color-ink)]" : "bg-card shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-faint)]",
       )}
     >
       <div className="flex items-center gap-2">
@@ -523,7 +524,7 @@ function TileButton({ onClick, children }: { onClick: () => void; children: Reac
     <button
       type="button"
       onClick={onClick}
-      className="press h-11 shrink-0 md:h-8 rounded-[var(--radius-control)] bg-card px-3 text-caption font-semibold text-ink shadow-chip hover:bg-bg active:bg-line-soft"
+      className="press h-11 shrink-0 md:h-8 rounded-[var(--radius-control)] bg-line-soft px-3 text-caption font-semibold text-ink hover:bg-line active:bg-line" // 흰 칸 위라 연회색 버튼 (10/7)
     >
       {children}
     </button>

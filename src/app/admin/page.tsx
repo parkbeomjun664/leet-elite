@@ -169,7 +169,8 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   ];
 
   return (
-    <div className="space-y-8">
+    // 연회색 바탕 위 구역마다 흰 카드 (10/7, docs/design.md 1-1)
+    <div className="space-y-5">
       <PageHeader
         title={<span className="tabular">{formatDateKo(date)}</span>}
         description={
@@ -180,8 +181,8 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       />
 
       {/* 왼쪽: 확인할 일(처리할 것만) / 오른쪽: 오늘 학원 숫자. 예전 현황 카드 7개를 둘로 나눔 (10/5) */}
-      <div className="grid gap-8 lg:grid-cols-5">
-        <section aria-labelledby="todo-title" className="lg:col-span-3">
+      <div className="grid gap-5 lg:grid-cols-5">
+        <section aria-labelledby="todo-title" className="surface px-5 py-4 lg:col-span-3">
           <h2 id="todo-title" className="mb-1 text-heading font-semibold">
             확인할 일
           </h2>
@@ -213,7 +214,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           )}
         </section>
 
-        <section aria-labelledby="stats-title" className="lg:col-span-2">
+        <section aria-labelledby="stats-title" className="surface px-5 py-4 lg:col-span-2">
           <h2 id="stats-title" className="mb-1 text-heading font-semibold">
             오늘 학원
           </h2>
@@ -235,8 +236,8 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       </div>
 
       {/* 바로가기 메뉴 3줄 (HOME-02) */}
-      <section aria-label="바로가기">
-        <h2 className="mb-3 text-heading font-semibold">바로가기</h2>
+      <section aria-label="바로가기" className="surface px-3 py-4 sm:px-4">
+        <h2 className="mb-2 px-2 text-heading font-semibold">바로가기</h2>
         <div className="grid grid-cols-3 gap-1">
           {MENU_ROWS.flat().map((m) => (
             <Link
@@ -257,7 +258,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       </section>
 
       {/* 오늘 보강 · 읽지 않은 메시지 */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Panel
           title={
             <>

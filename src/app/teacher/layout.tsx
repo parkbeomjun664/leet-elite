@@ -7,12 +7,13 @@ import { teachers } from "@/lib/mock/data";
 const demoTeacher = teachers[0];
 
 export default function TeacherLayout({ children }: LayoutProps<"/teacher">) {
+  // 바탕은 연회색, 구역은 흰 카드 (10/7, docs/design.md 1-1)
   return (
-    <>
+    <div className="min-h-dvh bg-bg">
       <TopBar nav={TEACHER_NAV} roleLabel="선생님" userName={demoTeacher.nickname} />
       <main className="mx-auto max-w-[1280px] px-4 py-6">
         <PageTransition>{children}</PageTransition>
       </main>
-    </>
+    </div>
   );
 }

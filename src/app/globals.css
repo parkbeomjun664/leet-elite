@@ -170,6 +170,13 @@
   }
 }
 
+/* 구역 카드 (10/7): 연회색 바탕(bg) 위 흰 카드 + 얇은 테두리. 관리 화면·휴대폰 화면 공통으로 구역의 경계를 만든다 (docs/design.md 1-1) */
+@utility surface {
+  border-radius: var(--radius-mcard);
+  border: 1px solid var(--color-line);
+  background-color: var(--color-card);
+}
+
 /* 누름 반응: 버튼 0.97, 카드 0.98 (공통 부품에서 붙인다) */
 @utility press {
   transition-property: transform, color, background-color, border-color, box-shadow;
