@@ -39,19 +39,21 @@ test.describe("선생님 화면 학생 상세", () => {
   });
 });
 
-test("원장님 홈: 확인할 일과 오늘 학원 숫자", async ({ page }) => {
+test("원장님 홈: 확인할 일과 오늘 학원 숫자 (10/7 상자 없는 배치)", async ({ page }) => {
   await gotoReady(page, "/admin?at=16:00");
-  const todo = page.locator("section").filter({ has: page.getByRole("heading", { name: "확인할 일" }) });
+  const todo = page.locator("section").filter({ has: page.getByRole("heading", { name: /^확인할 일/ }) });
   const items = todo.locator("li");
   const count = await items.count();
   expect(count).toBeGreaterThan(0);
-  // 머리말의 "n가지"와 목록 줄 수가 같다
-  await expect(page.getByText(`오늘 확인할 일이 ${count}가지 있어요`)).toBeVisible();
-  // 줄마다 처리하러 가는 링크가 있다
-  await expect(items.first().getByRole("link")).toBeVisible();
-
+  // 구역 라벨의 개수와 목록 줄 수가 같다
+  await expect(todo.getByRole("heading", { name: `확인할 일 ${count}` })).toBeVisible();
+  // 줄마다 처리하러 가는 링크
+  await expect(items.first().getByRole("link")).toContainText("보기");
+  // 오늘 학원 숫자 다섯 칸 (날짜 아래 한 줄)
   const stats = page.locator("section").filter({ has: page.getByRole("heading", { name: "오늘 학원" }) });
-  await expect(stats.getByRole("link")).toHaveCount(5);
+  await expect(stats.getByRole("listitem")).toHaveCount(5);
+  // 바로가기는 자주 쓰는 4개만 (HOME-02 축소)
+  await expect(page.getByRole("navigation", { name: "바로가기" }).getByRole("link")).toHaveCount(4);
 });
 
 test("원장님 홈: 학생 이름은 굵고 검게", async ({ page }) => {
