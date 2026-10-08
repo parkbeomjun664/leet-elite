@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { usePathname } from "next/navigation";
 import { activeItem, isActive, type NavItem } from "@/lib/nav";
 
@@ -20,26 +21,29 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
   const current = activeItem(nav, pathname);
   const home = nav[0];
 
+  // 좁은 화면에서 옆으로 밀어 보는 메뉴: 스크롤바 숨김 + 오른쪽 끝 흰 페이드, 지금 메뉴가 밖이면 가운데로 (10/8 UI 5)
   const menu = (
-    <ul className="flex h-full overflow-x-auto">
-      {nav.map((item) => {
-        const active = current?.href === item.href;
-        return (
-          <li key={item.href} className="shrink-0">
-            <Link
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={`relative flex h-full items-center px-3.5 text-body whitespace-nowrap transition-colors duration-[var(--duration-fast)] ${
-                active ? "font-semibold text-ink" : "text-sub hover:text-ink"
-              }`}
-            >
-              {item.label}
-              {active && <span className="absolute inset-x-3.5 bottom-0 h-0.5 bg-ink" />}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+    <ScrollRow activeKey={pathname} className="h-full">
+      <ul className="flex h-full">
+        {nav.map((item) => {
+          const active = current?.href === item.href;
+          return (
+            <li key={item.href} className="shrink-0">
+              <Link
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`relative flex h-full items-center px-3.5 text-body whitespace-nowrap transition-colors duration-[var(--duration-fast)] ${
+                  active ? "font-semibold text-ink" : "text-sub hover:text-ink"
+                }`}
+              >
+                {item.label}
+                {active && <span className="absolute inset-x-3.5 bottom-0 h-0.5 bg-ink" />}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </ScrollRow>
   );
 
   return (
@@ -81,25 +85,27 @@ export function SubNav({ nav }: { nav: NavItem[] }) {
   if (!current?.children) return null;
   return (
     <nav aria-label={`${current.label} 하위 메뉴`} className="sticky top-[113px] z-20 border-b border-line-soft bg-card lg:top-[65px]">
-      <ul className="mx-auto flex max-w-[1280px] overflow-x-auto px-1">
-        {current.children.map((child) => {
-          const active = isActive(pathname, child.href, true);
-          return (
-            <li key={child.href} className="shrink-0">
-              <Link
-                href={child.href}
-                aria-current={active ? "page" : undefined}
-                className={`relative flex h-11 items-center px-4 text-body whitespace-nowrap transition-colors duration-[var(--duration-fast)] ${
-                  active ? "font-semibold text-ink" : "text-sub hover:text-ink"
-                }`}
-              >
-                {child.label}
-                {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-ink" />}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <ScrollRow activeKey={pathname} className="mx-auto max-w-[1280px]">
+        <ul className="flex px-1">
+          {current.children.map((child) => {
+            const active = isActive(pathname, child.href, true);
+            return (
+              <li key={child.href} className="shrink-0">
+                <Link
+                  href={child.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`relative flex h-11 items-center px-4 text-body whitespace-nowrap transition-colors duration-[var(--duration-fast)] ${
+                    active ? "font-semibold text-ink" : "text-sub hover:text-ink"
+                  }`}
+                >
+                  {child.label}
+                  {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-ink" />}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </ScrollRow>
     </nav>
   );
 }

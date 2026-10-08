@@ -138,18 +138,28 @@ export function SkeletonAdminHome() {
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-3 border-y border-line-soft sm:grid-cols-5">
+        <div className="grid grid-cols-2 border-y border-line-soft sm:grid-cols-5">
           {Array.from({ length: 5 }, (_, i) => (
-            <div key={i} className={cn("flex h-[74px] flex-col justify-center gap-2 px-4 sm:px-5", i % 3 === 0 && "max-sm:pl-0", i === 0 && "sm:pl-0")}>
+            <div
+              key={i}
+              className={cn(
+                "flex h-[74px] flex-col justify-center gap-2 border-line-soft px-4 sm:px-5",
+                i % 2 === 1 && "max-sm:border-l",
+                i >= 2 && "max-sm:border-t",
+                i === 4 && "max-sm:col-span-2",
+                i % 2 === 0 && "max-sm:pl-0",
+                i === 0 && "sm:pl-0",
+              )}
+            >
               <Skeleton className="h-[22px] w-10" />
               <Skeleton className="h-3 w-14" />
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Skeleton className="mr-1 h-3.5 w-12" />
+        <div className="flex items-center gap-2 overflow-hidden">
+          <Skeleton className="mr-1 h-3.5 w-12 shrink-0" />
           {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-11 w-[72px] rounded-full md:h-9" />
+            <Skeleton key={i} className="h-11 w-[72px] shrink-0 rounded-full md:h-9" />
           ))}
         </div>
       </div>

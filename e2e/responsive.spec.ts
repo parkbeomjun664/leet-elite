@@ -88,3 +88,32 @@ test.describe("휴대폰 하단 시트", () => {
     await expect(dialog).toBeVisible();
   });
 });
+
+// 10/8 UI 5: 원장님 홈 휴대폰(375) — 숫자 2칸씩·마지막 칸 꽉, 메뉴 스크롤바 숨김·끝 페이드, 지금 메뉴가 화면 안에
+test.describe("원장님 홈 375", () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+
+  test("숫자 줄은 2칸씩, 마지막 칸은 가로로 꽉", async ({ page }) => {
+    await gotoReady(page, "/admin?at=16:00");
+    const cells = page.locator("div").filter({ has: page.getByRole("heading", { name: "오늘 학원" }) }).last().getByRole("listitem");
+    await expect(cells).toHaveCount(5);
+    const w = await cells.evaluateAll((lis) => lis.map((li) => Math.round(li.getBoundingClientRect().width)));
+    expect(w[0]).toBe(w[1]); // 두 칸이 같은 폭
+    expect(w[4]).toBeGreaterThan(w[0] * 1.9); // 마지막 칸은 두 칸 폭
+  });
+
+  test("메뉴: 스크롤바 숨김, 오른쪽에 더 있으면 페이드, 지금 메뉴는 화면 안", async ({ page }) => {
+    await gotoReady(page, "/admin/messages");
+    const menu = page.getByRole("navigation", { name: "주 메뉴" }).filter({ visible: true });
+    const scroller = menu.locator("div.overflow-x-auto");
+    await expect(scroller).toHaveCSS("scrollbar-width", "none");
+    // 맨 오른쪽 메뉴(메시지)가 지금 메뉴 → 화면 안으로 밀려 와 있다
+    const current = menu.locator('[aria-current="page"]');
+    await expect(current).toHaveText("메시지");
+    await expect.poll(async () => (await current.boundingBox())!.x + (await current.boundingBox())!.width).toBeLessThanOrEqual(375);
+    // 홈으로 가면 처음으로, 오른쪽에 더 있으니 페이드가 보인다
+    await menu.getByRole("link", { name: "홈" }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(menu.locator("span[aria-hidden].bg-gradient-to-l")).toHaveCSS("opacity", "1");
+  });
+});

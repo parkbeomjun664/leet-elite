@@ -8,6 +8,7 @@ import { mockAttendanceFor, studentById, students, teacherById, teachers } from 
 import { homework, makeups, messages, submissionOf, submissions, unreadCount } from "@/lib/mock/activity";
 import { workLogsFor } from "@/lib/mock/work";
 import { cn } from "@/lib/cn";
+import { ScrollRow } from "@/components/ui/scroll-row";
 
 // 가상 데이터라 매 요청마다 "지금" 기준으로 다시 계산한다
 export const dynamic = "force-dynamic";
@@ -187,19 +188,25 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           )}
         </div>
 
-        {/* 오늘 학원: 숫자 22px + 라벨 작게, 칸 사이 세로선. 0은 회색, 결석만 빨강. 휴대폰은 3칸 + 2칸 */}
+        {/* 오늘 학원: 숫자 22px + 라벨 작게, 칸 사이 세로선. 0은 회색, 결석만 빨강. 휴대폰은 2칸씩, 마지막 칸은 가로로 꽉 (10/8 UI 5) */}
         <div>
           <h2 className="sr-only">오늘 학원</h2>
-          <ul className="grid grid-cols-3 border-y border-line-soft sm:grid-cols-5">
+          <ul className="grid grid-cols-2 border-y border-line-soft sm:grid-cols-5">
             {stats.map((st, i) => (
               <li
                 key={st.label}
-                className={cn("border-line-soft", i % 3 !== 0 && "border-l", i >= 3 && "border-t sm:border-t-0", "sm:border-l sm:first:border-l-0")}
+                className={cn(
+                  "border-line-soft",
+                  i % 2 === 1 && "max-sm:border-l",
+                  i >= 2 && "max-sm:border-t",
+                  i === stats.length - 1 && i % 2 === 0 && "max-sm:col-span-2",
+                  "sm:border-l sm:first:border-l-0",
+                )}
               >
-                {/* 줄의 첫 칸은 왼쪽 여백 없이 (날짜·라벨과 같은 선에 맞춘다): 휴대폰은 1·4번째, 넓은 화면은 1번째 */}
+                {/* 줄의 첫 칸은 왼쪽 여백 없이 (날짜·라벨과 같은 선에 맞춘다): 휴대폰은 왼쪽 칸, 넓은 화면은 1번째 */}
                 <Link
                   href={st.href}
-                  className={cn("press-card flex h-full flex-col gap-1 px-4 py-3.5 hover:bg-bg sm:px-5", i % 3 === 0 && "max-sm:pl-0", i === 0 && "sm:pl-0")}
+                  className={cn("press-card flex h-full flex-col gap-1 px-4 py-3.5 hover:bg-bg sm:px-5", i % 2 === 0 && "max-sm:pl-0", i === 0 && "sm:pl-0")}
                 >
                   <span className={cn("text-figure-sm leading-none font-semibold tabular", st.value === 0 ? "text-sub" : st.alert ? "text-brand" : "text-ink")}>
                     {st.value}
@@ -213,17 +220,22 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         </div>
 
         {/* 바로가기 (HOME-02): 상단 메뉴와 겹쳐 자주 쓰는 4개만, 테두리 있는 작은 알약 (10/8) */}
-        <nav aria-label="바로가기" className="flex flex-wrap items-center gap-2">
-          <span className="mr-1 text-caption font-semibold text-sub">바로가기</span>
-          {SHORTCUTS.map((m) => (
-            <Link
-              key={m.label}
-              href={hrefOf(m.navLabel)}
-              className="press inline-flex h-11 items-center rounded-full border border-line px-4 text-caption font-semibold text-ink hover:bg-bg md:h-9"
-            >
-              {m.label}
-            </Link>
-          ))}
+        {/* 좁은 화면에서는 한 줄로 옆으로 밀어 본다 (두 줄로 넘어가지 않게) */}
+        <nav aria-label="바로가기">
+          <ScrollRow>
+            <div className="flex w-max items-center gap-2">
+              <span className="mr-1 text-caption font-semibold text-sub">바로가기</span>
+              {SHORTCUTS.map((m) => (
+                <Link
+                  key={m.label}
+                  href={hrefOf(m.navLabel)}
+                  className="press inline-flex h-11 items-center rounded-full border border-line px-4 text-caption font-semibold text-ink hover:bg-bg md:h-9"
+                >
+                  {m.label}
+                </Link>
+              ))}
+            </div>
+          </ScrollRow>
         </nav>
       </section>
 

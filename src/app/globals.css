@@ -188,6 +188,13 @@
     transform: scale(0.97);
   }
 }
+/* 옆으로 밀어 보는 줄의 운영체제 스크롤바 숨김 (src/components/ui/scroll-row.tsx, 10/8) */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
 /* 키패드 숫자 버튼: 누르면 바로 회색 + 0.96 (저가 태블릿이라 100ms만) */
 @utility press-key {
   transition-property: transform, background-color;
