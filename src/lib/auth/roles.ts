@@ -23,8 +23,8 @@ const AREAS: { prefix: string; roles: readonly Role[] }[] = [
   { prefix: "/kiosk", roles: ["kiosk", "admin"] },
 ];
 
-// 로그인 없이 열리는 화면: 로그인, 디자인 미리보기(가상 이름만)
-const PUBLIC = ["/login", "/design-system", "/design"];
+// 로그인 없이 열리는 화면: 로그인, 개인정보 처리방침(NF-10), 디자인 미리보기(가상 이름만)
+const PUBLIC = ["/login", "/privacy", "/design-system", "/design"];
 
 const under = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
 

@@ -10,7 +10,9 @@ describe("화면 출입 규칙", () => {
     expect(routeFor("/teacher", null, "?at=16:00")).toEqual({ redirect: "/login?next=%2Fteacher%3Fat%3D16%3A00" });
   });
 
-  it("로그인 화면·디자인 미리보기는 로그인 없이 열린다", () => {
+  it("로그인 화면·개인정보 처리방침·디자인 미리보기는 로그인 없이 열린다", () => {
+    expect(routeFor("/privacy", null)).toBeNull();
+    expect(routeFor("/privacy", "student")).toBeNull(); // 로그인한 사람도 본다
     expect(routeFor("/login", null)).toBeNull();
     expect(routeFor("/design-system", null)).toBeNull();
   });

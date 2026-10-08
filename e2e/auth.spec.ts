@@ -32,6 +32,13 @@ test("로그인 안 하면 로그인 화면으로, 보던 주소는 기억", asy
   await expect(page).toHaveURL(/\/login\?next=%2Fadmin%2Fstudents/);
 });
 
+test("개인정보 처리방침은 로그인 없이, 로그인 화면 아래 링크로 열린다 (NF-10)", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("link", { name: "개인정보 처리방침" }).click();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(page.getByRole("heading", { level: 1, name: "개인정보 처리방침" })).toBeVisible();
+});
+
 test("틀리면 문구 하나, 아이디는 남고 비밀번호는 비움", async ({ page }) => {
   await page.goto("/login");
   await login(page, "e2e-nobody", "wrong-pass");

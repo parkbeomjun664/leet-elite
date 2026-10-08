@@ -14,6 +14,7 @@ const PAGES = [
   ["재원생 목록", "/admin/students"],
   ["학생 정보 수정 창", "/admin/students?edit=s010"],
   ["로그인", "/login"],
+  ["개인정보 처리방침", "/privacy"],
 ] as const;
 
 async function violations(page: Page) {

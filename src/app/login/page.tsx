@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "로그인" };
@@ -37,6 +38,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             <span aria-hidden className="text-sub">›</span>
           </a>
         </div>
+        {/* 개인정보 처리방침 (NF-10): 맨 아래 작게 */}
+        <p className="mt-6 text-center">
+          <Link href="/privacy" className="inline-flex min-h-11 items-center px-2 text-caption text-sub hover:text-ink hover:underline">
+            개인정보 처리방침
+          </Link>
+        </p>
       </div>
     </main>
   );
