@@ -8,5 +8,5 @@ export default async function TeacherPlaceholder({ params }: PageProps<"/teacher
   // 하위 메뉴 이름을 먼저 찾는다 (예: "숙제"보다 "숙제 관리")
   const label =
     TEACHER_NAV.flatMap((i) => [...(i.children ?? []), i]).find((i) => i.href === href)?.label ?? "이 화면";
-  return <ComingSoon title={label} />;
+  return <ComingSoon title={label} homeHref="/teacher" />;
 }

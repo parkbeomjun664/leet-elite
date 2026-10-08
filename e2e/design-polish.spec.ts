@@ -132,3 +132,16 @@ test("선생님 홈 오른쪽 상세(1280): 헤더 아래 고정·화면 높이�
   await expect(chip).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(chip).toHaveCSS("border-top-color", "rgb(228, 226, 222)");
 });
+
+test("준비 중 화면: 아이콘 40px, 본문 위에서 30% 지점, [홈으로] (10/8 UI 8)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await gotoReady(page, "/admin/makeups");
+  const icon = page.locator("main svg").first();
+  const box = (await icon.boundingBox())!;
+  expect(Math.round(box.width)).toBe(40);
+  // 본문 칸(상단 메뉴 65px 아래) 높이의 30% 근처에서 시작 (±24px)
+  const target = 65 + (900 - 65) * 0.3;
+  expect(Math.abs(box.y - target)).toBeLessThanOrEqual(24);
+  await page.getByRole("main").getByRole("link", { name: "홈으로" }).click();
+  await expect(page).toHaveURL(/\/admin$/);
+});

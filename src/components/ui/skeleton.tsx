@@ -171,14 +171,17 @@ export function SkeletonAdminHome() {
   );
 }
 
-/** 준비 중 화면 모양 (src/components/coming-soon.tsx와 같은 자리) */
+/** 준비 중 화면 모양 (src/components/coming-soon.tsx와 같은 자리: 본문 위에서 30%, 아이콘 40 · 제목 · 안내 · [홈으로]) */
 export function SkeletonComingSoon() {
   return (
-    <SkeletonGroup immediate className="flex flex-col items-center py-[88px]">
-      <Skeleton className="mb-3 size-6 rounded-full" />
+    <SkeletonGroup
+      immediate
+      className="flex flex-col items-center px-4 pt-[max(1rem,calc((100dvh-113px)*0.3-24px))] lg:pt-[max(1rem,calc((100dvh-65px)*0.3-24px))]"
+    >
+      <Skeleton className="mb-3 size-10 rounded-full" />
       <Skeleton className="h-[30px] w-32" />
-      <Skeleton className="mt-2 h-4 w-40" />
-      <Skeleton className="mt-4 h-[22px] w-14" />
+      <Skeleton className="mt-1.5 h-4 w-48" />
+      <Skeleton className="mt-5 h-10 w-20 rounded-[var(--radius-control)]" />
     </SkeletonGroup>
   );
 }

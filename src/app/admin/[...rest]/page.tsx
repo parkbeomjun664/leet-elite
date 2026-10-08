@@ -8,5 +8,5 @@ export default async function AdminPlaceholder({ params }: PageProps<"/admin/[..
   // 하위 메뉴 이름을 먼저 찾는다 (예: "학생관리"보다 "재원생")
   const label =
     ADMIN_NAV.flatMap((i) => [...(i.children ?? []), i]).find((i) => i.href === href)?.label ?? "이 화면";
-  return <ComingSoon title={label} />;
+  return <ComingSoon title={label} homeHref="/admin" />;
 }

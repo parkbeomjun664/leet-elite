@@ -5,5 +5,5 @@ const LABELS: Record<string, string> = { homework: "자녀 숙제", attendance: 
 
 export default async function ParentPlaceholder({ params }: PageProps<"/parent/[...rest]">) {
   const { rest } = await params;
-  return <ComingSoon title={LABELS[rest[0]] ?? "이 화면"} />;
+  return <ComingSoon title={LABELS[rest[0]] ?? "이 화면"} homeHref="/parent" mobile />;
 }

@@ -8,12 +8,15 @@ import { cn } from "@/lib/cn";
  */
 export function EmptyState({
   icon: Icon,
+  iconClassName,
   title,
   description,
   action,
   className,
 }: {
   icon?: LucideIcon;
+  /** 아이콘 크기를 바꿀 때 (기본 24px, 준비 중 화면은 40px) */
+  iconClassName?: string;
   title: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
@@ -21,7 +24,7 @@ export function EmptyState({
 }) {
   return (
     <div className={cn("flex flex-col items-center px-4 py-10 text-center", className)}>
-      {Icon && <Icon aria-hidden className="mb-3 size-6 text-faint" strokeWidth={1.75} />}
+      {Icon && <Icon aria-hidden className={cn("mb-3 size-6 text-faint", iconClassName)} strokeWidth={1.75} />}
       <div className="text-body font-semibold text-ink">{title}</div>
       {description && <p className="mt-1 text-caption text-sub">{description}</p>}
       {action && <div className="mt-4">{action}</div>}

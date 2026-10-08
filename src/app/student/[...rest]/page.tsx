@@ -5,5 +5,5 @@ const LABELS: Record<string, string> = { homework: "숙제", attendance: "내 �
 
 export default async function StudentPlaceholder({ params }: PageProps<"/student/[...rest]">) {
   const { rest } = await params;
-  return <ComingSoon title={LABELS[rest[0]] ?? "이 화면"} />;
+  return <ComingSoon title={LABELS[rest[0]] ?? "이 화면"} homeHref="/student" mobile />;
 }
