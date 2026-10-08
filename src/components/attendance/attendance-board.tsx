@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/field";
 import { SectionTitle } from "@/components/ui/panel";
 import { ScrollRow } from "@/components/ui/scroll-row";
 import { Segment } from "@/components/ui/segment";
+import { STATUS_CARD_CLASS, statusColor } from "@/lib/status-colors";
 import { Sheet } from "@/components/ui/sheet";
 import { attendanceSaveMessage, DAY_STATUS_LABEL, sortDays, studentDay, type DayStatus, type StudentDay } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
@@ -54,13 +55,14 @@ const STATUS_COLOR: Record<DayStatus, string> = {
 };
 
 // 위쪽 숫자 = 상태 필터 (숫자를 누르면 그 학생들만)
-const STATUS_FILTERS: { key: "all" | DayStatus; label: string; color: string }[] = [
-  { key: "all", label: "오늘 수업", color: "text-ink" },
-  { key: "upcoming", label: "수업 전", color: "text-ink/60" },
-  { key: "not_arrived", label: "미등원", color: "text-warn" },
-  { key: "checked_in", label: "등원", color: "text-ok" },
-  { key: "checked_out", label: "하원", color: "text-info" },
-  { key: "absent", label: "결석", color: "text-brand" },
+// 10/8 UI 7: 고른 칸의 숫자만 검정 28px, 나머지는 회색 22px. 결석은 1 이상이면 어느 쪽이든 빨강
+const STATUS_FILTERS: { key: "all" | DayStatus; label: string }[] = [
+  { key: "all", label: "오늘 수업" },
+  { key: "upcoming", label: "수업 전" },
+  { key: "not_arrived", label: "미등원" },
+  { key: "checked_in", label: "등원" },
+  { key: "checked_out", label: "하원" },
+  { key: "absent", label: "결석" },
 ];
 
 export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classes, days: initialDays, details, homeworkHref, messagesHref, initialOpen = null }: Props) {
@@ -226,7 +228,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
                 onClick={() => setStatus(active && f.key !== "all" ? "all" : f.key)}
                 className="press py-3 text-center hover:bg-bg/60"
               >
-                <StatNumber value={count(f.key)} color={f.color} />
+                <StatNumber value={count(f.key)} active={active} alert={f.key === "absent"} />
                 <span className={cn("text-caption whitespace-nowrap", active ? "font-semibold text-ink" : "text-sub")}>{f.label}</span>
               </button>
             );
@@ -321,17 +323,17 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
 
       {/* ── 오른쪽: 학생 상세 (PC에서만, 스크롤해도 따라옴) ── */}
       <aside className="hidden lg:block">
-        {/* 상단 메뉴(64px, 고정) 바로 아래에 붙고, 화면 높이만큼 채운다 (오른쪽이 비어 보이지 않게) */}
+        {/* 상단 메뉴(65px, 고정) 바로 아래에 붙고 화면 높이만큼 채운다. 스크롤은 이 칸 하나로(안쪽 이중 스크롤 없음), 스크롤바 자리는 미리 잡아 둔다 (10/8 UI 7) */}
         {/* 상자 없이 왼쪽 1px 선으로만 목록과 나눈다 (10/7 오후) */}
-        <div className="sticky top-[88px] flex h-[calc(100dvh-112px)] flex-col overflow-hidden border-l border-line-soft bg-card">
+        <div className="sticky top-[65px] -mt-6 h-[calc(100dvh-65px)] overflow-y-auto border-l border-line-soft bg-card [scrollbar-gutter:stable]">
           {focusDay ? (
             // 학생을 바꾸면 내용이 살짝 나타난다 (200ms)
-            <div key={focusDay.student.id} className="flex min-h-0 flex-1 animate-fade-in flex-col">
-              <header className="border-b border-line-soft px-5 py-4">
+            <div key={focusDay.student.id} className="animate-fade-in">
+              <header className="sticky top-0 z-[1] border-b border-line-soft bg-card px-5 py-4">
                 <h2 className="text-heading font-bold">{focusDay.student.name}</h2>
                 <p className="mt-0.5 text-caption text-sub">{detailSubtitle(focusDay)}</p>
               </header>
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div>
                 <StudentDetail
                   key={focusDay.student.id}
                   day={focusDay}
@@ -343,7 +345,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
               </div>
             </div>
           ) : (
-            <EmptyState className="m-auto" title="왼쪽에서 학생을 눌러 주세요" description="수업 정보·숙제·메시지가 여기에 보여요" />
+            <EmptyState className="h-full justify-center" title="왼쪽에서 학생을 눌러 주세요" description="수업 정보·숙제·메시지가 여기에 보여요" />
           )}
         </div>
       </aside>
@@ -476,7 +478,12 @@ function Tile({ day, selecting, selected, focusId, onToggle, onOpen, onAttendanc
         "rounded-[var(--radius-card)] px-4 py-3 transition-[transform,background-color,box-shadow] duration-[var(--duration-fast)]",
         "[&:has(>div:first-child>button:active)]:scale-[0.99] [&:has(>div:first-child>button:active)]:bg-black/[0.04]",
         // 흰 바탕 위 옅은 회색 칸(누르는 단위라 칸 모양은 남긴다), 고른 칸은 흰 바탕 + 검은 테두리 (10/7 오후)
-        checked || focused ? "bg-card shadow-[inset_0_0_0_1.5px_var(--color-ink)]" : "bg-bg hover:bg-line-soft/70",
+        // 결석 학생 칸은 결석 전용 분홍 바탕으로 구분 (분홍은 결석에만, src/lib/status-colors.ts, 10/8 UI 7)
+        checked || focused
+          ? "bg-card shadow-[inset_0_0_0_1.5px_var(--color-ink)]"
+          : statusColor(status) === "alert"
+            ? STATUS_CARD_CLASS.alert
+            : "bg-bg hover:bg-line-soft/70",
       )}
     >
       <div className="flex items-center gap-2">
@@ -538,9 +545,22 @@ function TileButton({ onClick, children }: { onClick: () => void; children: Reac
 }
 
 /** 위쪽 숫자 하나: 바뀌면 세어 가며 바뀐다. 0이면 회색 (색은 확인할 숫자에만, 10/5) */
-function StatNumber({ value, color }: { value: number; color: string }) {
+function StatNumber({ value, active, alert }: { value: number; active: boolean; alert: boolean }) {
   const shown = useAnimatedNumber(value);
-  return <span className={cn("block text-figure font-bold tabular", value === 0 ? "text-ink/50" : color)}>{shown}</span>;
+  // 칸 높이는 큰 숫자(28px) 기준으로 고정해서 고른 칸이 바뀌어도 줄이 출렁이지 않게
+  return (
+    <span className="flex h-9 items-end justify-center">
+      <span
+        className={cn(
+          "tabular transition-colors duration-[var(--duration-fast)]",
+          active ? "text-figure-md font-bold" : "text-figure-sm font-semibold",
+          alert && value > 0 ? "text-brand" : active ? "text-ink" : "text-sub",
+        )}
+      >
+        {shown}
+      </span>
+    </span>
+  );
 }
 
 function IconButton({ label, children }: { label: string; children: ReactNode }) {

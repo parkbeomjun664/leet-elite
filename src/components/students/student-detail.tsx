@@ -172,7 +172,7 @@ function ProgramEditor({ initial }: { initial: string[] }) {
   const dirty = draft.slice().sort().join() !== saved.slice().sort().join();
   return (
     <div className="space-y-2">
-      {/* 배지 모양 토글: 누르면 켜짐(진한 바탕) / 꺼짐(회색). 빨강은 쓰지 않는다 (10/5) */}
+      {/* 배지 모양 토글: 켜짐 = 흰 바탕 + 회색 테두리 + 진한 글씨, 꺼짐 = 옅은 회색. 패널에서 눈에 띄는 것은 [출결 입력] 하나만 (10/8 UI 7) */}
       <div className="flex flex-wrap gap-1.5">
         {PROGRAMS.map((p) => {
           const on = draft.includes(p);
@@ -183,8 +183,8 @@ function ProgramEditor({ initial }: { initial: string[] }) {
               aria-pressed={on}
               onClick={() => setDraft((prev) => (on ? prev.filter((x) => x !== p) : [...prev, p]))}
               className={cn(
-                "press h-[26px] rounded-[var(--radius-badge)] px-2 text-caption font-semibold",
-                on ? "bg-ink text-white" : "bg-line-soft text-sub hover:text-ink",
+                "press h-[26px] rounded-[var(--radius-badge)] border px-2 text-caption font-semibold",
+                on ? "border-line bg-card text-ink" : "border-transparent bg-line-soft text-sub hover:text-ink",
               )}
             >
               {on ? "✓ " : ""}

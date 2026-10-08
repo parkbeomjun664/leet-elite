@@ -18,19 +18,41 @@ test("출결 입력: 시간은 24시간제 시·분 선택칸", async ({ page })
   await expect(page.getByRole("combobox", { name: "등원 시각 분" })).toHaveValue(minuteBefore);
 });
 
-test("선생님 홈: 0인 숫자는 회색, 1 이상만 상태색", async ({ page }) => {
+test("선생님 홈 숫자 줄: 고른 칸만 검정 28px, 나머지 회색 22px, 결석은 빨강 (10/8 UI 7)", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await gotoReady(page, "/teacher?at=16:00");
-  const numbers = page.getByRole("group", { name: "상태로 보기" }).locator("button > span:first-child");
-  const cells = await numbers.evaluateAll((els) => els.map((el) => ({ n: el.textContent, color: getComputedStyle(el).color })));
-  const zeros = cells.filter((c) => c.n === "0");
-  const nonZeros = cells.filter((c) => c.n !== "0");
-  expect(zeros.length).toBeGreaterThan(0); // 16:00 가상 데이터에는 0인 칸이 있다
-  // 0인 칸은 모두 같은 회색(ink 50%, 브라우저는 oklab(... / 0.5)로 돌려준다), 1 이상인 칸은 그 회색이 아니다
-  const gray = zeros[0].color;
-  expect(gray).toMatch(/[/,] 0\.5\)$/);
-  for (const z of zeros) expect(z.color).toBe(gray);
-  for (const c of nonZeros) expect(c.color).not.toBe(gray);
+  const group = page.getByRole("group", { name: "상태로 보기" });
+  const read = () =>
+    group.locator("button").evaluateAll((bs) =>
+      bs.map((b) => {
+        const n = b.querySelector("span span")!;
+        const s = getComputedStyle(n);
+        return { label: b.textContent?.replace(/[0-9]/g, "").trim(), pressed: b.getAttribute("aria-pressed"), n: Number(n.textContent), size: s.fontSize, color: s.color };
+      }),
+    );
+  const ink = "rgb(26, 26, 26)";
+  const sub = "rgb(106, 105, 102)";
+  const brand = "rgb(179, 38, 46)";
+  let cells = await read();
+  for (const c of cells) {
+    expect(c.size).toBe(c.pressed === "true" ? "28px" : "22px");
+    if (c.label === "결석" && c.n > 0) expect(c.color).toBe(brand);
+    else expect(c.color).toBe(c.pressed === "true" ? ink : sub);
+  }
+  // 다른 칸을 고르면 그 칸이 커지고 검정
+  await group.getByRole("button", { name: /등원/ }).first().click();
+  cells = await read();
+  const picked = cells.find((c) => c.pressed === "true")!;
+  expect(picked.size).toBe("28px");
+  // 결석 학생 칸은 결석 전용 분홍 바탕: 한 명을 [여러 명 선택] → [결석]으로 결석 처리해 본다 (화면에서만)
+  await group.getByRole("button", { name: /오늘 수업/ }).click();
+  await page.getByRole("button", { name: "여러 명 선택" }).click();
+  const box = page.getByRole("checkbox", { name: / 선택$/ }).last();
+  const name = (await box.getAttribute("aria-label"))!.replace(/ 선택$/, "");
+  await box.check();
+  await page.getByRole("button", { name: "결석 처리" }).click();
+  const tile = page.locator("li").filter({ has: page.getByRole("button", { name: new RegExp(`^${name} `) }) });
+  await expect(tile).toHaveCSS("background-color", "rgb(251, 236, 238)");
 });
 
 test("키패드 휴대폰 세로: 제목이 잘리지 않는다", async ({ page }) => {
@@ -85,4 +107,28 @@ test.describe("누름 반응", () => {
     const btn = await pressed(page, 'main button:has-text("학생 등록")');
     expect(btn.transform).toBe("none");
   });
+});
+
+test("선생님 홈 오른쪽 상세(1280): 헤더 아래 고정·화면 높이·스크롤바 자리, 사용 프로그램은 회색 테두리 칩 (10/8 UI 7)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await gotoReady(page, "/teacher?at=16:00");
+  const panel = page.locator("aside > div").first();
+  await expect(panel).toHaveCSS("position", "sticky");
+  await expect(panel).toHaveCSS("top", "65px");
+  await expect(panel).toHaveCSS("scrollbar-gutter", "stable");
+  expect(Math.round((await panel.boundingBox())!.height)).toBe(900 - 65);
+  // 안쪽에 따로 스크롤되는 칸이 없다 (이중 스크롤 없음)
+  const inner = await panel.evaluate((p) =>
+    [...p.querySelectorAll("*")]
+      .filter((e) => !["TEXTAREA", "INPUT", "SELECT"].includes(e.tagName))
+      .filter((e) => ["auto", "scroll"].includes(getComputedStyle(e).overflowY) && e.scrollHeight > e.clientHeight)
+      .map((e) => e.tagName + "." + e.className),
+  );
+  expect(inner).toEqual([]);
+  // 켜진 프로그램 칩: 흰 바탕 + 회색 테두리 (검정 꽉 찬 칩 아님)
+  const chip = panel.getByRole("button", { name: "클래스카드" });
+  if ((await chip.getAttribute("aria-pressed")) !== "true") await chip.click();
+  await expect(chip).toHaveAttribute("aria-pressed", "true");
+  await expect(chip).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(chip).toHaveCSS("border-top-color", "rgb(228, 226, 222)");
 });
