@@ -1,17 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { AdminStudentSheet, type AdminStudent } from "@/components/students/admin-student-sheet";
 import { ComingSoonButton } from "@/components/coming-soon-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox, Input } from "@/components/ui/field";
+import { Checkbox, Input, Select } from "@/components/ui/field";
 import { EmptyLine } from "@/components/ui/panel";
 import { Segment } from "@/components/ui/segment";
 import { Table, Td, Th, Tr } from "@/components/ui/table";
 import { cn } from "@/lib/cn";
 import { WEEKDAY_KO } from "@/lib/date";
 import type { ScheduleSlot } from "@/lib/mock/types";
+import { findRange, matchStudent, type SearchHit } from "@/lib/students/search";
+import { DEFAULT_SORT, SORT_OPTIONS, nextSort, sortStudents, type Sort, type SortKey } from "@/lib/students/sort";
 
 type ClassChip = { id: string; name: string };
 
@@ -26,6 +28,38 @@ function scheduleLabel(slots: ScheduleSlot[]): string {
     byStart.set(s.start, [...(byStart.get(s.start) ?? []), s.weekday]);
   }
   return [...byStart.entries()].map(([start, days]) => `${days.map((d) => WEEKDAY_KO[d]).join("·")} ${start}`).join(" / ");
+}
+
+/** 검색어가 있는 자리를 옅은 회색 바탕으로 (초성·하이픈 건너뛴 숫자도) */
+function Mark({ text, query }: { text: string; query: string }) {
+  const r = findRange(text, query);
+  if (!r) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, r[0])}
+      <mark className="rounded-[2px] bg-line text-inherit">{text.slice(r[0], r[1])}</mark>
+      {text.slice(r[1])}
+    </>
+  );
+}
+
+/** 누르면 정렬되는 머리글 (같은 열을 다시 누르면 방향 반대) */
+function SortTh({ label, sortKey, sort, onSort }: { label: string; sortKey: SortKey; sort: Sort; onSort: (k: SortKey) => void }) {
+  const on = sort.key === sortKey;
+  return (
+    <Th aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"} className="p-0">
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={cn("flex w-full items-center gap-1 px-3 py-2.5 text-left hover:text-ink", on && "text-ink")}
+      >
+        {label}
+        <span aria-hidden className={cn("text-[10px]", !on && "invisible")}>
+          {sort.dir === "asc" ? "▲" : "▼"}
+        </span>
+      </button>
+    </Th>
+  );
 }
 
 /**
@@ -45,6 +79,7 @@ export function StudentTable({
   const [rows, setRows] = useState(students);
   const [classId, setClassId] = useState("all");
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   // 휴대폰·태블릿 카드는 [여러 명 선택]을 눌렀을 때만 체크박스 (선생님 홈과 같은 규칙, 10/1). PC 표는 늘 보인다(에듀OK 방식)
   const [selecting, setSelecting] = useState(false);
@@ -55,12 +90,22 @@ export function StudentTable({
   // 재원생 화면: 재원 + 예정만 (휴·퇴원으로 바꿔 저장하면 목록에서 빠진다, STU-09)
   const active = useMemo(() => rows.filter((r) => r.status === "enrolled" || r.status === "pending"), [rows]);
 
-  const visible = useMemo(() => {
+  // 검색: 이름(초성)·학교·학년·휴대폰·출결 번호·메모·보호자 (src/lib/students/search.ts). 맞은 칸은 hits에
+  const { visible, hits } = useMemo(() => {
     const q = query.trim();
-    return active
+    const hits = new Map<string, SearchHit>();
+    const filtered = active
       .filter((r) => classId === "all" || r.classIds.includes(classId))
-      .filter((r) => !q || r.name.includes(q) || (r.school ?? "").includes(q) || (r.grade ?? "").includes(q));
-  }, [active, classId, query]);
+      .filter((r) => {
+        if (!q) return true;
+        const hit = matchStudent(r, q);
+        if (hit) hits.set(r.id, hit);
+        return hit !== null;
+      });
+    return { visible: sortStudents(filtered, sort), hits };
+  }, [active, classId, query, sort]);
+  const q = query.trim();
+  const mark = (text: string): ReactNode => (q ? <Mark text={text} query={q} /> : text);
 
   // 휴·퇴원으로 바뀌어 목록에서 빠진 학생은 선택에서도 뺀다
   const selectedCount = active.filter((r) => selected.has(r.id)).length;
@@ -110,9 +155,9 @@ export function StudentTable({
             </Segment>
           ))}
         </div>
-        <label className="md:w-60 md:shrink-0">
-          <span className="sr-only">이름·학교 검색</span>
-          <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="이름·학교 검색" />
+        <label className="md:w-64 md:shrink-0">
+          <span className="sr-only">학생 검색 (이름·초성·학교·전화·출결 번호·메모)</span>
+          <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="이름·초성·전화·메모 검색" />
         </label>
       </div>
       {/* 걸렀을 때만 결과 수, 휴대폰·태블릿은 [여러 명 선택] */}
@@ -125,10 +170,26 @@ export function StudentTable({
             </>
           ) : null}
         </p>
+        <div className="flex shrink-0 items-center gap-1 lg:hidden">
+        {/* PC는 표 머리글을 눌러 정렬, 휴대폰·태블릿은 선택칸 */}
+        <label>
+          <span className="sr-only">정렬</span>
+          <Select
+            value={`${sort.key}-${sort.dir}`}
+            onChange={(e) => setSort(SORT_OPTIONS.find((o) => o.value === e.target.value)?.sort ?? DEFAULT_SORT)}
+            className="h-9 border-transparent bg-transparent text-caption text-sub max-md:h-11"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
+        </label>
         <Button
           size="sm"
           variant="ghost"
-          className="shrink-0 text-sub lg:hidden"
+          className="shrink-0 text-sub"
           aria-pressed={selecting}
           onClick={() => {
             setSelecting((v) => !v);
@@ -137,6 +198,7 @@ export function StudentTable({
         >
           {selecting ? "선택 끝내기" : "여러 명 선택"}
         </Button>
+        </div>
       </div>
 
       {visible.length === 0 ? (
@@ -162,17 +224,27 @@ export function StudentTable({
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-body font-bold">{r.name}</span>
+                      <span className="truncate text-body font-bold">{mark(r.name)}</span>
                       {r.status === "pending" && <Badge tone="warn">예정</Badge>}
-                      <span className="truncate text-caption text-sub">{[r.school, r.grade].filter(Boolean).join(" ")}</span>
+                      <span className="truncate text-caption text-sub">{mark([r.school, r.grade].filter(Boolean).join(" "))}</span>
                     </span>
                     <span className="mt-0.5 block truncate text-caption text-sub tabular">
                       {[r.classIds.map(className).filter(Boolean).join(", "), scheduleLabel(r.schedule)].filter(Boolean).join(" · ") || "–"}
                     </span>
+                    {/* 카드에 안 보이는 칸에서 찾았으면 어디서 찾았는지 한 줄 */}
+                    {(() => {
+                      const hit = hits.get(r.id);
+                      if (!hit || !["phone", "memo", "guardian"].includes(hit.field)) return null;
+                      return (
+                        <span className="mt-0.5 block truncate text-caption text-sub">
+                          {hit.label} <span className="text-ink">{mark(hit.text)}</span>
+                        </span>
+                      );
+                    })()}
                   </span>
                   <span className="shrink-0 text-right">
                     <span className="block text-caption text-sub">출결</span>
-                    <span className="block text-body font-semibold tabular">{r.attendanceCode}</span>
+                    <span className="block text-body font-semibold tabular">{mark(r.attendanceCode)}</span>
                   </span>
                 </button>
               </li>
@@ -194,14 +266,14 @@ export function StudentTable({
                   className="align-middle"
                 />
               </Th>
-              <Th>이름</Th>
+              <SortTh label="이름" sortKey="name" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
               <Th>학생 휴대폰</Th>
               <Th>학교·학년</Th>
               <Th>반</Th>
               <Th>수업 요일·시간</Th>
-              <Th>출결 코드</Th>
+              <SortTh label="출결 코드" sortKey="attendanceCode" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
               <Th>보호자</Th>
-              <Th>입학일</Th>
+              <SortTh label="입학일" sortKey="enrolledOn" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
               <Th>메모</Th>
             </tr>
           </thead>
@@ -233,22 +305,22 @@ export function StudentTable({
                     />
                   </Td>
                   <Td className="whitespace-nowrap">
-                    <span className="font-bold">{r.name}</span>
+                    <span className="font-bold">{mark(r.name)}</span>
                     {r.status === "pending" && (
                       <Badge tone="warn" className="ml-2">
                         예정
                       </Badge>
                     )}
                   </Td>
-                  <Td className="whitespace-nowrap tabular">{r.phone ?? <span className="text-sub">없음</span>}</Td>
-                  <Td className="whitespace-nowrap">{[r.school, r.grade].filter(Boolean).join(" ") || "–"}</Td>
+                  <Td className="whitespace-nowrap tabular">{r.phone ? mark(r.phone) : <span className="text-sub">없음</span>}</Td>
+                  <Td className="whitespace-nowrap">{[r.school, r.grade].filter(Boolean).length ? mark([r.school, r.grade].filter(Boolean).join(" ")) : "–"}</Td>
                   <Td className="whitespace-nowrap">{r.classIds.map(className).filter(Boolean).join(", ") || "–"}</Td>
                   <Td className="whitespace-nowrap tabular">{scheduleLabel(r.schedule)}</Td>
-                  <Td className="tabular">{r.attendanceCode}</Td>
+                  <Td className="tabular">{mark(r.attendanceCode)}</Td>
                   <Td className="whitespace-nowrap">
                     {g ? (
                       <>
-                        {g.name} <span className="ml-1 text-sub tabular">{g.phone1}</span>
+                        {mark(g.name)} <span className="ml-1 text-sub tabular">{g.phone1 ? mark(g.phone1) : null}</span>
                       </>
                     ) : (
                       <span className="text-sub">–</span>
@@ -256,7 +328,7 @@ export function StudentTable({
                   </Td>
                   <Td className="whitespace-nowrap tabular">{r.enrolledOn}</Td>
                   <Td className="max-w-[220px] truncate text-sub" title={r.memo || undefined}>
-                    {r.memo || "–"}
+                    {r.memo ? mark(r.memo) : "–"}
                   </Td>
                 </Tr>
               );
