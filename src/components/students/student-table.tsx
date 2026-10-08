@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Input, Select } from "@/components/ui/field";
 import { EmptyLine } from "@/components/ui/panel";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { Segment } from "@/components/ui/segment";
 import { Table, Td, Th, Tr } from "@/components/ui/table";
 import { cn } from "@/lib/cn";
@@ -155,21 +156,24 @@ export function StudentTable({
     <div className={cn("space-y-3", selectedCount > 0 && "pb-20")}>
       {/* 거르기 한 줄: 반 알약(넘치면 옆으로 밀어 보기) + 검색. 인원 수는 알약에만 (10/7 다듬기) */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
-        <div role="group" aria-label="반으로 거르기" className="-mx-4 flex min-w-0 flex-1 gap-1 overflow-x-auto px-4 md:mx-0 md:px-0 [&>*]:shrink-0">
-          <Segment active={classId === "all"} onClick={() => setClassId("all")} count={active.length}>
-            전체
-          </Segment>
-          {classes.map((c) => (
-            <Segment
-              key={c.id}
-              active={classId === c.id}
-              onClick={() => setClassId(c.id)}
-              count={active.filter((r) => r.classIds.includes(c.id)).length}
-            >
-              {c.name}
+        {/* 반 알약 줄: 스크롤바 숨김 + 오른쪽 끝 페이드, 고른 반이 밖이면 가운데로 (10/8 UI 6) */}
+        <ScrollRow activeKey={classId} className="-mx-4 flex-1 md:mx-0" scrollClassName="px-4 md:px-0">
+          <div role="group" aria-label="반으로 거르기" className="flex w-max gap-1">
+            <Segment active={classId === "all"} onClick={() => setClassId("all")} count={active.length}>
+              전체
             </Segment>
-          ))}
-        </div>
+            {classes.map((c) => (
+              <Segment
+                key={c.id}
+                active={classId === c.id}
+                onClick={() => setClassId(c.id)}
+                count={active.filter((r) => r.classIds.includes(c.id)).length}
+              >
+                {c.name}
+              </Segment>
+            ))}
+          </div>
+        </ScrollRow>
         <label className="md:w-64 md:shrink-0">
           <span className="sr-only">학생 검색 (이름·초성·학교·전화·출결 번호·메모)</span>
           <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="이름·초성·전화·메모 검색" />

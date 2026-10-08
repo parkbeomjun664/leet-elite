@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/field";
 import { SectionTitle } from "@/components/ui/panel";
+import { ScrollRow } from "@/components/ui/scroll-row";
 import { Segment } from "@/components/ui/segment";
 import { Sheet } from "@/components/ui/sheet";
 import { attendanceSaveMessage, DAY_STATUS_LABEL, sortDays, studentDay, type DayStatus, type StudentDay } from "@/lib/attendance";
@@ -237,18 +238,22 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
           />
         </div>
 
-        {/* 반 · 이름 검색 (한 줄) */}
-        <div className="flex flex-wrap items-center gap-x-1 gap-y-2">
-          {/* 반 이름 옆 숫자 = 그 반 학생 수 */}
-          <Segment active={classId === "all"} onClick={() => setClassId("all")} count={days.length}>
-            전체 반
-          </Segment>
-          {classes.map((c) => (
-            <Segment key={c.id} active={classId === c.id} onClick={() => setClassId(c.id)} count={days.filter((d) => d.student.classIds.includes(c.id)).length}>
-              {c.name}
-            </Segment>
-          ))}
-          <div className="ml-auto flex w-full items-center gap-2 sm:w-auto">
+        {/* 반 · 이름 검색. 반 알약은 한 줄로 옆으로 밀어 본다(두 줄로 넘어가지 않게): 스크롤바 숨김 + 끝 페이드 (10/8 UI 6) */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <ScrollRow activeKey={classId} className="-mx-4 flex-1 sm:mx-0" scrollClassName="px-4 sm:px-0">
+            {/* 반 이름 옆 숫자 = 그 반 학생 수 */}
+            <div role="group" aria-label="반으로 거르기" className="flex w-max gap-1">
+              <Segment active={classId === "all"} onClick={() => setClassId("all")} count={days.length}>
+                전체 반
+              </Segment>
+              {classes.map((c) => (
+                <Segment key={c.id} active={classId === c.id} onClick={() => setClassId(c.id)} count={days.filter((d) => d.student.classIds.includes(c.id)).length}>
+                  {c.name}
+                </Segment>
+              ))}
+            </div>
+          </ScrollRow>
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:shrink-0">
             <Button
               variant="ghost"
               size="sm"

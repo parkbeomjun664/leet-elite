@@ -117,3 +117,20 @@ test.describe("원장님 홈 375", () => {
     await expect(menu.locator("span[aria-hidden].bg-gradient-to-l")).toHaveCSS("opacity", "1");
   });
 });
+
+// 10/8 UI 6: 반 알약 줄은 한 줄(두 줄로 넘어가지 않음), 스크롤바 숨김, 오른쪽에 더 있으면 끝 페이드
+test.describe("반 알약 줄 375", () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+  for (const path of ["/teacher?at=16:00", "/admin/students"]) {
+    test(`${path.split("?")[0]}: 한 줄 + 스크롤바 숨김 + 끝 페이드`, async ({ page }) => {
+      await gotoReady(page, path);
+      const group = page.getByRole("group", { name: "반으로 거르기" });
+      const tops = await group.getByRole("button").evaluateAll((bs) => [...new Set(bs.map((b) => Math.round(b.getBoundingClientRect().top)))]);
+      expect(tops).toHaveLength(1);
+      const scroller = group.locator("xpath=..");
+      await expect(scroller).toHaveCSS("scrollbar-width", "none");
+      await expect(scroller.locator("xpath=following-sibling::span[1]")).toHaveCSS("opacity", "1");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+});
