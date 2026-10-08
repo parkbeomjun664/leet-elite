@@ -26,7 +26,7 @@ const SIZE: Record<Size, string> = {
 
 export function buttonClass(variant: Variant = "secondary", size: Size = "md", extra?: string) {
   return cn(
-    "press relative inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-control)] font-semibold whitespace-nowrap select-none disabled:cursor-not-allowed",
+    "press relative inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-control)] font-semibold whitespace-nowrap select-none active:brightness-95 disabled:cursor-not-allowed disabled:active:brightness-100",
     VARIANT[variant],
     SIZE[size],
     extra,

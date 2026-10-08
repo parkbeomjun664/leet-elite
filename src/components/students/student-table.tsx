@@ -293,7 +293,7 @@ export function StudentTable({
                       setEditId(r.id);
                     }
                   }}
-                  className={cn("cursor-pointer", checked && "bg-bg")} // 선택한 줄: 옅은 회색 (분홍은 결석에만, 10/5)
+                  className={cn("press-card cursor-pointer", checked && "bg-bg")} // 선택한 줄: 옅은 회색 (분홍은 결석에만, 10/5)
                 >
                   {/* 체크박스를 눌러도 상세 창은 열리지 않게 */}
                   <Td className="w-10 pr-0" onClick={(e) => e.stopPropagation()}>

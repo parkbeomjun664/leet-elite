@@ -170,7 +170,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
               <Link
                 href={st.href}
                 className={cn(
-                  "flex h-full flex-col gap-1 px-4 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-bg sm:px-5",
+                  "press-card flex h-full flex-col gap-1 px-4 py-4 hover:bg-bg sm:px-5",
                   i % 3 === 0 && "max-sm:pl-0",
                   i === 0 && "sm:pl-0",
                 )}
@@ -207,7 +207,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           <ul className="mt-2 divide-y divide-line-soft border-y border-line-soft">
             {todos.map((t) => (
               <li key={t.title}>
-                <Link href={t.href} className="group -mx-2 flex items-center gap-4 px-2 py-3.5 transition-colors duration-[var(--duration-fast)] hover:bg-bg">
+                <Link href={t.href} className="group press-card -mx-2 flex items-center gap-4 px-2 py-3.5 hover:bg-bg">
                   <span className="w-20 shrink-0 text-figure leading-none font-bold whitespace-nowrap text-ink tabular">
                     {t.value}
                     <span className="ml-0.5 text-caption font-normal text-sub">{t.unit}</span>
@@ -273,7 +273,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                 return (
                   <li key={m.id}>
                     {/* TODO: 해당 학생 대화방으로 바로 이동 */}
-                    <Link href="/admin/messages" className="-mx-2 flex items-start gap-3 px-2 py-3 transition-colors duration-[var(--duration-fast)] hover:bg-bg">
+                    <Link href="/admin/messages" className="press-card -mx-2 flex items-start gap-3 px-2 py-3 hover:bg-bg">
                       <span className="w-20 shrink-0 pt-0.5 text-body text-sub tabular">
                         {day === date ? time : `${day.slice(5).replace("-", "/")} ${time}`}
                       </span>

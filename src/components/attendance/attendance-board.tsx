@@ -468,7 +468,8 @@ function Tile({ day, selecting, selected, focusId, onToggle, onOpen, onAttendanc
   return (
     <li
       className={cn(
-        "rounded-[var(--radius-card)] px-4 py-3 transition-[background-color,box-shadow] duration-[var(--duration-fast)]",
+        "rounded-[var(--radius-card)] px-4 py-3 transition-[transform,background-color,box-shadow] duration-[var(--duration-fast)]",
+        "[&:has(>div:first-child>button:active)]:scale-[0.99] [&:has(>div:first-child>button:active)]:bg-black/[0.04]",
         // 흰 바탕 위 옅은 회색 칸(누르는 단위라 칸 모양은 남긴다), 고른 칸은 흰 바탕 + 검은 테두리 (10/7 오후)
         checked || focused ? "bg-card shadow-[inset_0_0_0_1.5px_var(--color-ink)]" : "bg-bg hover:bg-line-soft/70",
       )}
