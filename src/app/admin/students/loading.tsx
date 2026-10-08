@@ -19,8 +19,8 @@ export default function Loading() {
         <Skeleton className="h-11 flex-1 rounded-[var(--radius-control)] md:h-9" />
         <Skeleton className="h-10 rounded-[var(--radius-control)] md:w-64" />
       </div>
-      <SkeletonCards immediate count={8} className="md:grid-cols-2 lg:hidden xl:grid-cols-2" cardClassName="min-h-[67px]" />
-      <div className="hidden lg:block">
+      <SkeletonCards immediate count={8} className="md:grid-cols-2 xl:hidden" cardClassName="min-h-[67px]" />
+      <div className="hidden xl:block">
         <SkeletonRows immediate rows={10} />
       </div>
     </SkeletonGroup>

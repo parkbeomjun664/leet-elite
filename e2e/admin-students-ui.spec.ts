@@ -57,7 +57,8 @@ test("검색: 초성·휴대폰 뒷자리·출결 번호·메모로 찾고, 찾�
   await expect(page.getByRole("row", { name: "조나윤 상세 보기" })).toBeVisible();
 
   await search.fill("보호자 번호로"); // 메모
-  await expect(page.getByRole("row", { name: "조나윤 상세 보기" }).locator("mark")).toHaveText("보호자 번호로");
+  // 1440 미만은 메모 열을 숨기고 이름 아래에 "메모 …" 한 줄로 보여 준다
+  await expect(page.getByRole("row", { name: "조나윤 상세 보기" }).locator("mark:visible")).toHaveText("보호자 번호로");
 
   await search.fill("표승현맘"); // 보호자 이름 → 형제 둘 다
   await expect(page.getByRole("row", { name: /상세 보기/ })).toHaveCount(2);
@@ -93,4 +94,33 @@ test("정렬: PC는 머리글을 눌러, 휴대폰은 선택칸으로", async ({
     lis.map((li) => li.querySelector(".tabular.font-semibold")?.textContent ?? ""),
   );
   expect(cardCodes).toEqual([...cardCodes].sort());
+});
+
+// 10/8 UI 4: 1280 이상 표가 컨테이너 안에, 휴대폰·입학일·메모는 1440 이상에서만, 1024~1279는 카드
+test.describe("재원생 표 폭", () => {
+  test("1280: 표가 컨테이너 안에 들어오고(가로 스크롤 없음) 7개 열만", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await gotoReady(page, "/admin/students");
+    const table = page.getByRole("table");
+    const fit = await table.evaluate((t) => ({ table: t.scrollWidth, box: t.parentElement!.clientWidth }));
+    expect(fit.table).toBeLessThanOrEqual(fit.box);
+    const headers = await page.getByRole("columnheader").evaluateAll((ths) => ths.filter((th) => (th as HTMLElement).offsetParent !== null).map((th) => th.textContent?.replace(/[▲▼]/g, "").trim()));
+    expect(headers).toEqual(["보이는 학생 전체 선택", "이름", "학교·학년", "반", "수업 요일·시간", "출결 코드", "보호자"]);
+    // 이름 칸은 왼쪽에 고정
+    await expect(page.getByRole("columnheader", { name: /이름/ })).toHaveCSS("position", "sticky");
+  });
+
+  test("1440: 학생 휴대폰·입학일·메모 열도 보인다", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await gotoReady(page, "/admin/students");
+    for (const name of ["학생 휴대폰", "입학일", "메모"]) await expect(page.getByRole("columnheader", { name: new RegExp(name) })).toBeVisible();
+  });
+
+  test("1024: 표 대신 카드", async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await gotoReady(page, "/admin/students");
+    await expect(page.getByRole("list", { name: "재원생" })).toBeVisible();
+    await expect(page.getByRole("table")).toBeHidden();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
 });

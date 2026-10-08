@@ -48,8 +48,8 @@ for (const vp of WIDTHS) {
       expect(await noHorizontalScroll(page)).toBe(true);
       await gotoReady(page, "/admin/students");
       expect(await noHorizontalScroll(page)).toBe(true);
-      // 1024 미만은 카드, 이상은 표
-      if (vp.width < 1024) await expect(page.getByRole("list", { name: "재원생" })).toBeVisible();
+      // 1280 미만은 카드, 이상은 표 (10/8 UI 4)
+      if (vp.width < 1280) await expect(page.getByRole("list", { name: "재원생" })).toBeVisible();
       else await expect(page.getByRole("table")).toBeVisible();
     });
   });
