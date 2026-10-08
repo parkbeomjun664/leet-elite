@@ -95,11 +95,89 @@ test("원장님: 다른 재원생이 쓰는 출결 번호로는 저장되지 않
   await expect(page.getByRole("row", { name: "조나윤 상세 보기" })).toContainText("1234");
 });
 
-test("오늘 저장하지 않는 칸은 잠겨 있고 열리는 날짜를 안내", async ({ page }) => {
+test("휴원·퇴원(상태)만 잠겨 있고 날짜를 안내 (10/13)", async ({ page }) => {
   await loginAs(page, "admin", "/admin/students");
   await page.getByRole("row", { name: "조나윤 상세 보기" }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText("반과 수업 시간 저장은 10/9에 열려요")).toBeVisible();
   await expect(dialog.getByLabel("상태")).toBeDisabled();
-  await expect(dialog.getByRole("button", { name: /^OB-초저/ })).toBeDisabled();
+  await expect(dialog.getByText("휴원·퇴원 처리는 10/13에 열려요")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /^OB-초저/ })).toBeEnabled();
+});
+
+// 10/9 반·수업 시간·보호자·생년월일 저장: 고치면 DB에 남고 새로고침해도 그대로. 끝나면 원래대로 되돌린다
+test("원장님: 반·수업 시간·생년월일을 고쳐 저장하면 새로고침해도 남는다", async ({ page }) => {
+  await loginAs(page, "admin", "/admin/students");
+  const row = () => page.getByRole("row", { name: "조나윤 상세 보기" });
+  const open = async () => {
+    await row().click();
+    const d = page.getByRole("dialog");
+    await expect(d).toBeVisible();
+    return d;
+  };
+  await expect(row()).toContainText("수·금 14:30");
+
+  let dialog = await open();
+  await dialog.getByRole("button", { name: "초중", exact: true }).click(); // 반 하나 더
+  await dialog.getByRole("button", { name: "+ 요일 추가" }).click(); // 빈 첫 요일 = 월요일, 시간은 마지막 줄과 같게
+  await dialog.getByLabel("생년월일").fill("2018-05-05");
+  await dialog.getByRole("button", { name: "저장" }).click();
+  await expect(page.getByTestId("toast")).toContainText("조나윤 정보를 저장했어요");
+  await expect(row()).toContainText("월·수·금 14:30");
+
+  await page.reload();
+  await expect(row()).toContainText("월·수·금 14:30");
+  await expect(row()).toContainText("초중");
+  dialog = await open();
+  await expect(dialog.getByLabel("생년월일")).toHaveValue("2018-05-05");
+  await expect(dialog.getByRole("button", { name: "초중", exact: true })).toHaveAttribute("aria-pressed", "true");
+
+  // 원래대로
+  await dialog.getByRole("button", { name: "초중", exact: true }).click();
+  await dialog.getByRole("button", { name: "월요일 수업 삭제" }).click();
+  await dialog.getByLabel("생년월일").fill("");
+  await dialog.getByRole("button", { name: "저장" }).click();
+  await expect(page.getByTestId("toast")).toContainText("저장했어요");
+  await page.reload();
+  await expect(row()).toContainText("수·금 14:30");
+  await expect(row()).not.toContainText("초중");
+});
+
+test("같은 요일에 수업 시간이 겹치면 저장하지 않고 안내", async ({ page }) => {
+  await loginAs(page, "admin", "/admin/students");
+  await page.getByRole("row", { name: "조나윤 상세 보기" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "+ 요일 추가" }).click();
+  // 새 줄(월요일)을 수요일로 바꾸면 수요일 14:30 두 개가 겹친다
+  await dialog.getByRole("combobox", { name: "요일", exact: true }).last().selectOption({ label: "수" });
+  await expect(dialog.getByRole("alert")).toContainText("수요일 14:30과 14:30 수업 시간이 겹쳐요");
+  await dialog.getByRole("button", { name: "저장" }).click();
+  await expect(dialog).toBeVisible(); // 저장되지 않고 창이 열려 있다
+  await dialog.getByRole("button", { name: "취소" }).click();
+});
+
+test("원장님: 보호자 전화를 고치면 형제 줄에도 같이 바뀐다", async ({ page }) => {
+  await loginAs(page, "admin", "/admin/students");
+  const brother = () => page.getByRole("row", { name: "표준현 상세 보기" });
+  await page.getByRole("row", { name: "표승현 상세 보기" }).click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "고치기" }).first().click();
+  await expect(dialog.getByText("저장하면 표준현 학생의 보호자 정보도 같이 바뀌어요")).toBeVisible();
+  const phone1 = dialog.getByLabel("전화 1");
+  const before = await phone1.inputValue();
+  await phone1.fill("01055509999");
+  await dialog.getByRole("button", { name: "저장" }).click();
+  await expect(page.getByTestId("toast")).toContainText("저장했어요");
+  await expect(brother()).toContainText("010-5550-9999"); // 새로고침 없이도 형제 줄이 바뀐다
+  await page.reload();
+  await expect(brother()).toContainText("010-5550-9999");
+
+  // 원래대로
+  await page.getByRole("row", { name: "표승현 상세 보기" }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "고치기" }).first().click();
+  await dialog.getByLabel("전화 1").fill(before);
+  await dialog.getByRole("button", { name: "저장" }).click();
+  await expect(page.getByTestId("toast")).toContainText("저장했어요");
+  await page.reload();
+  await expect(brother()).toContainText(before);
 });

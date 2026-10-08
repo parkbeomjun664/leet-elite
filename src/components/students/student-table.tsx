@@ -410,7 +410,12 @@ export function StudentTable({
           classes={classes}
           onClose={() => setEditId(null)}
           onSave={(next) => {
-            setRows((prev) => prev.map((r) => (r.id === next.id ? next : r)));
+            // 보호자는 형제가 함께 쓰므로, 같은 보호자가 연결된 다른 학생 줄도 같이 바꾼다 (10/9)
+            setRows((prev) =>
+              prev.map((r) =>
+                r.id === next.id ? next : { ...r, guardians: r.guardians.map((g) => next.guardians.find((n) => n.id === g.id) ?? g) },
+              ),
+            );
             // 창은 저장 뒤 닫힘 움직임을 거쳐 onClose로 닫힌다
           }}
         />

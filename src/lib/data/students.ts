@@ -23,7 +23,7 @@ export async function loadAdminStudents(): Promise<AdminStudentList> {
     supabase
       .from("students")
       .select(
-        `id, name, school, grade, phone, status, enrolled_on, left_on, attendance_code, programs, memo,
+        `id, name, school, grade, phone, status, enrolled_on, birth_date, left_on, attendance_code, programs, memo,
          student_schedules ( weekday, start_time, duration_min ),
          class_members ( class_id, left_on ),
          guardian_students ( guardians ( id, name, relation, phone1, phone2, guardian_students ( student_id, students ( name ) ) ) )`,
@@ -43,6 +43,7 @@ export async function loadAdminStudents(): Promise<AdminStudentList> {
     phone: s.phone,
     status: s.status,
     enrolledOn: s.enrolled_on,
+    birthDate: s.birth_date,
     leftOn: s.left_on,
     // 지금 소속된 반만 (반을 옮기면 left_on이 채워지고 기록은 남는다)
     classIds: s.class_members.filter((m) => m.left_on === null).map((m) => m.class_id),
@@ -81,6 +82,7 @@ function mockAdminStudents(): AdminStudentList {
       phone: s.phone,
       status: s.status,
       enrolledOn: s.enrolledOn,
+      birthDate: null, // 가상 데이터에는 생년월일이 없다
       leftOn: s.leftOn,
       classIds: [...s.classIds],
       schedule: s.schedule.map((x) => ({ ...x })),

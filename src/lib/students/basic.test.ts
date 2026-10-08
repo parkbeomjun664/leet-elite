@@ -8,6 +8,7 @@ const base = {
   school: " 한빛초 ",
   grade: "",
   enrolledOn: "2026-04-15",
+  birthDate: "",
   attendanceCode: "1002",
   programs: ["클래스카드"],
   memo: " 쌍둥이 ",
@@ -55,5 +56,17 @@ describe("학생 기본 정보 저장 규칙 (STU-01~03)", () => {
   it("입학일은 YYYY-MM-DD", () => {
     const r = parseStudentBasic({ ...base, enrolledOn: "2026/4/15" });
     expect(r.ok).toBe(false);
+  });
+});
+
+describe("생년월일 (10/9)", () => {
+  it("비우면 null, 날짜는 그대로", () => {
+    expect(parseStudentBasic(base)).toMatchObject({ ok: true, value: { birthDate: null } });
+    expect(parseStudentBasic({ ...base, birthDate: "2015-03-02" })).toMatchObject({ ok: true, value: { birthDate: "2015-03-02" } });
+  });
+  it("1950년 이전·미래·모양이 틀린 날짜는 거부", () => {
+    for (const d of ["1949-12-31", "2999-01-01", "2015/03/02"]) {
+      expect(parseStudentBasic({ ...base, birthDate: d })).toMatchObject({ ok: false, field: "birthDate" });
+    }
   });
 });

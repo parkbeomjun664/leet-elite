@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { todayKST } from "@/lib/date";
 
 // 원장님 학생 정보 수정 중 "기본 정보" 저장 규칙 (STU-01~03, 10/8). 서버 함수와 화면이 같은 규칙을 쓴다
-// 반·수업 시간·보호자(10/9)와 상태(휴원·퇴원, 10/13)는 따로 저장한다
+// 반·수업 시간은 schedule.ts, 보호자는 guardian.ts (10/9). 상태(휴원·퇴원)는 10/13
 
 // 사용 프로그램 목록 (STU-03). TODO: 원장님이 목록을 추가·수정
 export const PROGRAMS = ["클래스카드", "클래스5", "오토보카"] as const;
@@ -14,8 +15,8 @@ const optionalText = (max: number, label: string) =>
     .max(max, `${label}은(는) ${max}자 이하로 입력해 주세요`)
     .transform((v) => (v === "" ? null : v));
 
-/** 휴대폰: 숫자만 넣어도 되고 하이픈이 있어도 된다. 저장은 010-5550-0000 모양으로 */
-const phone = z
+/** 휴대폰: 숫자만 넣어도 되고 하이픈이 있어도 된다. 저장은 010-5550-0000 모양으로 (보호자 전화도 같은 규칙) */
+export const phoneSchema = z
   .string()
   .trim()
   .transform((v, ctx) => {
@@ -31,10 +32,22 @@ const phone = z
 export const studentBasicSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1, "이름을 입력해 주세요").max(30, "이름은 30자 이하로 입력해 주세요"),
-  phone,
+  phone: phoneSchema,
   school: optionalText(30, "학교"),
   grade: optionalText(10, "학년"),
   enrolledOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "입학일을 다시 확인해 주세요"),
+  // 생년월일 (STU-01, 10/9): 비워 둘 수 있다. 1950년부터 오늘(한국 날짜)까지 (DB도 1950년 이전은 거부)
+  birthDate: z
+    .string()
+    .trim()
+    .transform((v, ctx) => {
+      if (v === "") return null;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v < "1950-01-01" || v > todayKST()) {
+        ctx.addIssue({ code: "custom", message: "생년월일을 다시 확인해 주세요" });
+        return z.NEVER;
+      }
+      return v;
+    }),
   // 출결 번호: 숫자 4자리 고정 (10/5, 키패드가 4자리에서 바로 처리)
   attendanceCode: z.string().trim().regex(/^\d{4}$/, "출결 코드는 숫자 4자리로 입력해 주세요"),
   programs: z.array(z.enum(PROGRAMS)).max(PROGRAMS.length),

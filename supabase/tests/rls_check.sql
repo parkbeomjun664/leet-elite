@@ -81,6 +81,50 @@ select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
 select pg_temp.expect('키패드', '볼 수 있는 학생 (직접 접근 없음)', (select count(*) from public.students), 0);
 select pg_temp.expect('키패드', '계정 정보 (자기 것만)', (select count(*) from public.profiles), 1);
 
+-- 반 소속·시간표 저장 함수 (10/9): 원장님만. 반에서 빠지면 기록은 남기고(left_on) 지금 소속에서만 빠진다
+select pg_temp.login('00000000-0000-0000-0000-00000000000a');
+select public.save_student_classes_schedule('20000000-0000-0000-0000-000000000003',
+  array['30000000-0000-0000-0000-00000000000a', '30000000-0000-0000-0000-00000000000b']::uuid[],
+  '[{"weekday":2,"start_time":"15:00","duration_min":90},{"weekday":4,"start_time":"15:10","duration_min":90}]');
+select pg_temp.expect('원장님', '학생3 지금 소속 반 (A·B)', (select count(*) from public.class_members where student_id = '20000000-0000-0000-0000-000000000003' and left_on is null), 2);
+select pg_temp.expect('원장님', '학생3 시간표', (select count(*) from public.student_schedules where student_id = '20000000-0000-0000-0000-000000000003'), 2);
+select public.save_student_classes_schedule('20000000-0000-0000-0000-000000000003',
+  array['30000000-0000-0000-0000-00000000000a']::uuid[], '[{"weekday":1,"start_time":"16:00","duration_min":60}]');
+select pg_temp.expect('원장님', '반B에서 빠진 뒤 지금 소속', (select count(*) from public.class_members where student_id = '20000000-0000-0000-0000-000000000003' and left_on is null), 1);
+select pg_temp.expect('원장님', '반B 기록은 남음 (left_on)', (select count(*) from public.class_members where student_id = '20000000-0000-0000-0000-000000000003' and class_id = '30000000-0000-0000-0000-00000000000b' and left_on is not null), 1);
+select pg_temp.expect('원장님', '시간표 통째 교체', (select count(*) from public.student_schedules where student_id = '20000000-0000-0000-0000-000000000003'), 1);
+-- 같은 날 다시 반B에 넣으면 그 줄을 되살린다 (기록이 두 줄로 늘지 않음)
+select public.save_student_classes_schedule('20000000-0000-0000-0000-000000000003',
+  array['30000000-0000-0000-0000-00000000000b']::uuid[], '[]');
+select pg_temp.expect('원장님', '같은 날 다시 넣은 반B (한 줄, 소속 중)', (select count(*) from public.class_members where student_id = '20000000-0000-0000-0000-000000000003' and class_id = '30000000-0000-0000-0000-00000000000b' and left_on is null), 1);
+-- 보호자 정보는 원장님이 고칠 수 있다
+with u as (update public.guardians set phone1 = '010-5550-0000' returning 1) select pg_temp.expect('원장님', '보호자 정보 수정', (select count(*) from u), 1);
+-- 생년월일: 1950년 이전은 저장 거부 (10/8 A3)
+do $$ begin
+  update public.students set birth_date = '1949-12-31' where id = '20000000-0000-0000-0000-000000000003';
+  raise exception 'FAIL 1950년 이전 생년월일이 허용됨';
+exception when check_violation then raise notice 'ok   생년월일 1950년 이전 거부';
+end $$;
+
+-- 원장님이 아니면 반·시간표 저장 함수 거부, 보호자 정보도 못 고침
+do $$
+declare uid text; n int;
+begin
+  foreach uid in array array['00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000e1'] loop
+    perform set_config('request.jwt.claim.sub', uid, false);
+    begin
+      perform public.save_student_classes_schedule('20000000-0000-0000-0000-000000000001', array[]::uuid[], '[]');
+      raise exception 'FAIL [%] 반·시간표 저장이 허용됨', uid;
+    exception when insufficient_privilege then null;
+    end;
+    with u as (update public.guardians set name = 'x' returning 1) select count(*) into n from u;
+    if n > 0 then
+      raise exception 'FAIL [%] 보호자 정보 수정이 허용됨', uid;
+    end if;
+  end loop;
+  raise notice 'ok   [선생님·학생·보호자·키패드] 반·시간표 저장 거부, 보호자 정보 수정 0줄';
+end $$;
+
 -- 로그인하지 않은 사람(anon): 테이블 자체에 권한이 없다
 reset role;
 set role anon;

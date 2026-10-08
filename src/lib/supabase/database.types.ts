@@ -259,6 +259,7 @@ export type Database = {
       students: {
         Row: {
           attendance_code: string
+          birth_date: string | null
           created_at: string
           enrolled_on: string
           grade: string | null
@@ -275,6 +276,7 @@ export type Database = {
         }
         Insert: {
           attendance_code: string
+          birth_date?: string | null
           created_at?: string
           enrolled_on?: string
           grade?: string | null
@@ -291,6 +293,7 @@ export type Database = {
         }
         Update: {
           attendance_code?: string
+          birth_date?: string | null
           created_at?: string
           enrolled_on?: string
           grade?: string | null
@@ -375,6 +378,10 @@ export type Database = {
       }
       login_attempt_success: {
         Args: { p_id: string; p_ip: string }
+        Returns: undefined
+      }
+      save_student_classes_schedule: {
+        Args: { new_class_ids: string[]; new_slots: Json; sid: string }
         Returns: undefined
       }
       set_student_programs: {
