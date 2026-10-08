@@ -49,7 +49,7 @@ type Stat = {
 // 홈에는 최근 메시지 몇 건만
 const UNREAD_LIMIT = 5;
 
-// 바로가기 (HOME-02): 상단 메뉴와 겹쳐 자주 쓰는 4개만 텍스트 링크로 (10/7, decisions.md)
+// 바로가기 (HOME-02): 상단 메뉴와 겹쳐 자주 쓰는 4개만 (10/7 축소, 10/8 테두리 알약으로, decisions.md)
 const SHORTCUTS: { label: string; navLabel: string }[] = [
   { label: "숙제 등록", navLabel: "숙제 등록" },
   { label: "출결", navLabel: "오늘 출결" },
@@ -147,84 +147,84 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   ];
 
   return (
-    // 상자 없이 여백(48px)·구역 라벨·1px 선으로 나눈다 (10/7, docs/design.md 1-1)
+    // 상자 없이 여백·구역 라벨·1px 선으로 나눈다 (10/7, docs/design.md 1-1)
+    // 순서 (10/8 UI 다듬기): 날짜 줄(작게) → 확인할 일(가장 큰 숫자) → 오늘 숫자 줄 → 바로가기 → 보강·메시지. 위 네 묶음 사이는 24px
     <div className="space-y-12">
-      {/* 날짜 · 기준 시각 → 오늘 숫자 한 줄 → 바로가기 */}
-      <section aria-labelledby="today-title">
+      <section aria-labelledby="todo-title" className="space-y-6">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h1 id="today-title" className="text-title font-bold tracking-tight tabular">
-            {formatDateKo(date)}
-          </h1>
+          <h1 className="text-lead font-bold tracking-tight tabular">{formatDateKo(date)}</h1>
           <p className="text-caption text-sub tabular">{now} 기준</p>
         </div>
 
-        {/* 오늘 학원: 숫자 크게 + 라벨 작게, 칸 사이 세로선. 휴대폰은 3칸 + 2칸 */}
-        <h2 className="sr-only">오늘 학원</h2>
-        <ul className="mt-5 grid grid-cols-3 border-y border-line-soft sm:grid-cols-5">
-          {stats.map((st, i) => (
-            <li
-              key={st.label}
-              className={cn("border-line-soft", i % 3 !== 0 && "border-l", i >= 3 && "border-t sm:border-t-0", "sm:border-l sm:first:border-l-0")}
-            >
-              {/* 줄의 첫 칸은 왼쪽 여백 없이 (날짜·라벨과 같은 선에 맞춘다): 휴대폰은 1·4번째, 넓은 화면은 1번째 */}
-              <Link
-                href={st.href}
-                className={cn(
-                  "press-card flex h-full flex-col gap-1 px-4 py-4 hover:bg-bg sm:px-5",
-                  i % 3 === 0 && "max-sm:pl-0",
-                  i === 0 && "sm:pl-0",
-                )}
+        {/* 확인할 일: 처리할 것만, 숫자가 있는 것만. 숫자는 화면에서 가장 크게 (32px) */}
+        <div>
+          <h2 id="todo-title" className="text-caption font-semibold text-sub">
+            확인할 일 <span className="tabular">{todos.length}</span>
+          </h2>
+          {todos.length === 0 ? (
+            <p className="mt-3 text-body text-sub">지금 처리할 일이 없어요.</p>
+          ) : (
+            <ul className="mt-2 divide-y divide-line-soft border-y border-line-soft">
+              {todos.map((t) => (
+                <li key={t.title}>
+                  <Link href={t.href} className="group press-card -mx-2 flex items-center gap-4 px-2 py-3.5 hover:bg-bg">
+                    <span className="w-24 shrink-0 text-figure-lg leading-none font-bold whitespace-nowrap text-ink tabular">
+                      {t.value}
+                      <span className="ml-0.5 text-caption font-normal text-sub">{t.unit}</span>
+                    </span>
+                    <span className="min-w-0 flex-1 md:flex md:items-baseline md:gap-3">
+                      <span className="block shrink-0 text-body font-semibold">{t.title}</span>
+                      <span className="block truncate text-caption text-sub">{t.detail}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center text-caption font-semibold text-ink group-hover:underline">
+                      보기
+                      <ChevronRight aria-hidden className="size-4" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* 오늘 학원: 숫자 22px + 라벨 작게, 칸 사이 세로선. 0은 회색, 결석만 빨강. 휴대폰은 3칸 + 2칸 */}
+        <div>
+          <h2 className="sr-only">오늘 학원</h2>
+          <ul className="grid grid-cols-3 border-y border-line-soft sm:grid-cols-5">
+            {stats.map((st, i) => (
+              <li
+                key={st.label}
+                className={cn("border-line-soft", i % 3 !== 0 && "border-l", i >= 3 && "border-t sm:border-t-0", "sm:border-l sm:first:border-l-0")}
               >
-                <span className={cn("text-figure leading-none font-bold tabular", st.value === 0 ? "text-sub" : st.alert ? "text-brand" : "text-ink")}>
-                  {st.value}
-                  {st.total !== undefined && <span className="text-caption font-normal text-sub"> / {st.total}</span>}
-                </span>
-                <span className="text-caption text-sub">{st.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        {/* 바로가기 (HOME-02): 상단 메뉴와 겹쳐 자주 쓰는 4개만 */}
-        <nav aria-label="바로가기" className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1">
-          <span className="text-caption font-semibold text-sub">바로가기</span>
-          {SHORTCUTS.map((m) => (
-            <Link key={m.label} href={hrefOf(m.navLabel)} className="inline-flex min-h-11 items-center text-body font-medium text-ink hover:underline">
-              {m.label}
-            </Link>
-          ))}
-        </nav>
-      </section>
-
-      {/* 확인할 일: 처리할 것만, 숫자가 있는 것만 */}
-      <section aria-labelledby="todo-title">
-        <h2 id="todo-title" className="text-caption font-semibold text-sub">
-          확인할 일 <span className="tabular">{todos.length}</span>
-        </h2>
-        {todos.length === 0 ? (
-          <p className="mt-3 text-body text-sub">지금 처리할 일이 없어요.</p>
-        ) : (
-          <ul className="mt-2 divide-y divide-line-soft border-y border-line-soft">
-            {todos.map((t) => (
-              <li key={t.title}>
-                <Link href={t.href} className="group press-card -mx-2 flex items-center gap-4 px-2 py-3.5 hover:bg-bg">
-                  <span className="w-20 shrink-0 text-figure leading-none font-bold whitespace-nowrap text-ink tabular">
-                    {t.value}
-                    <span className="ml-0.5 text-caption font-normal text-sub">{t.unit}</span>
+                {/* 줄의 첫 칸은 왼쪽 여백 없이 (날짜·라벨과 같은 선에 맞춘다): 휴대폰은 1·4번째, 넓은 화면은 1번째 */}
+                <Link
+                  href={st.href}
+                  className={cn("press-card flex h-full flex-col gap-1 px-4 py-3.5 hover:bg-bg sm:px-5", i % 3 === 0 && "max-sm:pl-0", i === 0 && "sm:pl-0")}
+                >
+                  <span className={cn("text-figure-sm leading-none font-semibold tabular", st.value === 0 ? "text-sub" : st.alert ? "text-brand" : "text-ink")}>
+                    {st.value}
+                    {st.total !== undefined && <span className="text-caption font-normal text-sub"> / {st.total}</span>}
                   </span>
-                  <span className="min-w-0 flex-1 md:flex md:items-baseline md:gap-3">
-                    <span className="block shrink-0 text-body font-semibold">{t.title}</span>
-                    <span className="block truncate text-caption text-sub">{t.detail}</span>
-                  </span>
-                  <span className="flex shrink-0 items-center text-caption font-semibold text-ink group-hover:underline">
-                    보기
-                    <ChevronRight aria-hidden className="size-4" />
-                  </span>
+                  <span className="text-caption text-sub">{st.label}</span>
                 </Link>
               </li>
             ))}
           </ul>
-        )}
+        </div>
+
+        {/* 바로가기 (HOME-02): 상단 메뉴와 겹쳐 자주 쓰는 4개만, 테두리 있는 작은 알약 (10/8) */}
+        <nav aria-label="바로가기" className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-caption font-semibold text-sub">바로가기</span>
+          {SHORTCUTS.map((m) => (
+            <Link
+              key={m.label}
+              href={hrefOf(m.navLabel)}
+              className="press inline-flex h-11 items-center rounded-full border border-line px-4 text-caption font-semibold text-ink hover:bg-bg md:h-9"
+            >
+              {m.label}
+            </Link>
+          ))}
+        </nav>
       </section>
 
       {/* 오늘 보강 · 읽지 않은 메시지: 2단 목록, 행 사이 구분선만 */}

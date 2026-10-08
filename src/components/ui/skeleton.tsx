@@ -118,37 +118,38 @@ export function SkeletonPage({ immediate }: { immediate?: boolean }) {
   );
 }
 
-/** 원장님 홈 모양 (src/app/admin/page.tsx와 같은 순서·높이): 날짜 줄 · 숫자 줄 · 바로가기 · 확인할 일 · 보강/메시지 2단 */
+/** 원장님 홈 모양 (src/app/admin/page.tsx와 같은 순서·높이): 날짜 줄 · 확인할 일 · 숫자 줄 · 바로가기 · 보강/메시지 2단 (10/8) */
 export function SkeletonAdminHome() {
   return (
     <SkeletonGroup immediate label="홈 불러오는 중" className="space-y-12">
-      <div>
-        <div className="flex items-center justify-between gap-4">
-          <Skeleton className="h-[30px] w-56" />
+      <div className="space-y-6">
+        <div className="flex h-[25px] items-center justify-between gap-4">
+          <Skeleton className="h-5 w-48" />
           <Skeleton className="h-4 w-20" />
         </div>
-        <div className="mt-5 grid grid-cols-3 border-y border-line-soft sm:grid-cols-5">
+        <div>
+          <Skeleton className="my-[3px] h-3.5 w-24" />
+          <div className="mt-2 divide-y divide-line-soft border-y border-line-soft">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="flex h-[63px] items-center gap-4">
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-4 flex-1" style={{ maxWidth: `${30 + i * 10}%` }} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-3 border-y border-line-soft sm:grid-cols-5">
           {Array.from({ length: 5 }, (_, i) => (
-            <div key={i} className={cn("flex h-[84px] flex-col justify-center gap-2.5 px-4 sm:px-5", i % 3 === 0 && "max-sm:pl-0", i === 0 && "sm:pl-0")}>
-              <Skeleton className="h-7 w-10" />
+            <div key={i} className={cn("flex h-[74px] flex-col justify-center gap-2 px-4 sm:px-5", i % 3 === 0 && "max-sm:pl-0", i === 0 && "sm:pl-0")}>
+              <Skeleton className="h-[22px] w-10" />
               <Skeleton className="h-3 w-14" />
             </div>
           ))}
         </div>
-        <div className="mt-4 flex h-11 items-center gap-5">
-          {Array.from({ length: 5 }, (_, i) => (
-            <Skeleton key={i} className={cn("h-4", i === 0 ? "w-12" : "w-16")} />
-          ))}
-        </div>
-      </div>
-      <div>
-        <Skeleton className="h-4 w-24" />
-        <div className="mt-2 divide-y divide-line-soft border-y border-line-soft">
-          {Array.from({ length: 3 }, (_, i) => (
-            <div key={i} className="flex h-[58px] items-center gap-4">
-              <Skeleton className="h-7 w-16" />
-              <Skeleton className="h-4 flex-1" style={{ maxWidth: `${30 + i * 10}%` }} />
-            </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Skeleton className="mr-1 h-3.5 w-12" />
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={i} className="h-11 w-[72px] rounded-full md:h-9" />
           ))}
         </div>
       </div>

@@ -39,21 +39,35 @@ test.describe("선생님 화면 학생 상세", () => {
   });
 });
 
-test("원장님 홈: 확인할 일과 오늘 학원 숫자 (10/7 상자 없는 배치)", async ({ page }) => {
+test("원장님 홈: 확인할 일과 오늘 학원 숫자 (10/8 순서·크기)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
   await gotoReady(page, "/admin?at=16:00");
-  const todo = page.locator("section").filter({ has: page.getByRole("heading", { name: /^확인할 일/ }) });
-  const items = todo.locator("li");
+  const todo = page.locator("div").filter({ has: page.getByRole("heading", { name: /^확인할 일/ }) }).last();
+  const items = todo.locator("ul > li");
   const count = await items.count();
   expect(count).toBeGreaterThan(0);
   // 구역 라벨의 개수와 목록 줄 수가 같다
   await expect(todo.getByRole("heading", { name: `확인할 일 ${count}` })).toBeVisible();
   // 줄마다 처리하러 가는 링크
   await expect(items.first().getByRole("link")).toContainText("보기");
-  // 오늘 학원 숫자 다섯 칸 (날짜 아래 한 줄)
-  const stats = page.locator("section").filter({ has: page.getByRole("heading", { name: "오늘 학원" }) });
+  // 오늘 학원 숫자 다섯 칸
+  const stats = page.locator("div").filter({ has: page.getByRole("heading", { name: "오늘 학원" }) }).last();
   await expect(stats.getByRole("listitem")).toHaveCount(5);
-  // 바로가기는 자주 쓰는 4개만 (HOME-02 축소)
-  await expect(page.getByRole("navigation", { name: "바로가기" }).getByRole("link")).toHaveCount(4);
+  // 바로가기는 자주 쓰는 4개만 (HOME-02 축소), 테두리 알약 높이 36 이상
+  const shortcuts = page.getByRole("navigation", { name: "바로가기" }).getByRole("link");
+  await expect(shortcuts).toHaveCount(4);
+  expect((await shortcuts.first().boundingBox())!.height).toBeGreaterThanOrEqual(36);
+
+  // 순서: 날짜 → 확인할 일 → 숫자 줄 → 바로가기
+  const y = async (l: import("@playwright/test").Locator) => (await l.boundingBox())!.y;
+  const h1 = page.getByRole("heading", { level: 1 });
+  expect(await y(h1)).toBeLessThan(await y(todo));
+  expect(await y(todo)).toBeLessThan(await y(stats));
+  expect(await y(stats)).toBeLessThan(await y(shortcuts.first()));
+  // 크기: 날짜 18, 확인할 일 숫자 32(가장 큼), 오늘 숫자 22
+  await expect(h1).toHaveCSS("font-size", "18px");
+  await expect(items.first().locator("span").first()).toHaveCSS("font-size", "32px");
+  await expect(stats.locator("li span").first()).toHaveCSS("font-size", "22px");
 });
 
 test("원장님 홈: 학생 이름은 굵고 검게", async ({ page }) => {

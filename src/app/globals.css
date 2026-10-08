@@ -54,6 +54,15 @@
   --text-caption--line-height: 1.45;
   --text-figure: clamp(1.5rem, 1.42rem + 0.35vw, 1.75rem);
   --text-figure--line-height: 1.2;
+  /* 숫자 크기 단계 (10/8 UI 다듬기): 가장 중요한 숫자 32 / 선택된 숫자 28 / 보통 숫자 22, 날짜 줄 18 */
+  --text-figure-lg: 2rem;
+  --text-figure-lg--line-height: 1.1;
+  --text-figure-md: 1.75rem;
+  --text-figure-md--line-height: 1.15;
+  --text-figure-sm: 1.375rem;
+  --text-figure-sm--line-height: 1.2;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.4;
 
   /* 모서리: 배지 4 / 버튼·입력 6 / 관리 카드·시트 8 / 휴대폰 카드 12 */
   --radius-badge: 4px;
