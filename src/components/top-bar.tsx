@@ -66,31 +66,40 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
       <nav aria-label="주 메뉴" className="h-12 border-t border-line-soft px-1 lg:hidden">
         {menu}
       </nav>
-
-      {/* 하위 메뉴 (예: 학생관리 → 재원생 · 휴·퇴원생) */}
-      {current?.children && (
-        <nav aria-label={`${current.label} 하위 메뉴`} className="border-t border-line-soft bg-card">
-          <ul className="mx-auto flex max-w-[1280px] overflow-x-auto px-1">
-            {current.children.map((child) => {
-              const active = isActive(pathname, child.href, true);
-              return (
-                <li key={child.href} className="shrink-0">
-                  <Link
-                    href={child.href}
-                    aria-current={active ? "page" : undefined}
-                    className={`relative flex h-11 items-center px-4 text-body whitespace-nowrap ${
-                      active ? "font-semibold text-ink" : "text-sub hover:text-ink"
-                    }`}
-                  >
-                    {child.label}
-                    {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-ink" />}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      )}
     </header>
+  );
+}
+
+/**
+ * 하위 메뉴 줄 (예: 학생관리 → 재원생 · 휴·퇴원생 · 보호자). 레이아웃의 <main> 맨 위에 둔다 (10/8)
+ * 헤더 안에 있으면 이 줄이 생기고 없어질 때마다 본문 전체가 45px 밀려(CLS) 보여서, 본문 칸 안으로 옮겼다
+ * 스크롤해도 헤더 바로 아래에 붙어 있다 (헤더 높이: PC 65px, 좁은 화면 메뉴 둘째 줄까지 113px)
+ */
+export function SubNav({ nav }: { nav: NavItem[] }) {
+  const pathname = usePathname();
+  const current = activeItem(nav, pathname);
+  if (!current?.children) return null;
+  return (
+    <nav aria-label={`${current.label} 하위 메뉴`} className="sticky top-[113px] z-20 border-b border-line-soft bg-card lg:top-[65px]">
+      <ul className="mx-auto flex max-w-[1280px] overflow-x-auto px-1">
+        {current.children.map((child) => {
+          const active = isActive(pathname, child.href, true);
+          return (
+            <li key={child.href} className="shrink-0">
+              <Link
+                href={child.href}
+                aria-current={active ? "page" : undefined}
+                className={`relative flex h-11 items-center px-4 text-body whitespace-nowrap transition-colors duration-[var(--duration-fast)] ${
+                  active ? "font-semibold text-ink" : "text-sub hover:text-ink"
+                }`}
+              >
+                {child.label}
+                {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-ink" />}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }

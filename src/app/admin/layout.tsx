@@ -1,4 +1,4 @@
-import { TopBar } from "@/components/top-bar";
+import { SubNav, TopBar } from "@/components/top-bar";
 import { PageTransition } from "@/components/page-transition";
 import { ADMIN_NAV } from "@/lib/nav";
 
@@ -8,8 +8,10 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (
     <div className="min-h-dvh bg-card">
       <TopBar nav={ADMIN_NAV} roleLabel="원장님" userName="총괄관리자" />
-      <main className="mx-auto max-w-[1280px] px-4 py-6">
-        <PageTransition>{children}</PageTransition>
+      {/* 하위 메뉴 줄은 본문 칸 맨 위에, 여백 칸은 주소마다 새로 (메뉴 이동 중 화면 밀림 0, 10/8) */}
+      <main>
+        <SubNav nav={ADMIN_NAV} />
+        <PageTransition className="mx-auto max-w-[1280px] px-4 py-6">{children}</PageTransition>
       </main>
     </div>
   );

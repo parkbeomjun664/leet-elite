@@ -269,23 +269,27 @@ body {
   }
 }
 
-/* 화면 전환 (src/components/page-transition.tsx): 본문만 오른쪽 12px에서 밀려오며 나타나고, 메뉴·탭은 그대로.
+/* 화면 전환 (src/components/page-transition.tsx): 본문만 150ms 동안 이전 화면 → 새 화면으로 겹쳐 바뀌고, 메뉴·탭은 그대로.
+   이전 본문을 바로 지우지 않고 새 본문과 겹쳐 흐려지게 해서 빈(흰) 화면 프레임이 생기지 않게 한다 (10/8)
    브라우저 기본 전체 화면 교차는 끈다 */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
 }
 ::view-transition-new(.page-enter) {
-  animation: page-enter var(--duration-slow) var(--ease-out);
+  animation: page-fade-in var(--duration-fast) var(--ease-out) both;
 }
-::view-transition-old(.page-enter) {
-  animation: none;
-  opacity: 0;
+::view-transition-old(.page-exit) {
+  animation: page-fade-out var(--duration-fast) var(--ease-out) both;
 }
-@keyframes page-enter {
+@keyframes page-fade-in {
   from {
     opacity: 0;
-    transform: translateX(12px);
+  }
+}
+@keyframes page-fade-out {
+  to {
+    opacity: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {
