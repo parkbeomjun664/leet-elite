@@ -55,11 +55,12 @@ for (const vp of WIDTHS) {
   });
 }
 
+// 아래에서 올라오는 창(출결 입력)의 손잡이 끌기. 학생 상세는 10/9부터 창이 아니라 화면 전환
 test.describe("휴대폰 하단 시트", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test("손잡이를 아래로 끌면 닫힌다", async ({ page }) => {
-    await gotoReady(page, "/teacher?at=16:00&student=s010");
+    await gotoReady(page, "/teacher?at=16:00&student=s010&mode=attendance");
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     // 올라오는 움직임(0.25초)이 끝난 뒤 손잡이 위치를 잰다
@@ -74,7 +75,7 @@ test.describe("휴대폰 하단 시트", () => {
   });
 
   test("조금만 끌면 제자리로 돌아온다", async ({ page }) => {
-    await gotoReady(page, "/teacher?at=16:00&student=s010");
+    await gotoReady(page, "/teacher?at=16:00&student=s010&mode=attendance");
     const dialog = page.getByRole("dialog");
     // 올라오는 움직임(0.25초)이 끝난 뒤 손잡이 위치를 잰다
     await page.waitForTimeout(400);
@@ -133,4 +134,47 @@ test.describe("반 알약 줄 375", () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     });
   }
+});
+
+// 10/9 화면별 참고 패턴 2: 선생님 홈 = 왼쪽 학생 목록(360) + 오른쪽 상세, 768 이하는 목록 → 상세 화면 전환
+test.describe("선생님 홈 목록·상세", () => {
+  test("1280: 목록 360px·따로 스크롤, 고른 줄은 옅은 회색 + 왼쪽 3px 선, 상세 머리 고정", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 860 });
+    await gotoReady(page, "/teacher?at=16:00");
+    const list = page.getByRole("region", { name: "학생 목록" });
+    expect(Math.round((await list.boundingBox())!.width)).toBe(360);
+    await expect(list).toHaveCSS("overflow-y", "auto");
+    // 페이지 자체는 스크롤되지 않는다 (목록·상세만)
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+    const current = list.locator('li[aria-current="true"]');
+    await expect(current).toHaveCount(1);
+    await expect(current).toHaveCSS("box-shadow", /inset/);
+    // 다른 학생을 누르면 오른쪽 상세가 그 학생으로
+    const other = list.locator("li:not([aria-current])").first();
+    const name = (await other.locator("button span.font-bold").first().innerText()).trim();
+    await other.locator("button").first().click();
+    await expect(page.locator("aside header h2")).toHaveText(name);
+    await expect(page.locator("aside header")).toHaveCSS("position", "sticky");
+  });
+
+  test("375: 학생을 누르면 상세 화면, 뒤로 버튼·뒤로 가기로 목록", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await gotoReady(page, "/teacher?at=16:00");
+    const list = page.getByRole("region", { name: "학생 목록" });
+    const first = list.locator("li").first();
+    const name = (await first.locator("button span.font-bold").first().innerText()).trim();
+    await first.locator("button").first().click();
+    await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();
+    await expect(page).toHaveURL(/student=/);
+    await expect(list).toHaveCount(0);
+    await page.getByRole("button", { name: "학생 목록으로" }).click();
+    await expect(list).toBeVisible();
+    await expect(page).not.toHaveURL(/student=/);
+    // 휴대폰 뒤로 가기도 같다
+    await list.locator("li").first().locator("button").first().click();
+    await expect(list).toHaveCount(0);
+    await page.goBack();
+    await expect(list).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
 });

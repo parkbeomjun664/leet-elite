@@ -75,10 +75,10 @@ export function SkeletonCards({
   );
 }
 
-/** 선생님 홈 모양: 날짜 · 숫자 줄(6칸) · 반 알약 · 학생 칸 격자 + 오른쪽 상세 칸 (PC). 높이는 실제 화면에 맞춤 (10/8) */
+/** 선생님 홈 모양 (상담 데스크 패턴, 10/9): 날짜 · 숫자 줄(6칸) · 반 알약 / 왼쪽 학생 목록 360px + 오른쪽 상세 (769 이상) */
 export function SkeletonBoard({ immediate }: { immediate?: boolean }) {
   return (
-    <SkeletonGroup immediate={immediate} label="오늘 출결 불러오는 중" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_500px]">
+    <SkeletonGroup immediate={immediate} label="오늘 출결 불러오는 중" className="flex flex-col gap-5">
       <div className="space-y-5">
         <Skeleton className="h-7 w-56" />
         <div className="grid h-[80px] grid-cols-6 border-y border-line-soft">
@@ -90,13 +90,26 @@ export function SkeletonBoard({ immediate }: { immediate?: boolean }) {
           ))}
         </div>
         <Skeleton className="h-11 w-72 max-w-full md:h-9" />
-        <SkeletonCards count={6} cardClassName="min-h-[96px] lg:min-h-[107px]" />
       </div>
-      <div className="hidden space-y-4 border-l border-line-soft p-5 lg:block">
-        <Skeleton className="h-5 w-24" />
-        <Skeleton className="h-3 w-40" />
-        <Skeleton className="mt-6 h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
+      <div className="min-[769px]:grid min-[769px]:grid-cols-[360px_minmax(0,1fr)] min-[769px]:border-t min-[769px]:border-line-soft">
+        <div className="max-[768px]:-mx-4 min-[769px]:border-r min-[769px]:border-line-soft">
+          <Skeleton className="mx-4 mt-4 mb-2 h-3 w-20" />
+          {Array.from({ length: 7 }, (_, i) => (
+            <div key={i} className="flex h-[61px] items-center gap-3 border-b border-line-soft px-4">
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4" style={{ width: `${35 + ((i * 13) % 25)}%` }} />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+              <Skeleton className="h-8 w-12 rounded-[var(--radius-control)]" />
+            </div>
+          ))}
+        </div>
+        <div className="hidden space-y-4 p-5 min-[769px]:block">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-3 w-40" />
+          <Skeleton className="mt-6 h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
       </div>
     </SkeletonGroup>
   );

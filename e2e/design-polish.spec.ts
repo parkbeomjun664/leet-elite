@@ -109,15 +109,14 @@ test.describe("누름 반응", () => {
   });
 });
 
-test("선생님 홈 오른쪽 상세(1280): 헤더 아래 고정·화면 높이·스크롤바 자리, 사용 프로그램은 회색 테두리 칩 (10/8 UI 7)", async ({ page }) => {
+test("선생님 홈 오른쪽 상세(1280): 따로 스크롤·스크롤바 자리·머리 고정, 사용 프로그램은 회색 테두리 칩 (10/8 UI 7 → 10/9 데스크 패턴)", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await gotoReady(page, "/teacher?at=16:00");
-  const panel = page.locator("aside > div").first();
-  await expect(panel).toHaveCSS("position", "sticky");
-  await expect(panel).toHaveCSS("top", "65px");
+  const panel = page.locator("aside");
+  await expect(panel).toHaveCSS("overflow-y", "auto");
   await expect(panel).toHaveCSS("scrollbar-gutter", "stable");
-  expect(Math.round((await panel.boundingBox())!.height)).toBe(900 - 65);
-  // 안쪽에 따로 스크롤되는 칸이 없다 (이중 스크롤 없음)
+  await expect(panel.locator("header")).toHaveCSS("position", "sticky");
+  // 상세 안쪽에 따로 스크롤되는 칸이 없다 (이중 스크롤 없음)
   const inner = await panel.evaluate((p) =>
     [...p.querySelectorAll("*")]
       .filter((e) => !["TEXTAREA", "INPUT", "SELECT"].includes(e.tagName))

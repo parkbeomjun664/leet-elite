@@ -10,7 +10,7 @@ const tile = (page: Page, name: string) => page.locator("main li").filter({ has:
 // 가상 시간표는 요일마다 다르므로 이름을 정해 두지 않고, 지금 [하원] 버튼이 있는(등원한) 첫 학생을 고른다
 async function attendingName(page: Page) {
   const first = page.locator("main li").filter({ has: page.getByRole("button", { name: "하원", exact: true }) }).first();
-  return first.locator("span.text-heading").first().innerText();
+  return first.locator("button span.font-bold").first().innerText();
 }
 
 test("하원: 누르는 즉시 하원, 저장되면 성공 토스트", async ({ page }) => {

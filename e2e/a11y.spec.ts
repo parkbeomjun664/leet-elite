@@ -39,9 +39,9 @@ for (const width of [375, 1280]) {
   });
 }
 
-test.describe("휴대폰 상세 하단 시트", () => {
+test.describe("휴대폰 학생 상세 화면", () => {
   test.use({ viewport: { width: 375, height: 812 } });
-  test("학생 상세 시트: 접근성 위반 0개", async ({ page }) => {
+  test("학생 상세 화면(목록 → 상세 전환): 접근성 위반 0개", async ({ page }) => {
     await gotoReady(page, "/teacher?at=16:00&student=s010");
     await page.waitForTimeout(400);
     expect(await violations(page)).toEqual([]);
