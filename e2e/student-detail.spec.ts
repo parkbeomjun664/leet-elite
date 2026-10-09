@@ -39,7 +39,7 @@ test.describe("선생님 화면 학생 상세", () => {
   });
 });
 
-test("원장님 홈: 오늘 학원 숫자 줄과 확인할 일 (10/9 순서·크기·어제 대비)", async ({ page }) => {
+test("원장님 홈: 오늘 학원 숫자 줄과 확인할 일 (10/9 순서·크기)", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await gotoReady(page, "/admin?at=16:00");
   const todo = page.locator("section").filter({ has: page.getByRole("heading", { name: /^확인할 일/ }) });
@@ -68,8 +68,6 @@ test("원장님 홈: 오늘 학원 숫자 줄과 확인할 일 (10/9 순서·크
   await expect(h1).toHaveCSS("font-size", "18px");
   await expect(items.first().locator("span").first()).toHaveCSS("font-size", "28px");
   await expect(stats.locator("li a > span > span").first()).toHaveCSS("font-size", "28px");
-  // 어제와 비교: 시험 날짜 10/5(월)의 어제는 일요일(수업 없음)이라 보여 주지 않는다 (규칙은 src/lib/diff-label.test.ts)
-  await expect(stats.getByText(/^어제/)).toHaveCount(0);
 });
 
 test("원장님 홈: 학생 이름은 굵고 검게", async ({ page }) => {

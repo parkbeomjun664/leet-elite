@@ -8,7 +8,6 @@ import { mockAttendanceFor, studentById, students, teacherById, teachers } from 
 import { homework, makeups, messages, submissionOf, submissions, unreadCount } from "@/lib/mock/activity";
 import { workLogsFor } from "@/lib/mock/work";
 import { cn } from "@/lib/cn";
-import { diffLabel } from "@/lib/diff-label";
 import { ScrollRow } from "@/components/ui/scroll-row";
 import { StatFigure } from "@/components/ui/stat-figure";
 
@@ -47,8 +46,6 @@ type Stat = {
   href: string;
   /** 0보다 클 때 주의 색 (결석만) */
   alert?: boolean;
-  /** 어제 같은 시각 숫자. 없으면 비교를 보여 주지 않는다 */
-  prev?: number;
 };
 
 
@@ -64,7 +61,7 @@ const SHORTCUTS: { label: string; navLabel: string }[] = [
 ];
 
 /**
- * 그날 그 시각까지의 학원 숫자 (가상 데이터). 오늘 숫자와 "어제 같은 시각" 숫자를 같은 방법으로 센다 (10/9 어제 대비)
+ * 그날 그 시각까지의 학원 숫자 (가상 데이터)
  * 저녁에 낼 제출·출결은 그 시각까지 일어난 것만 센다
  */
 function dayNumbers(day: string, time: string) {
@@ -96,9 +93,6 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   // 지금(또는 시연 시각)보다 뒤에 낸 제출은 아직 없는 것으로 본다 (가상 데이터가 저녁 제출을 미리 만들어 둠)
   const nowKey = `${date} ${now}`;
   const today = dayNumbers(date, now);
-  // 어제 같은 시각. 어제가 수업 없는 날(일요일 등)이면 비교가 뜻이 없으니 보여 주지 않는다
-  const y = dayNumbers(addDays(date, -1), now);
-  const yesterday = y.withClass > 0 ? y : null;
 
   // 현황 계산
   const unread = unreadCount();
@@ -161,13 +155,12 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   ].filter((t) => t.value > 0);
 
   // 오늘 학원: 운영 숫자 한눈에
-  // prev = 어제 같은 시각 숫자 (어제보다 +1 / -2 / 어제와 같음). 보강은 날마다 달라 비교하지 않는다
   const stats: Stat[] = [
-    { label: "출결 (등원 / 수업)", value: today.arrived, total: today.withClass, prev: yesterday?.arrived, href: hrefOf("오늘 출결") },
-    { label: "결석", value: today.absent, prev: yesterday?.absent, href: hrefOf("오늘 출결"), alert: true },
-    { label: `숙제 제출 (학생 ${todaySubStudents}명)`, value: todaySubs.length, prev: yesterday?.subs.length, href: hrefOf("숙제 관리") },
+    { label: "출결 (등원 / 수업)", value: today.arrived, total: today.withClass, href: hrefOf("오늘 출결") },
+    { label: "결석", value: today.absent, href: hrefOf("오늘 출결"), alert: true },
+    { label: `숙제 제출 (학생 ${todaySubStudents}명)`, value: todaySubs.length, href: hrefOf("숙제 관리") },
     { label: "보강", value: todayMakeups.length, href: "/admin/makeups" },
-    { label: "선생님 출근", value: inTeachers.length, total: teachers.length, prev: yesterday?.inTeachers.length, href: hrefOf("선생님 출퇴근") },
+    { label: "선생님 출근", value: inTeachers.length, total: teachers.length, href: hrefOf("선생님 출퇴근") },
   ];
 
   return (
@@ -181,14 +174,13 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         </div>
 
         {/* 오늘 학원: 숫자 크게(28px) + 라벨 작게(13px 회색) 위아래, 항목 사이 넓은 간격, 선·상자 없음. 0은 회색, 결석만 빨강 */}
-        {/* 숫자는 새로 불러와 바뀌면 굴러간다(StatFigure). 아래에 어제 같은 시각과 비교 한 줄 */}
+        {/* 숫자는 새로 불러와 바뀌면 굴러간다(StatFigure) */}
         <section aria-labelledby="today-title">
           <h2 id="today-title" className="text-caption font-semibold text-sub">
             오늘 학원
           </h2>
           <ul className="mt-3 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-5 sm:gap-x-10">
             {stats.map((st, i) => {
-              const diff = diffLabel(st.value, st.prev);
               return (
                 <li key={st.label} className={cn(i === stats.length - 1 && i % 2 === 0 && "max-sm:col-span-2")}>
                   <Link href={st.href} className="press-card -mx-2 flex flex-col gap-1 rounded-[var(--radius-control)] px-2 py-1.5 hover:bg-bg">
@@ -200,7 +192,6 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                       {st.total !== undefined && <span className="text-caption text-sub tabular"> / {st.total}</span>}
                     </span>
                     <span className="text-caption text-sub">{st.label}</span>
-                    {diff && <span className="text-caption text-sub tabular">{diff}</span>}
                   </Link>
                 </li>
               );
