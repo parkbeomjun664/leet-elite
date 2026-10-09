@@ -55,12 +55,16 @@ test("선생님 홈 숫자 줄: 고른 칸만 검정 28px, 나머지 회색 22px
   await expect(tile).toHaveCSS("background-color", "rgb(251, 236, 238)");
 });
 
-test("키패드 휴대폰 세로: 제목이 잘리지 않는다", async ({ page }) => {
+test("키패드 상단은 로고와 현재 시각만, 휴대폰 세로에서도 잘리지 않는다 (10/9 출결 앱 패턴)", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/kiosk");
-  const title = page.locator("header p").first();
-  expect(await title.innerText()).toBe("출결"); // 학원 이름은 좁은 화면에서 숨김
-  const box = await title.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
+  const header = page.locator("header");
+  await expect(header.locator("p").first()).toHaveText("LEET영어학원");
+  await expect(header.getByText(/^\d{2}:\d{2}$/)).toBeVisible(); // 현재 시각
+  await expect(header.getByText(/년 .*월/)).toHaveCount(0); // 날짜 줄 없음
+  // 버튼은 소리 켜고 끄기 아이콘 하나뿐 (글자 없음)
+  await expect(header.getByRole("button")).toHaveCount(1);
+  const box = await header.locator("p").first().evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
   expect(box.scroll).toBeLessThanOrEqual(box.client);
 });
 

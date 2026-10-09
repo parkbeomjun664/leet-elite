@@ -40,7 +40,7 @@ test.describe("키패드 4자리 바로 처리", () => {
     expect(zero!.width).toBeGreaterThan(one!.width * 1.8);
   });
 
-  test("1234: 등원 전체 화면 → 2.5초 뒤 키패드로, 1분 안에 다시 누르면 기록하지 않음", async ({ page }) => {
+  test("1234: 등원 전체 화면 → 2초 뒤 키패드로, 1분 안에 다시 누르면 기록하지 않음", async ({ page }) => {
     await page.goto("/kiosk");
     await press(page, "1234");
     const done = page.locator('[data-result="in"]');
@@ -50,8 +50,8 @@ test.describe("키패드 4자리 바로 처리", () => {
     // 숫자 패드까지 덮는 전체 화면
     const box = await done.boundingBox();
     expect(box!.width).toBeGreaterThanOrEqual(1180 - 1);
-    // 2.5초 뒤 저절로 닫힌다
-    await expect(done).toHaveCount(0, { timeout: 4000 });
+    // 2초 뒤 저절로 닫힌다 (10/9)
+    await expect(done).toHaveCount(0, { timeout: 3000 });
 
     await press(page, "1234");
     await expect(page.locator('[data-result="recent"]')).toBeVisible();
@@ -88,7 +88,7 @@ test.describe("키패드 4자리 바로 처리", () => {
     await expect(page.getByLabel("입력한 번호 3자리")).toBeVisible();
     await press(page, "9");
     await expect(page.locator('[data-result="unknown"]')).toBeVisible();
-    await expect(page.getByText("없는 번호예요. 다시 눌러 주세요")).toBeVisible();
+    await expect(page.getByText("번호를 다시 확인해 주세요")).toBeVisible();
     // 전체 화면 결과는 뜨지 않는다
     await expect(page.locator('[data-result="in"], [data-result="out"]')).toHaveCount(0);
   });

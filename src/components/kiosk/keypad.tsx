@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
 import { KioskDoneScreen, DONE_SCREEN_MS, type DoneResult } from "@/components/kiosk/result-overlay";
 import { cn } from "@/lib/cn";
-import { addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf } from "@/lib/date";
+import { addMinutes, nowTimeKST, todayKST, weekdayOf } from "@/lib/date";
 import { KIOSK_CODE_LEN, shouldSubmitNow } from "@/lib/kiosk";
 
 /**
@@ -116,7 +116,6 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
   const byCode = useMemo(() => new Map(students.map((s) => [s.code, s])), [students]);
 
   const time = useSyncExternalStore(subscribeClock, () => nowTimeKST(), () => "");
-  const date = useSyncExternalStore(subscribeClock, () => todayKST(), () => "");
 
   const [digits, setDigits] = useState("");
   const [result, setResult] = useState<Result | null>(null);
@@ -176,7 +175,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
     }
   }
 
-  // 결과는 몇 초 뒤 자동으로 처음 화면으로 (KIOSK-03). 등원·하원 2.5초, 없는 번호 1.5초
+  // 결과는 몇 초 뒤 자동으로 처음 화면으로 (KIOSK-03). 등원·하원 2초(10/9), 없는 번호 1.5초
   useEffect(() => {
     if (!result) return;
     const t = setTimeout(() => changeResult(null), RESULT_MS[result.kind]);
@@ -268,15 +267,16 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
 
   return (
     <div className="flex min-h-dvh flex-col pr-[env(safe-area-inset-right,0px)] pb-[env(safe-area-inset-bottom,0px)] pl-[env(safe-area-inset-left,0px)]">
-      {/* 상단 줄: 로고 · 학원 이름 · 날짜와 시계. 10/5: 버건디 바 → 흰 바탕 (다른 화면의 흰 메뉴와 통일)
-          휴대폰 세로(아이폰 시험)에서는 학원 이름을 빼고 "출결"만 보여 잘리지 않게 */}
+      {/* 상단 줄: 로고와 현재 시각만 (10/9 출결 앱 패턴: 버튼 외 요소 최소화). 10/5: 버건디 바 → 흰 바탕
+          소리 켜고 끄기는 태블릿마다 정하는 설정이라 작은 아이콘 버튼으로만 남긴다 */}
       <header className="border-b border-line-soft bg-card pt-[env(safe-area-inset-top,0px)] text-ink">
         <div className="flex h-16 items-center justify-between gap-3 px-4 md:h-[72px] md:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             {/* 원본 PNG가 흰 배경이라 흰 바탕 위에 그대로 둔다 */}
             <Image src="/brand/leet-mark.png" alt="" width={407} height={512} priority className="h-8 w-auto shrink-0 md:h-9" />
-            <p className="truncate text-heading font-bold md:text-title">
-              <span className="hidden text-brand sm:inline">LEET영어학원 </span>출결
+            <p className="flex items-baseline gap-1.5 truncate">
+              <span className="text-[19px] font-extrabold tracking-tight text-brand md:text-[22px]">LEET</span>
+              <span className="text-heading font-semibold text-ink md:text-title">영어학원</span>
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-3 md:gap-5">
@@ -291,17 +291,13 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
               aria-label={soundOn ? "소리 켜짐 (누르면 끄기)" : "소리 꺼짐 (누르면 켜기)"}
               title="태블릿 음량도 켜 두세요"
               className={cn(
-                "press flex h-10 items-center gap-1.5 rounded-[var(--radius-control)] border border-line px-3 text-body font-semibold hover:bg-bg",
+                "press grid size-11 place-items-center rounded-[var(--radius-control)] hover:bg-bg",
                 soundOn ? "text-ink" : "text-sub",
               )}
             >
               <SpeakerIcon on={soundOn} />
-              <span className="hidden sm:inline">{soundOn ? "소리 켜짐" : "소리 꺼짐"}</span>
             </button>
-            <div className="flex flex-col items-end leading-tight sm:flex-row sm:items-baseline sm:gap-3">
-              <span className="text-caption text-sub sm:text-body">{date ? formatDateKo(date) : " "}</span>
-              <span className="text-[24px] font-bold tabular md:text-[28px]">{time || " "}</span>
-            </div>
+            <span className="text-[24px] font-bold tabular md:text-[28px]">{time || " "}</span>
           </div>
         </div>
       </header>
@@ -353,7 +349,7 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
               )}
             >
               {result?.kind === "unknown"
-                ? "없는 번호예요. 다시 눌러 주세요"
+                ? "번호를 다시 확인해 주세요"
                 : result?.kind === "recent"
                   ? `${result.name} 학생, 방금 ${result.label}했어요 (${result.time})`
                   : result?.kind === "done"
@@ -361,7 +357,6 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
                     : "4자리를 다 누르면 바로 처리돼요"}
             </p>
           </div>
-          <p className="hidden text-center text-body text-sub md:landscape:block">번호를 잊었으면 선생님께 말씀해 주세요.</p>
         </section>
 
         {/* 오른쪽(세로 화면에서는 아래): 숫자 패드. [확인] 없이 4자리가 차면 처리 (10/5) → 맨 아래 줄은 0(두 칸)과 지우기 */}
@@ -380,8 +375,6 @@ export function KioskKeypad({ students }: { students: KioskStudent[] }) {
             <span className="hidden sm:inline">지우기</span>
           </Key>
         </section>
-
-        <p className="text-center text-body text-sub md:landscape:hidden">번호를 잊었으면 선생님께 말씀해 주세요.</p>
       </main>
 
       {/* 등원·하원 완료: 숫자 패드까지 덮는 전체 화면 (토스 송금 완료 화면 참고, 10/5). 누르면 바로 닫힌다 */}
