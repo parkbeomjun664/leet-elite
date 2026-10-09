@@ -178,3 +178,20 @@ test.describe("선생님 홈 목록·상세", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 });
+
+// 10/9 화면별 참고 패턴 4: 학부모 홈 — 맨 위 오늘 상태 한 줄 크게, 아래 오늘 타임라인(시간순), 아래 탭 4개
+test.describe("학부모 홈 375", () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+  test("오늘 상태 한 줄 + 시간순 타임라인 + 아래 탭 4개", async ({ page }) => {
+    await gotoReady(page, "/parent?at=16:00");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/(\d{2}:\d{2} (등원|하원)했어요|아직 등원|오늘 결석|오늘은 수업이 없어요)/);
+    const timeline = page.getByRole("list", { name: "오늘 타임라인" });
+    await expect(timeline).toBeVisible();
+    const times = await timeline.locator("li span.tabular").allInnerTexts();
+    expect(times.length).toBeGreaterThan(0);
+    expect(times).toEqual([...times].sort()); // 오래된 것부터
+    await expect(timeline).toContainText("등원했어요");
+    await expect(page.getByRole("navigation", { name: "주 메뉴" }).getByRole("link")).toHaveCount(4);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+});

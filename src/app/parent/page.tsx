@@ -12,12 +12,12 @@ import {
   type MakeupItem,
   type MessageItem,
 } from "@/components/mobile/mobile-shell";
-import { MCARD, MCARD_LIST, ROW_DIVIDER } from "@/components/mobile/styles";
+import { MCARD } from "@/components/mobile/styles";
 import { Button } from "@/components/ui/button";
 import { studentDay, type DayStatus } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
 import { STATUS_CARD_CLASS, statusColor } from "@/lib/status-colors";
-import { addDays, addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
+import { addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
 import { homeworkOfStudent, makeupsOf, messagesOf, submissionOf } from "@/lib/mock/activity";
 import { classById, guardians, mockAttendanceFor, studentById, teacherById } from "@/lib/mock/data";
 
@@ -98,26 +98,31 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
     unread: m.from !== "parent" && !m.read,
   }));
 
-  // 새 알림 (맨 위 줄): 오늘 등원·하원, 안 읽은 학원 메시지, 새 선생님 코멘트. 최근 것부터 3개
-  // TODO(NOTI): 읽음 기록이 생기면 "읽지 않은 알림"만 보여 준다. 지금 코멘트는 어제·오늘 제출분 기준
+  // 오늘 타임라인 (10/9 학원 알림 앱 패턴): 오늘 일어난 일을 시간순으로 — 등원 → 숙제 제출 → 하원 → 선생님 메시지
+  // 이미 화면에 있던 오늘 출결·숙제·메시지를 합쳐 시각 순서로만 늘어놓는다 (새 데이터 없음). 시각을 모르는 일은 넣지 않는다
   const nowKey = `${date} ${now}`;
-  const alerts: AlertItem[] = [];
-  if (day.record?.checkOutAt) alerts.push({ key: "out", sortKey: `${date} ${day.record.checkOutAt}`, tone: "info", text: `${student.name} 학생 하원했습니다`, time: day.record.checkOutAt });
-  if (day.record?.checkInAt) alerts.push({ key: "in", sortKey: `${date} ${day.record.checkInAt}`, tone: "ok", text: `${student.name} 학생 등원했습니다`, time: day.record.checkInAt });
-  const unreadFromAcademy = allMessages.filter((m) => m.from !== "parent" && !m.read);
-  if (unreadFromAcademy.length > 0) {
-    alerts.push({ key: "msg", sortKey: unreadFromAcademy[0].sentAt, tone: "brand", text: `새 메시지 ${unreadFromAcademy.length}건`, href: "/parent/messages" });
+  const timeline: TimelineItem[] = [];
+  if (day.record?.checkInAt) timeline.push({ key: "in", time: day.record.checkInAt, tone: "ok", title: "등원했어요" });
+  for (const hw of homeworkOfStudent(student.id)) {
+    const sub = submissionOf(hw.id, student.id);
+    if (sub && sub.submittedAt.startsWith(date) && sub.submittedAt <= nowKey) {
+      timeline.push({ key: `hw-${hw.id}`, time: sub.submittedAt.slice(11, 16), tone: "ok", title: "숙제를 제출했어요", detail: hw.title, href: "/parent/homework" });
+    }
   }
-  const newComments = homeworkOfStudent(student.id)
-    .map((hw) => submissionOf(hw.id, student.id))
-    .filter((sub) => sub?.teacherComment && sub.submittedAt >= addDays(date, -1) && sub.submittedAt <= nowKey)
-    .map((sub) => sub!.submittedAt)
-    .sort()
-    .reverse();
-  if (newComments.length > 0) {
-    alerts.push({ key: "comment", sortKey: newComments[0], tone: "info", text: `선생님 코멘트 ${newComments.length}건`, href: "/parent/homework" });
+  if (day.record?.checkOutAt) timeline.push({ key: "out", time: day.record.checkOutAt, tone: "info", title: "하원했어요" });
+  for (const m of allMessages) {
+    if (m.from !== "parent" && m.sentAt.startsWith(date) && m.sentAt <= nowKey) {
+      timeline.push({
+        key: `msg-${m.id}`,
+        time: m.sentAt.slice(11, 16),
+        tone: "ink",
+        title: `${m.from === "admin" ? "원장님" : `${m.senderName} 선생님`} 메시지`,
+        detail: m.body.split("\n")[0],
+        href: "/parent/messages",
+      });
+    }
   }
-  alerts.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+  timeline.sort((x, y) => x.time.localeCompare(y.time));
 
   const hero = attendanceHeadline(day.status, day.slot, day.record);
 
@@ -139,7 +144,7 @@ export default async function ParentHome({ searchParams }: PageProps<"/parent">)
         {hero.detail && <p className="mt-1 text-caption text-sub tabular">{hero.detail}</p>}
       </section>
 
-      <NewAlerts items={alerts.slice(0, 3)} />
+      <TodayTimeline items={timeline} />
 
       {/* 숙제·제출 상태 (HW-06, HW-10) */}
       <MobileSection
@@ -215,48 +220,59 @@ function attendanceHeadline(
     case "not_arrived":
       return { title: "아직 등원하지 않았어요", detail: classTime };
     case "upcoming":
-      return { title: "아직 수업 전이에요", detail: classTime };
+      return { title: "아직 등원 전이에요", detail: classTime };
     default:
       return { title: "오늘은 수업이 없어요" };
   }
 }
 
-type AlertItem = { key: string; sortKey: string; tone: "ok" | "info" | "brand"; text: string; time?: string; href?: string };
+type TimelineItem = { key: string; time: string; tone: "ok" | "info" | "ink"; title: string; detail?: string; href?: string };
 
-const DOT: Record<AlertItem["tone"], string> = { ok: "bg-status-ok-fg", info: "bg-info", brand: "bg-ink" };
+// 점 색은 상태 토큰만: 등원·제출 초록, 하원 파랑, 메시지 진한 회색
+const DOT: Record<TimelineItem["tone"], string> = { ok: "bg-status-ok-fg", info: "bg-info", ink: "bg-ink" };
 
-// 새 알림: 있을 때만 목록으로 (없으면 아무것도 안 보인다)
-function NewAlerts({ items }: { items: AlertItem[] }) {
-  if (items.length === 0) return null;
+/** 오늘 타임라인: 왼쪽 시각 · 세로선 위 점 · 내용. 오래된 것부터 아래로 (오늘 하루를 위에서 아래로 읽는다) */
+function TodayTimeline({ items }: { items: TimelineItem[] }) {
   return (
-    <MobileSection title="새 알림">
-      <ul className={MCARD_LIST}>
-        {items.map((a) => {
-          const body = (
-            <>
-              <span className={cn("size-2 shrink-0 rounded-full", DOT[a.tone])} aria-hidden />
-              <span className="min-w-0 flex-1 truncate text-body font-medium text-ink">{a.text}</span>
-              {a.time && <span className="shrink-0 text-caption text-sub tabular">{a.time}</span>}
-              {a.href && (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-faint">
-                  <path d="m9 6 6 6-6 6" />
-                </svg>
-              )}
-            </>
-          );
-          return (
-            <li key={a.key} className={ROW_DIVIDER}>
-              {a.href ? (
-                <Link href={a.href} className="flex min-h-14 items-center gap-3 px-5 py-4 active:bg-bg">
-                  {body}
-                </Link>
-              ) : (
-                <div className="flex min-h-14 items-center gap-3 px-5 py-4">{body}</div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+    <MobileSection title="오늘">
+      {items.length === 0 ? (
+        <p className={cn(MCARD, "text-body text-sub")}>오늘은 아직 소식이 없어요.</p>
+      ) : (
+        <ol className={cn(MCARD, "py-4")} aria-label="오늘 타임라인">
+          {items.map((it, i) => {
+            const body = (
+              <>
+                <span className="w-12 shrink-0 pt-0.5 text-caption text-sub tabular">{it.time}</span>
+                {/* 세로선 + 점 (마지막 항목은 선 없음) */}
+                <span className="relative flex w-3 shrink-0 justify-center self-stretch" aria-hidden>
+                  {i < items.length - 1 && <span className="absolute top-3 -bottom-4 w-px bg-line" />}
+                  <span className={cn("relative mt-1.5 size-2.5 rounded-full ring-4 ring-card", DOT[it.tone])} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-body font-semibold text-ink">{it.title}</span>
+                  {it.detail && <span className="block truncate text-caption text-sub">{it.detail}</span>}
+                </span>
+                {it.href && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="mt-0.5 shrink-0 text-faint">
+                    <path d="m9 6 6 6-6 6" />
+                  </svg>
+                )}
+              </>
+            );
+            return (
+              <li key={it.key} className="pb-4 last:pb-0">
+                {it.href ? (
+                  <Link href={it.href} className="-mx-2 flex items-start gap-3 rounded-[var(--radius-control)] px-2 py-1 active:bg-bg">
+                    {body}
+                  </Link>
+                ) : (
+                  <div className="flex items-start gap-3 py-1">{body}</div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      )}
     </MobileSection>
   );
 }
