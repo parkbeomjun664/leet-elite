@@ -39,10 +39,10 @@ test.describe("선생님 화면 학생 상세", () => {
   });
 });
 
-test("원장님 홈: 확인할 일과 오늘 학원 숫자 (10/8 순서·크기)", async ({ page }) => {
+test("원장님 홈: 오늘 학원 숫자 줄과 확인할 일 (10/9 순서·크기·어제 대비)", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await gotoReady(page, "/admin?at=16:00");
-  const todo = page.locator("div").filter({ has: page.getByRole("heading", { name: /^확인할 일/ }) }).last();
+  const todo = page.locator("section").filter({ has: page.getByRole("heading", { name: /^확인할 일/ }) });
   const items = todo.locator("ul > li");
   const count = await items.count();
   expect(count).toBeGreaterThan(0);
@@ -51,23 +51,25 @@ test("원장님 홈: 확인할 일과 오늘 학원 숫자 (10/8 순서·크기)
   // 줄마다 처리하러 가는 링크
   await expect(items.first().getByRole("link")).toContainText("보기");
   // 오늘 학원 숫자 다섯 칸
-  const stats = page.locator("div").filter({ has: page.getByRole("heading", { name: "오늘 학원" }) }).last();
+  const stats = page.locator("section").filter({ has: page.getByRole("heading", { name: "오늘 학원" }) });
   await expect(stats.getByRole("listitem")).toHaveCount(5);
   // 바로가기는 자주 쓰는 4개만 (HOME-02 축소), 테두리 알약 높이 36 이상
   const shortcuts = page.getByRole("navigation", { name: "바로가기" }).getByRole("link");
   await expect(shortcuts).toHaveCount(4);
   expect((await shortcuts.first().boundingBox())!.height).toBeGreaterThanOrEqual(36);
 
-  // 순서: 날짜 → 확인할 일 → 숫자 줄 → 바로가기
+  // 순서: 날짜 → 숫자 줄 → 확인할 일 → 바로가기 (10/9 요약 숫자 먼저)
   const y = async (l: import("@playwright/test").Locator) => (await l.boundingBox())!.y;
   const h1 = page.getByRole("heading", { level: 1 });
-  expect(await y(h1)).toBeLessThan(await y(todo));
-  expect(await y(todo)).toBeLessThan(await y(stats));
-  expect(await y(stats)).toBeLessThan(await y(shortcuts.first()));
-  // 크기: 날짜 18, 확인할 일 숫자 32(가장 큼), 오늘 숫자 22
+  expect(await y(h1)).toBeLessThan(await y(stats));
+  expect(await y(stats)).toBeLessThan(await y(todo));
+  expect(await y(todo)).toBeLessThan(await y(shortcuts.first()));
+  // 크기: 날짜 18, 오늘 숫자·확인할 일 숫자 모두 28
   await expect(h1).toHaveCSS("font-size", "18px");
-  await expect(items.first().locator("span").first()).toHaveCSS("font-size", "32px");
-  await expect(stats.locator("li span").first()).toHaveCSS("font-size", "22px");
+  await expect(items.first().locator("span").first()).toHaveCSS("font-size", "28px");
+  await expect(stats.locator("li a > span > span").first()).toHaveCSS("font-size", "28px");
+  // 어제와 비교: 시험 날짜 10/5(월)의 어제는 일요일(수업 없음)이라 보여 주지 않는다 (규칙은 src/lib/diff-label.test.ts)
+  await expect(stats.getByText(/^어제/)).toHaveCount(0);
 });
 
 test("원장님 홈: 학생 이름은 굵고 검게", async ({ page }) => {

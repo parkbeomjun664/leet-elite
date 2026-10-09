@@ -95,7 +95,7 @@ test.describe("원장님 홈 375", () => {
 
   test("숫자 줄은 2칸씩, 마지막 칸은 가로로 꽉", async ({ page }) => {
     await gotoReady(page, "/admin?at=16:00");
-    const cells = page.locator("div").filter({ has: page.getByRole("heading", { name: "오늘 학원" }) }).last().getByRole("listitem");
+    const cells = page.locator("section").filter({ has: page.getByRole("heading", { name: "오늘 학원" }) }).getByRole("listitem");
     await expect(cells).toHaveCount(5);
     const w = await cells.evaluateAll((lis) => lis.map((li) => Math.round(li.getBoundingClientRect().width)));
     expect(w[0]).toBe(w[1]); // 두 칸이 같은 폭

@@ -8,7 +8,9 @@ import { mockAttendanceFor, studentById, students, teacherById, teachers } from 
 import { homework, makeups, messages, submissionOf, submissions, unreadCount } from "@/lib/mock/activity";
 import { workLogsFor } from "@/lib/mock/work";
 import { cn } from "@/lib/cn";
+import { diffLabel } from "@/lib/diff-label";
 import { ScrollRow } from "@/components/ui/scroll-row";
+import { StatFigure } from "@/components/ui/stat-figure";
 
 // 가상 데이터라 매 요청마다 "지금" 기준으로 다시 계산한다
 export const dynamic = "force-dynamic";
@@ -45,7 +47,10 @@ type Stat = {
   href: string;
   /** 0보다 클 때 주의 색 (결석만) */
   alert?: boolean;
+  /** 어제 같은 시각 숫자. 없으면 비교를 보여 주지 않는다 */
+  prev?: number;
 };
+
 
 // 홈에는 최근 메시지 몇 건만
 const UNREAD_LIMIT = 5;
@@ -58,6 +63,29 @@ const SHORTCUTS: { label: string; navLabel: string }[] = [
   { label: "메시지", navLabel: "메시지" },
 ];
 
+/**
+ * 그날 그 시각까지의 학원 숫자 (가상 데이터). 오늘 숫자와 "어제 같은 시각" 숫자를 같은 방법으로 센다 (10/9 어제 대비)
+ * 저녁에 낼 제출·출결은 그 시각까지 일어난 것만 센다
+ */
+function dayNumbers(day: string, time: string) {
+  const records = mockAttendanceFor(day, time);
+  const key = `${day} ${time}`;
+  const enrolled = students.filter((s) => s.status === "enrolled");
+  const days = enrolled.map((s) => studentDay(s, records, day, time));
+  const subs = submissions.filter((s) => s.submittedAt.startsWith(day) && s.submittedAt <= key);
+  const workLogs = workLogsFor(day, time);
+  return {
+    days,
+    // 오늘 수업이 있는 학생 수, 등원한 학생 수(하원 포함)
+    withClass: days.filter((d) => d.slot !== null).length,
+    arrived: days.filter((d) => d.status === "checked_in" || d.status === "checked_out").length,
+    absent: days.filter((d) => d.status === "absent").length,
+    subs,
+    makeups: makeups.filter((m) => m.date === day && m.status !== "cancelled").sort((a, b) => a.start.localeCompare(b.start)),
+    inTeachers: teachers.filter((t) => workLogs.some((w) => w.teacherId === t.id && w.checkInAt !== null)),
+  };
+}
+
 export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   // 시연용: /admin?at=16:00 처럼 시각을 지정하면 그 시각 기준으로 보여 준다 (가상 데이터 단계에서만)
   const { at } = await searchParams;
@@ -65,28 +93,23 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
 
   const date = todayKST();
   const now = demoTime ?? nowTimeKST();
-  const records = mockAttendanceFor(date, now);
   // 지금(또는 시연 시각)보다 뒤에 낸 제출은 아직 없는 것으로 본다 (가상 데이터가 저녁 제출을 미리 만들어 둠)
   const nowKey = `${date} ${now}`;
+  const today = dayNumbers(date, now);
+  // 어제 같은 시각. 어제가 수업 없는 날(일요일 등)이면 비교가 뜻이 없으니 보여 주지 않는다
+  const y = dayNumbers(addDays(date, -1), now);
+  const yesterday = y.withClass > 0 ? y : null;
 
   // 현황 계산
   const unread = unreadCount();
   const unreadList = messages
     .filter((m) => (m.from === "parent" || m.from === "student") && !m.read)
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt));
-  const todaySubs = submissions.filter((s) => s.submittedAt.startsWith(date) && s.submittedAt <= nowKey);
+  const todaySubs = today.subs;
   const todaySubStudents = new Set(todaySubs.map((s) => s.studentId)).size;
-  const todayMakeups = makeups
-    .filter((m) => m.date === date && m.status !== "cancelled")
-    .sort((a, b) => a.start.localeCompare(b.start));
+  const todayMakeups = today.makeups;
   const enrolled = students.filter((s) => s.status === "enrolled");
-  const days = enrolled.map((s) => studentDay(s, records, date, now));
-  const notArrived = days.filter((d) => d.status === "not_arrived");
-
-  // 오늘 출결 요약: 오늘 수업이 있는 학생 수, 등원한 학생 수(하원 포함)
-  const withClass = days.filter((d) => d.slot !== null).length;
-  const arrived = days.filter((d) => d.status === "checked_in" || d.status === "checked_out").length;
-  const absent = days.filter((d) => d.status === "absent").length;
+  const notArrived = today.days.filter((d) => d.status === "not_arrived");
 
   // 숙제 미제출: 어제·오늘 낸 숙제 중 아직 제출하지 않은 재원생 (원장님이 매일 챙길 숫자)
   const weekStart = addDays(date, -1);
@@ -100,8 +123,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   );
 
   // 선생님 출근 현황 (TCH-04)
-  const workLogs = workLogsFor(date, now);
-  const inTeachers = teachers.filter((t) => workLogs.some((w) => w.teacherId === t.id && w.checkInAt !== null));
+  const inTeachers = today.inTeachers;
   const outTeachers = teachers.filter((t) => !inTeachers.includes(t));
 
   // 확인할 일: 원장님이 지금 처리할 것만, 숫자가 있는 것만 (10/5 시안 "빨간 펜 출석부"에서 가져옴)
@@ -139,26 +161,55 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   ].filter((t) => t.value > 0);
 
   // 오늘 학원: 운영 숫자 한눈에
+  // prev = 어제 같은 시각 숫자 (어제보다 +1 / -2 / 어제와 같음). 보강은 날마다 달라 비교하지 않는다
   const stats: Stat[] = [
-    { label: "출결 (등원 / 수업)", value: arrived, total: withClass, href: hrefOf("오늘 출결") },
-    { label: "결석", value: absent, href: hrefOf("오늘 출결"), alert: true },
-    { label: `숙제 제출 (학생 ${todaySubStudents}명)`, value: todaySubs.length, href: hrefOf("숙제 관리") },
+    { label: "출결 (등원 / 수업)", value: today.arrived, total: today.withClass, prev: yesterday?.arrived, href: hrefOf("오늘 출결") },
+    { label: "결석", value: today.absent, prev: yesterday?.absent, href: hrefOf("오늘 출결"), alert: true },
+    { label: `숙제 제출 (학생 ${todaySubStudents}명)`, value: todaySubs.length, prev: yesterday?.subs.length, href: hrefOf("숙제 관리") },
     { label: "보강", value: todayMakeups.length, href: "/admin/makeups" },
-    { label: "선생님 출근", value: inTeachers.length, total: teachers.length, href: hrefOf("선생님 출퇴근") },
+    { label: "선생님 출근", value: inTeachers.length, total: teachers.length, prev: yesterday?.inTeachers.length, href: hrefOf("선생님 출퇴근") },
   ];
 
   return (
-    // 상자 없이 여백·구역 라벨·1px 선으로 나눈다 (10/7, docs/design.md 1-1)
-    // 순서 (10/8 UI 다듬기): 날짜 줄(작게) → 확인할 일(가장 큰 숫자) → 오늘 숫자 줄 → 바로가기 → 보강·메시지. 위 네 묶음 사이는 24px
+    // 상자 없이 구역 라벨 + 여백으로만 나눈다 (10/7, docs/design.md 1-1)
+    // 순서 (10/9 화면별 참고 패턴, 요약 숫자 먼저): 날짜 줄 → 오늘 학원 숫자 줄(28px) → 확인할 일 → 바로가기 → 보강·메시지
     <div className="space-y-12">
-      <section aria-labelledby="todo-title" className="space-y-6">
+      <div className="space-y-8">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <h1 className="text-lead font-bold tracking-tight tabular">{formatDateKo(date)}</h1>
           <p className="text-caption text-sub tabular">{now} 기준</p>
         </div>
 
-        {/* 확인할 일: 처리할 것만, 숫자가 있는 것만. 숫자는 화면에서 가장 크게 (32px) */}
-        <div>
+        {/* 오늘 학원: 숫자 크게(28px) + 라벨 작게(13px 회색) 위아래, 항목 사이 넓은 간격, 선·상자 없음. 0은 회색, 결석만 빨강 */}
+        {/* 숫자는 새로 불러와 바뀌면 굴러간다(StatFigure). 아래에 어제 같은 시각과 비교 한 줄 */}
+        <section aria-labelledby="today-title">
+          <h2 id="today-title" className="text-caption font-semibold text-sub">
+            오늘 학원
+          </h2>
+          <ul className="mt-3 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-5 sm:gap-x-10">
+            {stats.map((st, i) => {
+              const diff = diffLabel(st.value, st.prev);
+              return (
+                <li key={st.label} className={cn(i === stats.length - 1 && i % 2 === 0 && "max-sm:col-span-2")}>
+                  <Link href={st.href} className="press-card -mx-2 flex flex-col gap-1 rounded-[var(--radius-control)] px-2 py-1.5 hover:bg-bg">
+                    <span className="leading-none">
+                      <StatFigure
+                        value={st.value}
+                        className={cn("text-figure-md font-bold", st.value === 0 ? "text-sub" : st.alert ? "text-brand" : "text-ink")}
+                      />
+                      {st.total !== undefined && <span className="text-caption text-sub tabular"> / {st.total}</span>}
+                    </span>
+                    <span className="text-caption text-sub">{st.label}</span>
+                    {diff && <span className="text-caption text-sub tabular">{diff}</span>}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {/* 확인할 일: 처리할 것만, 숫자가 있는 것만 */}
+        <section aria-labelledby="todo-title">
           <h2 id="todo-title" className="text-caption font-semibold text-sub">
             확인할 일 <span className="tabular">{todos.length}</span>
           </h2>
@@ -169,7 +220,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
               {todos.map((t) => (
                 <li key={t.title}>
                   <Link href={t.href} className="group press-card -mx-2 flex items-center gap-4 px-2 py-3.5 hover:bg-bg">
-                    <span className="w-24 shrink-0 text-figure-lg leading-none font-bold whitespace-nowrap text-ink tabular">
+                    <span className="w-24 shrink-0 text-figure-md leading-none font-bold whitespace-nowrap text-ink tabular">
                       {t.value}
                       <span className="ml-0.5 text-caption font-normal text-sub">{t.unit}</span>
                     </span>
@@ -186,41 +237,9 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
               ))}
             </ul>
           )}
-        </div>
+        </section>
 
-        {/* 오늘 학원: 숫자 22px + 라벨 작게, 칸 사이 세로선. 0은 회색, 결석만 빨강. 휴대폰은 2칸씩, 마지막 칸은 가로로 꽉 (10/8 UI 5) */}
-        <div>
-          <h2 className="sr-only">오늘 학원</h2>
-          <ul className="grid grid-cols-2 border-y border-line-soft sm:grid-cols-5">
-            {stats.map((st, i) => (
-              <li
-                key={st.label}
-                className={cn(
-                  "border-line-soft",
-                  i % 2 === 1 && "max-sm:border-l",
-                  i >= 2 && "max-sm:border-t",
-                  i === stats.length - 1 && i % 2 === 0 && "max-sm:col-span-2",
-                  "sm:border-l sm:first:border-l-0",
-                )}
-              >
-                {/* 줄의 첫 칸은 왼쪽 여백 없이 (날짜·라벨과 같은 선에 맞춘다): 휴대폰은 왼쪽 칸, 넓은 화면은 1번째 */}
-                <Link
-                  href={st.href}
-                  className={cn("press-card flex h-full flex-col gap-1 px-4 py-3.5 hover:bg-bg sm:px-5", i % 2 === 0 && "max-sm:pl-0", i === 0 && "sm:pl-0")}
-                >
-                  <span className={cn("text-figure-sm leading-none font-semibold tabular", st.value === 0 ? "text-sub" : st.alert ? "text-brand" : "text-ink")}>
-                    {st.value}
-                    {st.total !== undefined && <span className="text-caption font-normal text-sub"> / {st.total}</span>}
-                  </span>
-                  <span className="text-caption text-sub">{st.label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* 바로가기 (HOME-02): 상단 메뉴와 겹쳐 자주 쓰는 4개만, 테두리 있는 작은 알약 (10/8) */}
-        {/* 좁은 화면에서는 한 줄로 옆으로 밀어 본다 (두 줄로 넘어가지 않게) */}
+        {/* 바로가기 (HOME-02): 상단 메뉴와 겹쳐 자주 쓰는 4개만, 테두리 있는 작은 알약 (10/8). 좁은 화면은 한 줄로 밀어 본다 */}
         <nav aria-label="바로가기">
           <ScrollRow>
             <div className="flex w-max items-center gap-2">
@@ -237,7 +256,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
             </div>
           </ScrollRow>
         </nav>
-      </section>
+      </div>
 
       {/* 오늘 보강 · 읽지 않은 메시지: 2단 목록, 행 사이 구분선만 */}
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-10">
