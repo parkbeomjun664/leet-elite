@@ -59,16 +59,23 @@ const teacherOf = (studentId: string) => {
   return teachers.find((t) => t.id === cls?.teacherId) ?? teachers[0];
 };
 
-// 학부모가 보내는 연락 문구 (학생마다 조금씩 다르게)
-const PARENT_NOTES = [
-  "선생님, 이번 주 목요일은 학교 행사가 있어서 30분 늦을 것 같아요.",
-  "오늘 병원 예약이 있어서 수업 끝나기 20분 전에 데리러 가겠습니다.",
-  "숙제 사진이 잘 안 올라간다고 하는데 확인 부탁드려요.",
+// 학부모가 보내는 연락 (학생마다 내용·시각·보낸 사람이 다르게. 시연 화면에 같은 문장이 반복되지 않게, 10/9)
+// at: 오늘이면 "HH:MM", 지난날이면 [며칠 전, "HH:MM"]
+const PARENT_NOTES: { body: string; at: string | [number, string]; who: "어머님" | "아버님" }[] = [
+  { body: "선생님, 이번 주 목요일은 학교 행사가 있어서 30분 늦을 것 같아요.", at: "09:12", who: "어머님" },
+  { body: "오늘 병원 예약이 있어서 수업 끝나기 20분 전에 데리러 가겠습니다.", at: "11:47", who: "어머님" },
+  { body: "숙제 사진이 앱에서 잘 안 올라간다고 하는데 확인 부탁드려요.", at: [1, "21:30"], who: "아버님" },
+  { body: "다음 주 월요일부터 수업 시간을 30분 늦출 수 있을까요?", at: "08:05", who: "어머님" },
+  { body: "단원 평가 결과 나오면 따로 상담 가능할까요?", at: [2, "19:40"], who: "어머님" },
+  { body: "아이가 감기 기운이 있어서 오늘은 쉬게 하려고 합니다.", at: "13:15", who: "아버님" },
+  { body: "교재를 학원에 두고 왔다고 하네요. 내일 챙겨 갈게요.", at: [1, "18:22"], who: "어머님" },
+  { body: "방학 특강 일정 나오면 미리 알려 주세요.", at: "10:33", who: "어머님" },
 ];
 
 // 학생별 학부모 대화 (앞쪽 학생 일부). read = 받는 쪽이 읽었는지
 // 시연용 학생·학부모(s001, 쌍둥이 s003·s004)는 학원에서 온 안 읽은 메시지가 보이도록 넣는다
 const DEMO_IDS = new Set(["s001", "s003", "s004"]);
+let noteNo = 0; // 학부모 연락을 넣을 때마다 다음 문구로 (같은 문장이 반복되지 않게)
 export const messages: Message[] = students.slice(0, 40).flatMap((s, i) => {
   if (i % 3 !== 0 && !DEMO_IDS.has(s.id)) return [];
   const teacher = teacherOf(s.id);
@@ -77,7 +84,9 @@ export const messages: Message[] = students.slice(0, 40).flatMap((s, i) => {
     { id: `m-${s.id}-2`, studentId: s.id, room: "family", from: "parent", senderName: `${s.name} 어머님`, body: "감사합니다! 집에서도 칭찬해 줄게요.", sentAt: `${d(-2)} 19:05`, read: true },
   ];
   if (i % 2 === 0) {
-    list.push({ id: `m-${s.id}-3`, studentId: s.id, room: "family", from: "parent", senderName: `${s.name} 어머님`, body: PARENT_NOTES[i % PARENT_NOTES.length], sentAt: `${today} 09:12`, read: false });
+    const note = PARENT_NOTES[noteNo++ % PARENT_NOTES.length];
+    const sentAt = typeof note.at === "string" ? `${today} ${note.at}` : `${d(-note.at[0])} ${note.at[1]}`;
+    list.push({ id: `m-${s.id}-3`, studentId: s.id, room: "family", from: "parent", senderName: `${s.name} ${note.who}`, body: note.body, sentAt, read: false });
   }
   if (DEMO_IDS.has(s.id)) {
     list.push({ id: `m-${s.id}-4`, studentId: s.id, room: "family", from: "teacher", senderName: teacher.nickname, body: "이번 주 금요일에 단원 평가가 있어요. 3과 단어를 복습해 오세요.", sentAt: `${today} 13:40`, read: false });

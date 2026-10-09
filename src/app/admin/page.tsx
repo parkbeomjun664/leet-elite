@@ -1,8 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { studentDay } from "@/lib/attendance";
-import { addDays, addMinutes, formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
+import { addDays, addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
 import { ADMIN_NAV } from "@/lib/nav";
 import { mockAttendanceFor, studentById, students, teacherById, teachers } from "@/lib/mock/data";
 import { homework, makeups, messages, submissionOf, submissions, unreadCount } from "@/lib/mock/activity";
@@ -34,6 +33,8 @@ type Todo = {
   title: string;
   value: number;
   unit: string;
+  /** 분모 (예: 숙제 미제출 64 / 120명). 없으면 숫자만 */
+  total?: number;
   detail: string;
   href: string;
 };
@@ -102,6 +103,11 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   const todaySubs = today.subs;
   const todaySubStudents = new Set(todaySubs.map((s) => s.studentId)).size;
   const todayMakeups = today.makeups;
+  // 다음 보강: 내일 이후 예정 2건 (오늘 보강이 3건 미만일 때 이어서 보여 준다)
+  const nextMakeups = makeups
+    .filter((m) => m.date > date && m.status === "scheduled")
+    .sort((x, y) => (x.date + x.start).localeCompare(y.date + y.start))
+    .slice(0, 2);
   const enrolled = students.filter((s) => s.status === "enrolled");
   const notArrived = today.days.filter((d) => d.status === "not_arrived");
 
@@ -115,6 +121,8 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       return !sub || sub.submittedAt > nowKey;
     }),
   );
+  // 분모: 어제·오늘 숙제를 받은 재원생 수 ("64 / 120명")
+  const hwAssigned = enrolled.filter((s) => recentHomework.some((h) => h.studentIds.includes(s.id))).length;
 
   // 선생님 출근 현황 (TCH-04)
   const inTeachers = today.inTeachers;
@@ -148,6 +156,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
     {
       title: "숙제 미제출 (어제·오늘)",
       value: missingHw.length,
+      total: hwAssigned,
       unit: "명",
       detail: namesPreview(missingHw.map((s) => s.name)),
       href: hrefOf("숙제 관리"),
@@ -169,7 +178,8 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
     <div className="space-y-12">
       <div className="space-y-8">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h1 className="text-lead font-bold tracking-tight tabular">{formatDateKo(date)}</h1>
+          {/* "10월 9일 (금)" + 작은 회색 "12:59 기준" (연도는 뺀다) */}
+          <h1 className="text-lead font-bold tracking-tight tabular">{formatDateKo(date).replace(/^\d+년 /, "")}</h1>
           <p className="text-caption text-sub tabular">{now} 기준</p>
         </div>
 
@@ -179,10 +189,11 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           <h2 id="today-title" className="text-caption font-semibold text-sub">
             오늘 학원
           </h2>
-          <ul className="mt-3 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-5 sm:gap-x-10">
+          {/* 넓은 화면: 균등 배치 대신 왼쪽 정렬, 항목 간격 약 160px (라벨이 길면 그만큼 넓어진다). 휴대폰: 2칸씩 */}
+          <ul className="mt-3 grid grid-cols-2 gap-x-6 gap-y-5 sm:flex sm:flex-wrap sm:gap-x-0">
             {stats.map((st, i) => {
               return (
-                <li key={st.label} className={cn(i === stats.length - 1 && i % 2 === 0 && "max-sm:col-span-2")}>
+                <li key={st.label} className={cn("sm:min-w-[160px] sm:pr-6", i === stats.length - 1 && i % 2 === 0 && "max-sm:col-span-2")}>
                   <Link href={st.href} className="press-card -mx-2 flex flex-col gap-1 rounded-[var(--radius-control)] px-2 py-1.5 hover:bg-bg">
                     <span className="leading-none">
                       <StatFigure
@@ -211,8 +222,10 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
               {todos.map((t) => (
                 <li key={t.title}>
                   <Link href={t.href} className="group press-card -mx-2 flex items-center gap-4 px-2 py-3.5 hover:bg-bg">
-                    <span className="w-24 shrink-0 text-figure-md leading-none font-bold whitespace-nowrap text-ink tabular">
+                    <span className="w-28 shrink-0 text-figure-md leading-none font-bold whitespace-nowrap text-ink tabular">
                       {t.value}
+                      {/* 분모가 있으면 "64 / 120명" */}
+                      {t.total !== undefined && <span className="text-caption font-normal text-sub"> / {t.total}</span>}
                       <span className="ml-0.5 text-caption font-normal text-sub">{t.unit}</span>
                     </span>
                     <span className="min-w-0 flex-1 md:flex md:items-baseline md:gap-3">
@@ -230,7 +243,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           )}
         </section>
 
-        {/* 바로가기 (HOME-02): 상단 메뉴와 겹쳐 자주 쓰는 4개만, 테두리 있는 작은 알약 (10/8). 좁은 화면은 한 줄로 밀어 본다 */}
+        {/* 바로가기 (HOME-02): 상단 메뉴와 겹쳐 자주 쓰는 4개만. 옅은 회색 바탕 알약(테두리 없음, 거르기 알약과 같은 모양, 10/9). 좁은 화면은 한 줄로 밀어 본다 */}
         <nav aria-label="바로가기">
           <ScrollRow>
             <div className="flex w-max items-center gap-2">
@@ -239,7 +252,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                 <Link
                   key={m.label}
                   href={hrefOf(m.navLabel)}
-                  className="press inline-flex h-11 items-center rounded-full border border-line px-4 text-caption font-semibold text-ink hover:bg-bg md:h-9"
+                  className="press inline-flex h-11 items-center rounded-full bg-line-soft px-4 text-caption font-semibold text-ink hover:bg-line md:h-9"
                 >
                   {m.label}
                 </Link>
@@ -257,29 +270,21 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
             <p className="mt-3 text-body text-sub">오늘 보강 일정이 없어요.</p>
           ) : (
             <ul className="mt-2 divide-y divide-line-soft border-t border-line-soft">
-              {todayMakeups.map((m) => {
-                const s = studentById(m.studentId);
-                const t = teacherById(m.teacherId);
-                const end = addMinutes(m.start, m.durationMin);
-                const state = m.status === "done" || end <= now ? "끝남" : m.start <= now ? "진행 중" : "예정";
-                return (
-                  <li key={m.id} className="flex items-center gap-3 py-3">
-                    <span className="w-24 shrink-0 text-body tabular">
-                      {m.start}~{end}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="text-body font-bold text-ink">{s?.name ?? "알 수 없음"}</span>
-                      <span className="ml-2 text-caption text-sub">{[s?.school, s?.grade].filter(Boolean).join(" ")}</span>
-                      <span className="block truncate text-caption text-sub">
-                        {m.reason}
-                        {t && ` · ${t.nickname}`}
-                      </span>
-                    </span>
-                    <Badge tone={state === "진행 중" ? "ok" : state === "예정" ? "info" : "neutral"}>{state}</Badge>
-                  </li>
-                );
-              })}
+              {todayMakeups.map((m) => (
+                <MakeupRow key={m.id} m={m} timeLabel={`${m.start}~${addMinutes(m.start, m.durationMin)}`} state={makeupState(m, now)} />
+              ))}
             </ul>
+          )}
+          {/* 오늘 보강이 3건 미만이면 다음 보강을 2건까지 이어서 보여 준다 */}
+          {todayMakeups.length < 3 && nextMakeups.length > 0 && (
+            <>
+              <h3 className="mt-5 text-caption font-semibold text-sub">다음 보강</h3>
+              <ul className="mt-2 divide-y divide-line-soft border-t border-line-soft">
+                {nextMakeups.map((m) => (
+                  <MakeupRow key={m.id} m={m} timeLabel={`${shortDay(m.date)} ${m.start}`} state="예정" />
+                ))}
+              </ul>
+            </>
           )}
         </section>
 
@@ -289,25 +294,18 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
             <p className="mt-3 text-body text-sub">읽지 않은 메시지가 없어요.</p>
           ) : (
             <ul className="mt-2 divide-y divide-line-soft border-t border-line-soft">
-              {unreadList.slice(0, UNREAD_LIMIT).map((m) => {
-                const s = studentById(m.studentId);
-                const [day, time] = m.sentAt.split(" ");
-                return (
-                  <li key={m.id}>
-                    {/* TODO: 해당 학생 대화방으로 바로 이동 */}
-                    <Link href="/admin/messages" className="press-card -mx-2 flex items-start gap-3 px-2 py-3 hover:bg-bg">
-                      <span className="w-20 shrink-0 pt-0.5 text-body text-sub tabular">
-                        {day === date ? time : `${day.slice(5).replace("-", "/")} ${time}`}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="text-body font-bold text-ink">{s?.name ?? "알 수 없음"}</span>
-                        <span className="ml-2 text-caption text-sub">{m.senderName}</span>
-                        <span className="block truncate text-body">{m.body.split("\n")[0]}</span>
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
+              {unreadList.slice(0, UNREAD_LIMIT).map((m) => (
+                <li key={m.id}>
+                  {/* 메신저 목록처럼: 보낸 사람(굵게) ··· 시각 / 본문 한 줄. TODO: 해당 학생 대화방으로 바로 이동 */}
+                  <Link href="/admin/messages" className="press-card -mx-2 block px-2 py-3 hover:bg-bg">
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="truncate text-body font-bold text-ink">{m.senderName}</span>
+                      <span className="shrink-0 text-caption text-sub tabular">{messageTime(m.sentAt, date)}</span>
+                    </span>
+                    <span className="mt-0.5 block truncate text-body text-sub">{m.body.split("\n")[0]}</span>
+                  </Link>
+                </li>
+              ))}
               {unreadList.length > UNREAD_LIMIT && (
                 <li className="py-3 text-caption text-sub">
                   외 <span className="tabular">{unreadList.length - UNREAD_LIMIT}</span>건은 메시지 화면에서 확인
@@ -318,6 +316,52 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         </section>
       </div>
     </div>
+  );
+}
+
+/** "2026-10-12" → "10/12 (월)" */
+function shortDay(day: string): string {
+  return `${Number(day.slice(5, 7))}/${Number(day.slice(8, 10))} (${WEEKDAY_KO[weekdayOf(day)]})`;
+}
+
+/** 오늘 보강의 지금 상태 (회색 글자): 진행 중 / 30분 후 (1시간 안) / 예정 / 끝남 */
+function makeupState(m: { start: string; durationMin: number; status: string }, now: string): string {
+  const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const end = addMinutes(m.start, m.durationMin);
+  if (m.status === "done" || end <= now) return "끝남";
+  if (m.start <= now) return "진행 중";
+  const left = toMin(m.start) - toMin(now);
+  return left <= 60 ? `${left}분 후` : "예정";
+}
+
+/** 메시지 시각: 오늘이면 "오전 9:12"·"오후 1:40", 어제면 "어제", 그 전이면 "10/7" */
+function messageTime(sentAt: string, today: string): string {
+  const [day, time] = sentAt.split(" ");
+  if (day === today) {
+    const h = Number(time.slice(0, 2));
+    return `${h < 12 ? "오전" : "오후"} ${h % 12 === 0 ? 12 : h % 12}:${time.slice(3, 5)}`;
+  }
+  if (day === addDays(today, -1)) return "어제";
+  return `${Number(day.slice(5, 7))}/${Number(day.slice(8, 10))}`;
+}
+
+/** 보강 한 줄: 시각 · 학생(학교 학년) · 사유·선생님 · 오른쪽 상태(회색 글자) */
+function MakeupRow({ m, timeLabel, state }: { m: { studentId: string; teacherId: string; reason: string }; timeLabel: string; state: string }) {
+  const s = studentById(m.studentId);
+  const t = teacherById(m.teacherId);
+  return (
+    <li className="flex items-center gap-3 py-3">
+      <span className="w-32 shrink-0 text-body whitespace-nowrap tabular">{timeLabel}</span>
+      <span className="min-w-0 flex-1">
+        <span className="text-body font-bold text-ink">{s?.name ?? "알 수 없음"}</span>
+        <span className="ml-2 text-caption text-sub">{[s?.school, s?.grade].filter(Boolean).join(" ")}</span>
+        <span className="block truncate text-caption text-sub">
+          {m.reason}
+          {t && ` · ${t.nickname}`}
+        </span>
+      </span>
+      <span className="shrink-0 text-caption text-sub tabular">{state}</span>
+    </li>
   );
 }
 
