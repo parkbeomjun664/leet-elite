@@ -42,6 +42,8 @@ type Props = {
   messagesHref: string;
   /** 주소로 바로 열 학생 (?student=s010&mode=attendance) */
   initialOpen?: { studentId: string; mode: "detail" | "attendance" } | null;
+  /** 처음부터 골라 둘 반 (?class=, 원장님 새 홈의 반 블록에서 들어올 때) */
+  initialClassId?: string | null;
 };
 
 // 상태는 글자색 + 작은 점으로만 구분한다 (칸 바탕은 모두 흰색, 10/1 단순화)
@@ -65,13 +67,13 @@ const STATUS_FILTERS: { key: "all" | DayStatus; label: string }[] = [
   { key: "absent", label: "결석" },
 ];
 
-export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classes, days: initialDays, details, homeworkHref, messagesHref, initialOpen = null }: Props) {
+export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classes, days: initialDays, details, homeworkHref, messagesHref, initialOpen = null, initialClassId = null }: Props) {
   // null = 아직 모름(첫 화면). 이때는 휴대폰용 창을 띄우지 않는다
   // 769 이상 = 목록 + 오른쪽 상세 나란히, 768 이하 = 목록 → 상세 화면 전환 (10/9)
   const media = useMediaReady("(min-width: 769px)");
   const isDesktop = media === true;
   const searchParams = useSearchParams();
-  const [classId, setClassId] = useState<string>("all");
+  const [classId, setClassId] = useState<string>(initialClassId && classes.some((c) => c.id === initialClassId) ? initialClassId : "all");
   const [status, setStatus] = useState<"all" | DayStatus>("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());

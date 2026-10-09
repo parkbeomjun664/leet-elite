@@ -17,7 +17,11 @@ const toChat = (m: Message) => ({ id: m.id, from: m.from, senderName: m.senderNa
 
 export default async function TeacherHome({ searchParams }: PageProps<"/teacher">) {
   // 시연용: /teacher?at=18:00 처럼 시각을 지정하면 그 시각 기준으로 보여 준다 (가상 데이터 단계에서만)
-  const { at, student, mode } = await searchParams;
+  const { at, student, mode, class: classParam } = await searchParams;
+  // 원장님 새 홈에서 반 블록을 누르면 /teacher?class=c3 → 그 반을 골라 둔 채로 연다 (10/9).
+  // 가상 데이터 단계라 그 반의 담당 선생님 화면으로 보여 준다 (로그인 연결 뒤에는 원장님 출결 화면 11/2로)
+  const openClass = typeof classParam === "string" ? classById(classParam) : null;
+  const viewTeacher = (openClass && teacherById(openClass.teacherId)) || demoTeacher;
   const demoTime = typeof at === "string" && /^\d{2}:\d{2}$/.test(at) ? at : null;
 
   const date = todayKST();
@@ -27,10 +31,10 @@ export default async function TeacherHome({ searchParams }: PageProps<"/teacher"
   const nowKey = `${date} ${now}`;
 
   // 선생님은 담당 반 학생만 본다 (HOME-07). 재원생만
-  const myStudents = studentsOfTeacher(demoTeacher.id).filter((s) => s.status === "enrolled");
+  const myStudents = studentsOfTeacher(viewTeacher.id).filter((s) => s.status === "enrolled");
   const days = myStudents.map((s) => studentDay(s, records, date, now)).sort(sortDays);
   const myClasses = classes
-    .filter((c) => c.teacherId === demoTeacher.id)
+    .filter((c) => c.teacherId === viewTeacher.id)
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((c) => ({ id: c.id, name: c.name }));
 
@@ -63,6 +67,7 @@ export default async function TeacherHome({ searchParams }: PageProps<"/teacher"
       dateLabel={formatDateKo(date)}
       nowTime={now}
       demo={demoTime !== null}
+      initialClassId={openClass?.id ?? null}
       classes={myClasses}
       days={days}
       details={details}
