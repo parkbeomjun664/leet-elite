@@ -18,7 +18,7 @@ test("출결 입력: 시간은 24시간제 시·분 선택칸", async ({ page })
   await expect(page.getByRole("combobox", { name: "등원 시각 분" })).toHaveValue(minuteBefore);
 });
 
-test("선생님 홈 숫자 줄: 고른 칸만 검정 28px, 나머지 회색 22px, 결석은 빨강 (10/8 UI 7)", async ({ page }) => {
+test("선생님 홈 숫자 줄: 고른 칸만 검정 28px·버건디 밑줄, 나머지 회색 22px (10/9 저녁: 결석도 빨강 글씨 없이)", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await gotoReady(page, "/teacher?at=16:00");
   const group = page.getByRole("group", { name: "상태로 보기" });
@@ -32,12 +32,10 @@ test("선생님 홈 숫자 줄: 고른 칸만 검정 28px, 나머지 회색 22px
     );
   const ink = "rgb(26, 26, 26)";
   const sub = "rgb(106, 105, 102)";
-  const brand = "rgb(179, 38, 46)";
   let cells = await read();
   for (const c of cells) {
     expect(c.size).toBe(c.pressed === "true" ? "28px" : "22px");
-    if (c.label === "결석" && c.n > 0) expect(c.color).toBe(brand);
-    else expect(c.color).toBe(c.pressed === "true" ? ink : sub);
+    expect(c.color).toBe(c.pressed === "true" ? ink : sub);
   }
   // 다른 칸을 고르면 그 칸이 커지고 검정
   await group.getByRole("button", { name: /등원/ }).first().click();

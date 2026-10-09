@@ -53,8 +53,8 @@ export function StudentDetail({
   onOpenAttendance: () => void;
 }) {
   return (
-    // 흰 바탕, 구역 사이는 얇은 구분선만 (박스 없이, 10/2)
-    <div className="divide-y divide-line-soft">
+    // 흰 바탕, 구역 사이는 8px 옅은 회색 띠 (박스 없이 면으로 나눈다, 10/9 저녁. 그전에는 1px 선)
+    <div className="divide-y-8 divide-bg">
       <TodaySection day={day} onOpenAttendance={onOpenAttendance} />
       <InfoSection day={day} data={data} />
       <MessageSection key={`msg-${day.student.id}`} data={data} messagesHref={messagesHref} />

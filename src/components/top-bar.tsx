@@ -14,7 +14,7 @@ type Props = {
 };
 
 // 흰 한 줄 메뉴: 로고 · 메뉴 · 사용자 (10/1: 버건디 메뉴 바 대신 가볍게)
-// 선택된 메뉴는 검정 글씨 + 검정 밑줄 (10/5 디자인 시스템: 빨강은 로고·주 버튼에만)
+// 선택된 메뉴는 검정 글씨 + 버건디 밑줄 (10/9 저녁: 브랜드 색을 선택 표시에, docs/design.md 1번)
 // PC(lg 이상)는 한 줄, 좁은 화면은 메뉴를 둘째 줄에서 옆으로 밀어 본다. 하위 메뉴는 그 아래 줄
 export function TopBar({ nav, roleLabel, userName }: Props) {
   const pathname = usePathname();
@@ -37,7 +37,7 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
                 }`}
               >
                 {item.label}
-                {active && <span className="absolute inset-x-3.5 bottom-0 h-0.5 bg-ink" />}
+                {active && <span className="absolute inset-x-3.5 bottom-0 h-0.5 bg-brand" />}
               </Link>
             </li>
           );
@@ -99,7 +99,7 @@ export function SubNav({ nav }: { nav: NavItem[] }) {
                   }`}
                 >
                   {child.label}
-                  {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-ink" />}
+                  {active && <span className="absolute inset-x-4 bottom-0 h-0.5 bg-brand" />}
                 </Link>
               </li>
             );

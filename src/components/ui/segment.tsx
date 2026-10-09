@@ -38,11 +38,13 @@ export function Segment({
       aria-pressed={active}
       className={cn(
         "press h-11 rounded-[var(--radius-control)] px-3 text-body md:h-9", // 휴대폰은 손가락 44px
-        active ? "bg-ink font-semibold text-white" : "text-ink hover:bg-bg",
+        // 고른 알약 = 브랜드 버건디 (10/9 저녁, 선택 표시는 버건디)
+        active ? "bg-brand font-semibold text-white" : "text-ink hover:bg-bg",
       )}
     >
       {children}
-      {count !== undefined && <span className="ml-1 text-caption tabular opacity-70">{count}</span>}
+      {/* 개수: 고른 알약(버건디)에서는 흰 글씨 그대로(반투명이면 대비가 모자람), 나머지는 회색 */}
+      {count !== undefined && <span className={cn("ml-1 text-caption tabular", active ? "font-normal" : "text-sub")}>{count}</span>}
     </button>
   );
 }

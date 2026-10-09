@@ -48,7 +48,7 @@ type Props = {
 const STATUS_COLOR: Record<DayStatus, string> = {
   checked_in: "text-ok",
   checked_out: "text-info",
-  absent: "text-brand",
+  absent: "text-ink", // 결석 줄은 분홍 바탕으로 구분 (빨강 글씨는 선택 표시와 겹쳐 쓰지 않는다, 10/9 저녁)
   not_arrived: "text-warn",
   upcoming: "text-sub",
   no_class: "text-sub",
@@ -286,14 +286,14 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
                     onClick={() => setStatus(active && f.key !== "all" ? "all" : f.key)}
                     className="press py-3 text-center hover:bg-bg/60"
                   >
-                    <StatNumber value={count(f.key)} active={active} alert={f.key === "absent"} />
+                    <StatNumber value={count(f.key)} active={active} />
                     <span className={cn("text-caption whitespace-nowrap", active ? "font-semibold text-ink" : "text-sub")}>{f.label}</span>
                   </button>
                 );
               })}
               <span
                 aria-hidden
-                className="absolute bottom-0 left-0 h-0.5 w-1/6 bg-ink transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]"
+                className="absolute bottom-0 left-0 h-0.5 w-1/6 bg-brand transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)]"
                 style={{ transform: `translateX(${STATUS_FILTERS.findIndex((f) => f.key === status) * 100}%)` }}
               />
             </div>
@@ -339,7 +339,8 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
               role="region"
               aria-label="학생 목록"
               className={cn(
-                "min-h-0 max-[768px]:-mx-4 min-[769px]:overflow-y-auto min-[769px]:border-r min-[769px]:border-line-soft min-[769px]:[scrollbar-gutter:stable]",
+                // 목록은 옅은 회색 면, 오른쪽 상세는 흰 면으로 나눈다 (선만으로는 경계가 모호해서, 10/9 저녁)
+                "min-h-0 bg-bg max-[768px]:-mx-4 min-[769px]:overflow-y-auto min-[769px]:border-r min-[769px]:border-line-soft min-[769px]:[scrollbar-gutter:stable]",
                 selecting && "pb-24",
               )}
             >
@@ -372,7 +373,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
                     type="button"
                     onClick={() => setShowNoClass((v) => !v)}
                     aria-expanded={showNoClass}
-                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-bg/60"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-line-soft/60"
                   >
                     <span className="text-caption font-semibold text-sub">
                       오늘 수업 없음 <span className="tabular">{others.length}명</span>
@@ -502,7 +503,7 @@ function RowSection({ title, items, empty, ...handlers }: { title: string; items
   return (
     <section aria-label={title}>
       {/* 묶음 이름: 목록을 스크롤해도 맨 위에 붙어 있다 */}
-      <h2 className="sticky top-0 z-[1] flex items-baseline gap-2 bg-card px-4 pt-3 pb-1.5 text-caption font-semibold text-sub">
+      <h2 className="sticky top-0 z-[1] flex items-baseline gap-2 bg-bg px-4 pt-3 pb-1.5 text-caption font-semibold text-sub">
         {title} <span className="tabular">{items.length}</span>
       </h2>
       <ul>
@@ -515,7 +516,7 @@ function RowSection({ title, items, empty, ...handlers }: { title: string; items
 }
 
 // 학생 한 줄 (상담 데스크 패턴, 10/9): 이름(굵게)·학교 / 시각 한 줄(회색) / 오른쪽 상태 + 지금 할 일 버튼 하나
-// 고른 줄 = 옅은 회색 + 왼쪽 3px 진한 선. 결석 줄 = 결석 전용 분홍 (분홍은 결석에만, src/lib/status-colors.ts)
+// 고른 줄 = 흰 바탕 + 왼쪽 3px 버건디 선 (회색 목록 위에서 떠 보임). 결석 줄 = 결석 전용 분홍 (분홍은 결석에만, src/lib/status-colors.ts)
 function Row({ day, selecting, selected, focusId, onToggle, onOpen, onAttendance, onCheckOut }: { day: StudentDay } & RowHandlers) {
   const { student, slot, record, status } = day;
   const checked = selected.has(student.id);
@@ -528,10 +529,10 @@ function Row({ day, selecting, selected, focusId, onToggle, onOpen, onAttendance
         "border-b border-line-soft transition-[background-color,box-shadow] duration-[var(--duration-fast)]",
         "[&:has(>div>button:first-of-type:active)]:bg-black/[0.04]",
         focused || checked
-          ? "bg-bg shadow-[inset_3px_0_0_var(--color-ink)]"
+          ? "bg-card shadow-[inset_3px_0_0_var(--color-brand)]"
           : statusColor(status) === "alert"
             ? STATUS_CARD_CLASS.alert
-            : "hover:bg-bg/60",
+            : "hover:bg-line-soft/60",
       )}
     >
       <div className="flex items-center gap-3 px-4 py-2.5">
@@ -591,7 +592,7 @@ function RowButton({ onClick, children }: { onClick: () => void; children: React
 }
 
 /** 위쪽 숫자 하나: 바뀌면 세어 가며 바뀐다. 0이면 회색 (색은 확인할 숫자에만, 10/5) */
-function StatNumber({ value, active, alert }: { value: number; active: boolean; alert: boolean }) {
+function StatNumber({ value, active }: { value: number; active: boolean }) {
   const shown = useAnimatedNumber(value);
   // 칸 높이는 큰 숫자(28px) 기준으로 고정해서 고른 칸이 바뀌어도 줄이 출렁이지 않게
   return (
@@ -600,7 +601,7 @@ function StatNumber({ value, active, alert }: { value: number; active: boolean; 
         className={cn(
           "tabular transition-colors duration-[var(--duration-fast)]",
           active ? "text-figure-md font-bold" : "text-figure-sm font-semibold",
-          alert && value > 0 ? "text-brand" : active ? "text-ink" : "text-sub",
+          active ? "text-ink" : "text-sub",
         )}
       >
         {shown}
