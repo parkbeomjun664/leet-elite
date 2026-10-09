@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { CapsLockNote } from "@/components/caps-lock-note";
+import { useCapsLock } from "@/lib/use-caps-lock";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { login } from "./actions";
@@ -47,6 +49,8 @@ export function LoginForm({ next }: { next?: string }) {
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   // 눈 아이콘을 누르고 있는 동안만 비밀번호를 보여 준다 (떼면 다시 가림)
   const [peek, setPeek] = useState(false);
+  // Caps Lock이 켜져 있으면 비밀번호 칸 아래에 알려 준다 (대문자로 들어가 틀리는 일 방지)
+  const { capsLock, capsLockHandlers } = useCapsLock();
   const show = () => setPeek(true);
   const hide = () => setPeek(false);
 
@@ -110,9 +114,14 @@ export function LoginForm({ next }: { next?: string }) {
               placeholder="비밀번호"
               required
               aria-invalid={errors.password ? true : undefined}
-              aria-describedby={errors.password ? "login-password-error" : undefined}
+              aria-describedby={[errors.password && "login-password-error", capsLock && "login-caps-lock"].filter(Boolean).join(" ") || undefined}
               onInput={() => clearError("password")}
-              onBlur={(e) => setError("password", check("password", e.currentTarget.value))}
+              onKeyDown={capsLockHandlers.onKeyDown}
+              onKeyUp={capsLockHandlers.onKeyUp}
+              onBlur={(e) => {
+                capsLockHandlers.onBlur();
+                setError("password", check("password", e.currentTarget.value));
+              }}
               className={cn(field, "pr-14")}
             />
           </label>
@@ -145,6 +154,7 @@ export function LoginForm({ next }: { next?: string }) {
           </button>
         </div>
         <FieldError id="login-password-error" message={errors.password} />
+        <CapsLockNote id="login-caps-lock" on={capsLock} />
       </div>
 
       {/* 로그인 상태 유지 (AUTH-06). 기본은 꺼짐: 공용 PC·태블릿에서 다음 사람이 그대로 로그인되지 않게

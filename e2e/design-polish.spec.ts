@@ -146,3 +146,20 @@ test("준비 중 화면: 아이콘 40px, 본문 위에서 30% 지점, [홈으로
   await page.getByRole("main").getByRole("link", { name: "홈으로" }).click();
   await expect(page).toHaveURL(/\/admin$/);
 });
+
+test("로그인: Caps Lock이 켜져 있으면 비밀번호 칸 아래에 알려 준다 (10/9)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/login");
+  const pw = page.getByPlaceholder("비밀번호");
+  const note = page.getByText("Caps Lock이 켜져 있어요");
+  await pw.click();
+  await page.keyboard.press("a");
+  await expect(note).toHaveCount(0);
+  // 실제 Caps Lock 키 상태는 시험 브라우저에서 바꿀 수 없어, Caps Lock이 켜진 키 입력을 보낸다
+  await pw.evaluate((el) => el.dispatchEvent(new KeyboardEvent("keyup", { key: "B", bubbles: true, modifierCapsLock: true } as KeyboardEventInit)));
+  await expect(note).toBeVisible();
+  await expect(pw).toHaveAttribute("aria-describedby", /login-caps-lock/);
+  // 칸을 떠나면 안내를 지운다
+  await page.getByPlaceholder("휴대폰 번호 또는 아이디").click();
+  await expect(note).toHaveCount(0);
+});
