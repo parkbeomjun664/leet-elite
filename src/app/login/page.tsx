@@ -9,10 +9,10 @@ const KAKAO_CHANNEL_URL = "http://pf.kakao.com/_zayZX/chat";
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { next } = await searchParams;
-  // 위쪽에 아주 옅은 버건디 빛이 도는 흰 화면. 로고 → 입력칸 → 문의 안내를 가운데 한 줄로
+  // 위에서 옅은 버건디 빛이 번지고 아래 모서리에 따뜻한 빛이 도는 화면 (globals.css bg-login-glow, 10/9 저녁). 로고 → 입력칸 → 문의 안내를 가운데 한 줄로
   // 세로는 가운데보다 조금 위 (아래 여백 10vh). 휴대폰 키보드가 올라와도 입력칸이 화면 위쪽이라 가려지지 않는다
   return (
-    <main className="flex min-h-dvh flex-col items-center bg-card justify-center px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(10vh+env(safe-area-inset-bottom,0px))]">
+    <main className="bg-login-glow flex min-h-dvh flex-col items-center justify-center px-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(10vh+env(safe-area-inset-bottom,0px))]">
       <div className="w-full max-w-[400px]">
         {/* 학원 로고 (가운데) */}
         <h1 className="flex items-center justify-center gap-2.5">

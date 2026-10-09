@@ -188,6 +188,24 @@
     transform: scale(0.97);
   }
 }
+/* 로그인 화면 바탕: 위에서 번지는 버건디 빛(13%) + 왼쪽 아래 옅은 버건디·오른쪽 아래 옅은 주황빛 (10/9 저녁, 딱딱한 업무 화면처럼 보이지 않게)
+   토큰 색만 섞어 쓴다. 빛이 아주 천천히(20초) 오가고, 움직임 줄이기 설정이면 멈춘다(아래 reduce 규칙) */
+@utility bg-login-glow {
+  background-color: var(--color-card);
+  background-image:
+    radial-gradient(75% 60% at 50% -10%, color-mix(in srgb, var(--color-brand) 13%, transparent) 0%, transparent 72%),
+    radial-gradient(50% 45% at 0% 100%, color-mix(in srgb, var(--color-brand) 8%, transparent) 0%, transparent 70%),
+    radial-gradient(55% 50% at 100% 100%, color-mix(in srgb, var(--color-warn) 7%, transparent) 0%, transparent 70%);
+  background-size: 140% 140%, 120% 120%, 120% 120%;
+  background-position: 50% 0%, 0% 100%, 100% 100%;
+  animation: login-glow 20s ease-in-out infinite alternate;
+}
+@keyframes login-glow {
+  to {
+    background-position: 45% 6%, 6% 92%, 92% 96%;
+  }
+}
+
 /* 옆으로 밀어 보는 줄의 운영체제 스크롤바 숨김 (src/components/ui/scroll-row.tsx, 10/8) */
 @utility scrollbar-none {
   scrollbar-width: none;
