@@ -13,6 +13,54 @@ import { cn } from "@/lib/cn";
 
 const STATE_TEXT: Record<BlockState, string> = { "수업 중": "font-semibold text-ok", 예정: "text-sub", 끝남: "text-sub" };
 
+/** 지금 시각 (1분마다). 화면 데이터도 1분마다 새로 불러온다(등원 숫자). 시연 시각이면 멈춘다 */
+export function useClock(initialNow: string, demo: boolean) {
+  const router = useRouter();
+  const [now, setNow] = useState(initialNow);
+  useEffect(() => {
+    if (demo) return;
+    const t = setInterval(() => {
+      setNow(nowTimeKST());
+      router.refresh();
+    }, 60_000);
+    return () => clearInterval(t);
+  }, [demo, router]);
+  return now;
+}
+
+/** 날짜 + 한 문장 요약 "지금 N개 반 수업 중 · 등원 x/y · 결석 z" (숫자 칸 없이). PC·휴대폰 같이 쓴다 */
+export function DaySummary({ dateLabel, blocks, now, titleId }: { dateLabel: string; blocks: Block[]; now: string; titleId?: string }) {
+  const s = summarize(blocks, now);
+  return (
+    <header>
+      <h1 id={titleId} className="text-lead font-bold tracking-tight tabular">
+        {dateLabel}
+      </h1>
+      <p className="mt-1 text-heading text-ink tabular" aria-live="polite">
+        {/* 줄이 바뀌어도 "결석 0"처럼 한 덩어리는 붙어 있게 */}
+        <span className="whitespace-nowrap">
+          {s.inClass > 0 ? (
+            <>
+              지금 <b className="font-bold">{s.inClass}개 반</b> 수업 중
+            </>
+          ) : (
+            <span className="text-sub">지금 수업 중인 반은 없어요</span>
+          )}
+        </span>
+        <span className="text-sub"> · </span>
+        <span className="whitespace-nowrap">
+          등원 <b className="font-bold">{s.arrived}</b>
+          <span className="text-sub">/{s.total}</span>
+        </span>
+        <span className="text-sub"> · </span>
+        <span className="whitespace-nowrap">
+          결석 <b className="font-bold">{s.absent}</b>
+        </span>
+      </p>
+    </header>
+  );
+}
+
 export function TodayTimeline({
   dateLabel,
   blocks,
@@ -24,18 +72,7 @@ export function TodayTimeline({
   initialNow: string; // "HH:MM"
   demo: boolean; // 시연 시각이면 시계를 멈춘다
 }) {
-  const router = useRouter();
-  const [now, setNow] = useState(initialNow);
-  useEffect(() => {
-    if (demo) return;
-    const t = setInterval(() => {
-      setNow(nowTimeKST());
-      router.refresh();
-    }, 60_000);
-    return () => clearInterval(t);
-  }, [demo, router]);
-
-  const s = summarize(blocks, now);
+  const now = useClock(initialNow, demo);
   // 지금 가로선 자리: 아직 시작하지 않은 첫 블록 바로 앞
   const nowIndex = (() => {
     const i = blocks.findIndex((b) => b.start > now);
@@ -44,33 +81,7 @@ export function TodayTimeline({
 
   return (
     <section aria-labelledby="timeline-title" className="space-y-6">
-      {/* 날짜 + 한 문장 요약 (숫자 칸 없이) */}
-      <header>
-        <h1 id="timeline-title" className="text-lead font-bold tracking-tight tabular">
-          {dateLabel}
-        </h1>
-        <p className="mt-1 text-heading text-ink tabular" aria-live="polite">
-          {/* 줄이 바뀌어도 "결석 0"처럼 한 덩어리는 붙어 있게 */}
-          <span className="whitespace-nowrap">
-            {s.inClass > 0 ? (
-              <>
-                지금 <b className="font-bold">{s.inClass}개 반</b> 수업 중
-              </>
-            ) : (
-              <span className="text-sub">지금 수업 중인 반은 없어요</span>
-            )}
-          </span>
-          <span className="text-sub"> · </span>
-          <span className="whitespace-nowrap">
-            등원 <b className="font-bold">{s.arrived}</b>
-            <span className="text-sub">/{s.total}</span>
-          </span>
-          <span className="text-sub"> · </span>
-          <span className="whitespace-nowrap">
-            결석 <b className="font-bold">{s.absent}</b>
-          </span>
-        </p>
-      </header>
+      <DaySummary dateLabel={dateLabel} blocks={blocks} now={now} titleId="timeline-title" />
 
       {blocks.length === 0 ? (
         <p className="text-body text-sub">오늘은 수업이 없어요.</p>

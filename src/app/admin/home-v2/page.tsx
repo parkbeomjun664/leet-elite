@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MobileHome } from "@/components/admin/mobile-home";
 import { TodayTimeline } from "@/components/admin/today-timeline";
 import { TodoPanel } from "@/components/admin/todo-panel";
 import { loadHomeV2 } from "@/lib/admin/home-v2-data";
@@ -21,16 +22,24 @@ export default async function AdminHomeV2({ searchParams }: PageProps<"/admin/ho
   const date = todayKST();
   const now = demoTime ?? nowTimeKST();
   const { blocks, todos } = loadHomeV2(date, now);
+  const dateLabel = formatDateKo(date).replace(/^\d+년 /, "");
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
-      <TodayTimeline dateLabel={formatDateKo(date).replace(/^\d+년 /, "")} blocks={blocks} initialNow={now} demo={demoTime !== null} />
-      {/* 오른쪽 처리할 일: 스크롤해도 위에 붙어 있다 */}
-      <aside className="hidden lg:block">
-        <div className="sticky top-6 max-h-[calc(100dvh-48px)] overflow-y-auto [scrollbar-gutter:stable]">
-          <TodoPanel items={todos} />
-        </div>
-      </aside>
-    </div>
+    <>
+      {/* 휴대폰·태블릿(1024 미만): 요약 · 처리할 일 한 줄 · 지금 수업 중 · 다음 수업 */}
+      <div className="lg:hidden">
+        <MobileHome dateLabel={dateLabel} blocks={blocks} initialNow={now} demo={demoTime !== null} todoCount={todos.length} />
+      </div>
+      {/* PC: 가운데 타임라인 + 오른쪽 처리할 일 */}
+      <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
+        <TodayTimeline dateLabel={dateLabel} blocks={blocks} initialNow={now} demo={demoTime !== null} />
+        {/* 오른쪽 처리할 일: 스크롤해도 위에 붙어 있다 */}
+        <aside>
+          <div className="sticky top-6 max-h-[calc(100dvh-48px)] overflow-y-auto [scrollbar-gutter:stable]">
+            <TodoPanel items={todos} />
+          </div>
+        </aside>
+      </div>
+    </>
   );
 }

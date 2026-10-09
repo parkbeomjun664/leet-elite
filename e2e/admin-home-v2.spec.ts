@@ -11,7 +11,7 @@ test.describe("원장님 새 홈 PC", () => {
     const side = page.getByRole("navigation", { name: "주 메뉴" });
     await expect(side.getByRole("link")).toHaveCount(7);
     await expect(side.getByRole("link", { name: "홈" })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByText(/지금 .*수업 중|지금 수업 중인 반은 없어요/)).toBeVisible();
+    await expect(page.locator("p[aria-live]").filter({ visible: true })).toHaveText(/^(지금 \d+개 반 수업 중|지금 수업 중인 반은 없어요) · 등원 \d+\/\d+ · 결석 \d+$/);
 
     const timeline = page.getByRole("list", { name: "오늘 시간표" });
     const starts = await timeline.locator("li a > span:first-child > span:first-child").allInnerTexts();
@@ -52,5 +52,26 @@ test.describe("원장님 새 홈 PC", () => {
     await next.getByRole("button").click();
     await expect(page.getByTestId("toast")).toHaveAttribute("data-kind", "error");
     await expect(panel.getByText(title2, { exact: true })).toBeVisible();
+  });
+});
+
+test.describe("원장님 새 홈 휴대폰 375", () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+
+  test("요약 → 처리할 일 한 줄 → 지금 수업 중(미등원 이름) → 다음 수업, 아래 탭 5개", async ({ page }) => {
+    await gotoReady(page, "/admin/home-v2?at=16:00");
+    await expect(page.getByRole("heading", { name: /^지금 수업 중/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "다음 수업" })).toBeVisible();
+    const tabs = page.getByRole("navigation", { name: "아래 메뉴" }).getByRole("link");
+    await expect(tabs).toHaveCount(5);
+    await expect(tabs.first()).toHaveAttribute("aria-current", "page");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    // 처리할 일 한 줄 → 목록 화면
+    await page.getByRole("link", { name: /^처리할 일/ }).click();
+    await expect(page).toHaveURL(/\/admin\/home-v2\/todo/);
+    await expect(page.getByRole("heading", { level: 1, name: "처리할 일" })).toBeVisible();
+    // 더보기
+    await tabs.last().click();
+    await expect(page.getByRole("link", { name: "기존 홈 보기 (비교용)" })).toBeVisible();
   });
 });
