@@ -140,6 +140,10 @@ function BlockRow({ b, state }: { b: Block; state: BlockState }) {
             {b.absent > 0 && ` · 결석 ${b.absent}`}
           </span>
         </span>
+        {/* 늦게 시작하는 학생 (같은 반은 한 블록, 10/9) */}
+        {b.lateStarts.length > 0 && (
+          <span className="mt-1 block text-caption text-sub tabular">{b.lateStarts.map((l) => `${l.start} 시작 ${l.count}명`).join(" · ")}</span>
+        )}
       </>
     ) : (
       <>
@@ -162,7 +166,11 @@ function BlockRow({ b, state }: { b: Block; state: BlockState }) {
         </span>
         <span className="ml-[5px] flex shrink-0 self-stretch">{marker}</span>
         <span className="min-w-0 flex-1">{body}</span>
-        <span className={cn("shrink-0 pt-0.5 text-caption tabular", STATE_TEXT[state])}>{state}</span>
+        <span className="shrink-0 pt-0.5 text-right text-caption tabular">
+          <span className={cn("block", STATE_TEXT[state])}>{state}</span>
+          {/* 수업 중인데 아직 안 온 학생 → 주황 글씨 (처리할 일에도 들어간다) */}
+          {b.kind === "class" && state === "수업 중" && b.notArrived > 0 && <span className="mt-0.5 block font-semibold text-warn">미등원 {b.notArrived}</span>}
+        </span>
       </Link>
     </li>
   );

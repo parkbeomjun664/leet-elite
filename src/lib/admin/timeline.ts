@@ -1,5 +1,6 @@
 // 원장님 새 홈(10/9 v2)의 "오늘 시간표" 블록 계산. 화면에서 계산만 한다 (새 쿼리 없음)
-// 우리 DB는 반에 시작·종료 시간이 없고 학생마다 시간이 있다(CLS-01) → 오늘 수업 학생을 "반 + 30분 안에 몰린 시작 시각"으로 묶는다
+// 우리 DB는 반에 시작·종료 시간이 없고 학생마다 시간이 있다(CLS-01) → 오늘 수업 학생을 반별로 한 블록에 묶는다 (10/9 범준님: 같은 반은 한 블록)
+// 블록 시작 = 가장 이른 시작, 끝 = 가장 늦은 끝. 늦게 시작하는 학생은 "15:10 시작 1명"으로 따로 센다
 
 import type { DayStatus } from "@/lib/attendance";
 
@@ -7,7 +8,7 @@ export type TimelineStudent = { id: string; name: string; status: DayStatus; sta
 
 export type ClassBlock = {
   kind: "class";
-  id: string; // "c2-14:30"
+  id: string; // "c2"
   classId: string;
   className: string;
   teacherName: string | null;
@@ -16,7 +17,11 @@ export type ClassBlock = {
   students: TimelineStudent[];
   arrived: number; // 등원(하원 포함)
   absent: number;
+  /** 수업이 시작됐는데 아직 등원하지 않은 학생 (원장님이 챙길 숫자) */
+  notArrived: number;
   total: number;
+  /** 블록 시작보다 늦게 시작하는 학생: [{ start: "15:10", count: 1 }] */
+  lateStarts: { start: string; count: number }[];
 };
 
 export type MakeupBlock = {
@@ -32,9 +37,6 @@ export type MakeupBlock = {
 export type Block = ClassBlock | MakeupBlock;
 export type BlockState = "끝남" | "수업 중" | "예정";
 
-/** 같은 반 안에서 시작 시각이 이 분 안이면 한 블록으로 묶는다 */
-export const CLUSTER_MIN = 30;
-
 export const toMin = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
 
 /**
@@ -49,31 +51,38 @@ export function buildClassBlocks(
 
   const blocks: ClassBlock[] = [];
   for (const [classId, list] of byClass) {
-    const sorted = [...list].sort((a, b) => a.student.start.localeCompare(b.student.start) || a.student.name.localeCompare(b.student.name, "ko"));
-    let current: ClassBlock | null = null;
+    const sorted = [...list].sort((x, y) => x.student.start.localeCompare(y.student.start) || x.student.name.localeCompare(y.student.name, "ko"));
+    const first = sorted[0];
+    const block: ClassBlock = {
+      kind: "class",
+      id: classId,
+      classId,
+      className: first.className,
+      teacherName: first.teacherName,
+      start: first.student.start,
+      end: first.student.end,
+      students: [],
+      arrived: 0,
+      absent: 0,
+      notArrived: 0,
+      total: 0,
+      lateStarts: [],
+    };
     for (const e of sorted) {
-      if (!current || toMin(e.student.start) - toMin(current.start) > CLUSTER_MIN) {
-        current = {
-          kind: "class",
-          id: `${classId}-${e.student.start}`,
-          classId,
-          className: e.className,
-          teacherName: e.teacherName,
-          start: e.student.start,
-          end: e.student.end,
-          students: [],
-          arrived: 0,
-          absent: 0,
-          total: 0,
-        };
-        blocks.push(current);
+      const st = e.student;
+      block.students.push(st);
+      if (st.end > block.end) block.end = st.end;
+      block.total++;
+      if (st.status === "checked_in" || st.status === "checked_out") block.arrived++;
+      if (st.status === "absent") block.absent++;
+      if (st.status === "not_arrived") block.notArrived++;
+      if (st.start !== block.start) {
+        const late = block.lateStarts.find((l) => l.start === st.start);
+        if (late) late.count++;
+        else block.lateStarts.push({ start: st.start, count: 1 });
       }
-      current.students.push(e.student);
-      if (e.student.end > current.end) current.end = e.student.end;
-      current.total++;
-      if (e.student.status === "checked_in" || e.student.status === "checked_out") current.arrived++;
-      if (e.student.status === "absent") current.absent++;
     }
+    blocks.push(block);
   }
   return blocks;
 }

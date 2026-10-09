@@ -84,8 +84,9 @@ export function AdminChrome({ nav, userName, children }: { nav: NavItem[]; userN
           </ul>
         </nav>
         <div className="flex shrink-0 items-center justify-between gap-2 border-t border-line-soft px-5 py-4 text-body">
-          <span className="min-w-0 truncate text-sub">
-            <b className="font-semibold text-ink">{userName}</b> 원장님
+          <span className="min-w-0 leading-tight">
+            <b className="block truncate font-semibold text-ink">{userName}</b>
+            <span className="text-caption text-sub">원장님</span>
           </span>
           <LogoutButton className="shrink-0 text-caption" />
         </div>
