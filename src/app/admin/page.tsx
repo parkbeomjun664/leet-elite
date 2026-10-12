@@ -130,8 +130,8 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         </nav>
       </section>
 
-      {/* 3. 오늘 보강 · 읽지 않은 학부모 메시지 (PC 2단, 휴대폰은 위아래) */}
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+      {/* 3. 오늘 보강 · 읽지 않은 학부모 메시지 (PC 2단은 두 카드 높이를 같게 — 10/12 범준님: 안정감, 휴대폰은 위아래) */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section aria-labelledby="makeup-title" className={CARD}>
           <ListHeader id="makeup-title" title="오늘 보강" count={todayMakeups.length} href="/admin/makeups" />
           {todayMakeups.length === 0 ? (

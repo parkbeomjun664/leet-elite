@@ -24,6 +24,8 @@ test.describe("원장님 홈 PC", () => {
     expect(await y(summary)).toBeLessThan(await y(checks));
     expect(await y(checks)).toBeLessThan(await y(makeupCard));
     expect(Math.round(await y(makeupCard))).toBe(Math.round(await y(msgCard))); // PC 2단
+    // 두 카드 높이도 같다 (10/12 안정감)
+    expect(Math.round((await makeupCard.boundingBox())!.height)).toBe(Math.round((await msgCard.boundingBox())!.height));
     // 카드 사이 16px
     const sb = (await summary.boundingBox())!;
     expect(Math.round((await y(checks)) - (sb.y + sb.height))).toBe(16);
