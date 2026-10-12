@@ -36,7 +36,7 @@ export function MobileHome({
       {/* 처리할 일 한 줄 → 목록 화면 */}
       <Link
         href="/admin/todo"
-        className="press-card -mx-1 flex min-h-14 items-center justify-between gap-3 rounded-[var(--radius-mcard)] bg-bg px-4"
+        className="press-card flex min-h-14 items-center justify-between gap-3 rounded-[var(--radius-mcard)] bg-bg px-4"
       >
         <span className="text-body font-semibold text-ink">
           처리할 일 <span className={cn("tabular", todoCount > 0 ? "text-ink" : "text-sub")}>{todoCount}</span>
@@ -66,9 +66,10 @@ export function MobileHome({
                     </span>
                     {b.teacherName && <span className="block text-caption text-sub">{b.teacherName}</span>}
                     <span className="mt-3 flex items-center gap-2">
-                      <AttendanceBar counts={b} className="flex-1" />
+                      <AttendanceBar counts={b} className="flex-1 bg-line" />
                       <span className="shrink-0 text-caption text-sub tabular">
                         등원 <b className="font-bold text-ink">{b.arrived}</b>/{b.total}
+                        {b.absent > 0 && <> · 결석 {b.absent}</>}
                       </span>
                     </span>
                     {/* 아직 안 온 학생 이름 (주황) */}
@@ -86,14 +87,14 @@ export function MobileHome({
       </section>
 
       {/* 다음 수업: 짧은 목록 */}
-      <section aria-labelledby="next-title">
+      <section aria-labelledby="next-title" className="rounded-[var(--radius-mcard)] bg-bg px-4 pt-3 pb-1">
         <h2 id="next-title" className="text-caption font-semibold text-sub">
           다음 수업
         </h2>
         {next.length === 0 ? (
-          <p className="mt-2 text-body text-sub">오늘 남은 수업이 없어요.</p>
+          <p className="mt-2 pb-2 text-body text-sub">오늘 남은 수업이 없어요.</p>
         ) : (
-          <ul className="mt-1 divide-y divide-line-soft">
+          <ul className="mt-1 divide-y divide-line">
             {next.map((b) => (
               <li key={b.id}>
                 <Link href={b.kind === "class" ? `/teacher?class=${b.classId}` : "/admin/makeups"} className="press-card -mx-1 flex items-center gap-3 rounded-[var(--radius-control)] px-1 py-3">

@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { nowTimeKST } from "@/lib/date";
 import { AttendanceBar, AttendanceLegend } from "@/components/admin/attendance-bar";
 import { blockState, summarize, type Block, type BlockState } from "@/lib/admin/timeline";
 import { cn } from "@/lib/cn";
 
-
 // 원장님 새 홈 가운데 "오늘 시간표" (10/9 v2): 시간순 반 블록 + 보강(◇) + 지금 시각 가로선
 // 1분마다 지금 시각을 다시 재고(상태·가로선) 화면 데이터도 새로 불러온다(등원 숫자). 시연 시각(?at=)이면 멈춰 둔다
+// 10/12 범준님: 요약·시간표·처리할 일을 옅은 회색 면(bg)으로 나누고 면 사이는 넓게(24px), 면 안 여백은 줄여 한 화면에 보이게
 
 const STATE_TEXT: Record<BlockState, string> = { "수업 중": "font-semibold text-ok", 예정: "text-sub", 끝남: "text-sub" };
 
@@ -33,9 +33,10 @@ export function useClock(initialNow: string, demo: boolean) {
 export function DaySummary({ dateLabel, blocks, now, titleId }: { dateLabel: string; blocks: Block[]; now: string; titleId?: string }) {
   const s = summarize(blocks, now);
   return (
-    <header>
-      <div className="flex items-baseline justify-between gap-3">
-        <h1 id={titleId} className="text-lead font-bold tracking-tight tabular">
+    <header className="rounded-[var(--radius-card)] bg-bg px-4 py-4 lg:flex lg:items-end lg:justify-between lg:gap-10 lg:px-6 lg:py-5">
+      <div className="min-w-0">
+      <div className="flex items-baseline justify-between gap-3 lg:justify-start">
+        <h1 id={titleId} className="text-title font-bold tracking-tight tabular">
           {dateLabel}
         </h1>
         <span className="text-caption text-sub tabular">{now} 기준</span>
@@ -61,9 +62,10 @@ export function DaySummary({ dateLabel, blocks, now, titleId }: { dateLabel: str
           결석 <b className="font-bold">{s.absent}</b>
         </span>
       </p>
-      {/* 오늘 전체 출결: 상태별 색 막대 + 범례 (10/12, 한 가지 초록 대신) */}
-      <div className="mt-3 space-y-2">
-        <AttendanceBar counts={{ arrived: s.arrived, notArrived: s.notArrived, absent: s.absent, total: s.total }} className="h-2.5" />
+      </div>
+      {/* 오늘 전체 출결: 등원만 채운 막대 + 범례 (등원 → 미등원 → 결석 → 수업 전) */}
+      <div className="mt-3 space-y-2 lg:mt-0 lg:w-[420px] lg:shrink-0">
+        <AttendanceBar counts={{ arrived: s.arrived, notArrived: s.notArrived, absent: s.absent, total: s.total }} className="h-2.5 bg-line" />
         <AttendanceLegend counts={{ arrived: s.arrived, notArrived: s.notArrived, absent: s.absent, total: s.total }} />
       </div>
     </header>
@@ -75,11 +77,13 @@ export function TodayTimeline({
   blocks,
   initialNow,
   demo,
+  aside,
 }: {
   dateLabel: string; // "10월 9일 (금)"
   blocks: Block[]; // 시간순
   initialNow: string; // "HH:MM"
   demo: boolean; // 시연 시각이면 시계를 멈춘다
+  aside?: ReactNode; // 오른쪽 칸 (처리할 일)
 }) {
   const now = useClock(initialNow, demo);
   // 지금 가로선 자리: 아직 시작하지 않은 첫 블록 바로 앞
@@ -89,17 +93,17 @@ export function TodayTimeline({
   })();
 
   return (
-    <section aria-labelledby="timeline-title" className="space-y-5">
+    <div className="space-y-6">
       <DaySummary dateLabel={dateLabel} blocks={blocks} now={now} titleId="timeline-title" />
-
+      <div className="grid grid-cols-[minmax(0,1fr)_360px] items-start gap-6">
+      <section aria-labelledby="timeline-list-title" className="rounded-[var(--radius-card)] bg-bg px-4 pt-4 pb-3">
+      <h2 id="timeline-list-title" className="mb-1 px-2 text-caption font-semibold text-sub">오늘 시간표</h2>
       {blocks.length === 0 ? (
-        <p className="text-body text-sub">오늘은 수업이 없어요.</p>
+        <p className="px-2 pb-2 text-body text-sub">오늘은 수업이 없어요.</p>
       ) : (
-        <div>
-        <h2 className="mb-1 text-caption font-semibold text-sub">오늘 시간표</h2>
         <ol aria-label="오늘 시간표" className="relative">
           {/* 세로선 (시각 칸 오른쪽) */}
-          <span aria-hidden className="absolute top-2 bottom-2 left-[71px] w-px bg-line-soft" />
+          <span aria-hidden className="absolute top-2 bottom-2 left-[71px] w-px bg-line" />
           {blocks.map((b, i) => (
             <Fragment key={b.id}>
               {i === nowIndex && <NowLine now={now} />}
@@ -108,9 +112,11 @@ export function TodayTimeline({
           ))}
           {nowIndex === blocks.length && <NowLine now={now} />}
         </ol>
-        </div>
       )}
-    </section>
+      </section>
+      {aside}
+      </div>
+    </div>
   );
 }
 
@@ -119,7 +125,7 @@ function NowLine({ now }: { now: string }) {
   return (
     <li aria-label={`지금 ${now}`} className="relative flex items-center gap-2 py-1.5">
       <span className="w-[60px] shrink-0 text-right text-caption font-bold text-ink tabular">{now}</span>
-      <span aria-hidden className="relative z-[1] ml-[5px] size-2.5 shrink-0 rounded-full bg-ink ring-4 ring-card" />
+      <span aria-hidden className="relative z-[1] ml-[5px] size-2.5 shrink-0 rounded-full bg-ink ring-4 ring-bg" />
       <span aria-hidden className="h-px flex-1 bg-ink" />
     </li>
   );
@@ -131,12 +137,12 @@ function BlockRow({ b, state }: { b: Block; state: BlockState }) {
   const marker =
     b.kind === "makeup" ? (
       // 보강은 마름모
-      <span aria-hidden className={cn("relative z-[1] mt-1.5 size-2.5 shrink-0 rotate-45 ring-4 ring-card", done ? "bg-line" : "border-[1.5px] border-ink bg-card")} />
+      <span aria-hidden className={cn("relative z-[1] mt-1.5 size-2.5 shrink-0 rotate-45 ring-4 ring-bg", done ? "bg-line" : "border-[1.5px] border-ink bg-card")} />
     ) : (
       <span
         aria-hidden
         className={cn(
-          "relative z-[1] mt-1.5 size-2.5 shrink-0 rounded-full ring-4 ring-card",
+          "relative z-[1] mt-1.5 size-2.5 shrink-0 rounded-full ring-4 ring-bg",
           state === "수업 중" ? "bg-ok" : done ? "bg-line" : "border-[1.5px] border-sub bg-card",
         )}
       />
@@ -149,18 +155,16 @@ function BlockRow({ b, state }: { b: Block; state: BlockState }) {
           <span className={cn("truncate text-body font-bold", done ? "text-sub" : "text-ink")}>{b.className}</span>
           {b.teacherName && <span className="truncate text-caption text-sub">{b.teacherName}</span>}
         </span>
-        {/* 출결 막대: 상태별 색 (등원 초록 · 미등원 주황 · 결석 분홍 · 수업 전 회색) */}
-        <span className="mt-1.5 flex items-center gap-2">
-          <AttendanceBar counts={b} className="w-40 shrink-0" />
-          <span className="text-caption text-sub tabular">
-            등원 {b.arrived}/{b.total}
-            {b.absent > 0 && ` · 결석 ${b.absent}`}
+        {/* 출결 막대(등원만 채움) + 숫자 + 늦게 시작 */}
+        <span className="mt-1 flex items-center gap-2">
+          <AttendanceBar counts={b} className="w-28 shrink-0 bg-line" />
+          <span className="min-w-0 truncate text-caption text-sub tabular">
+            등원 <b className="font-semibold text-ink">{b.arrived}</b>/{b.total}
+            {b.absent > 0 && <> · 결석 {b.absent}</>}
+            {/* 늦게 시작하는 학생 (같은 반은 한 블록, 10/9) */}
+            {b.lateStarts.length > 0 && <> · {b.lateStarts.map((l) => `${l.start} 시작 ${l.count}명`).join(" · ")}</>}
           </span>
         </span>
-        {/* 늦게 시작하는 학생 (같은 반은 한 블록, 10/9) */}
-        {b.lateStarts.length > 0 && (
-          <span className="mt-1 block text-caption text-sub tabular">{b.lateStarts.map((l) => `${l.start} 시작 ${l.count}명`).join(" · ")}</span>
-        )}
       </>
     ) : (
       <>
@@ -176,7 +180,7 @@ function BlockRow({ b, state }: { b: Block; state: BlockState }) {
   const href = b.kind === "class" ? `/teacher?class=${b.classId}` : "/admin/makeups";
   return (
     <li>
-      <Link href={href} className="press-card -mx-2 flex items-start gap-2 rounded-[var(--radius-control)] px-2 py-2.5 hover:bg-bg">
+      <Link href={href} className="press-card -mx-2 flex items-start gap-2 rounded-[var(--radius-control)] px-2 py-2 hover:bg-card">
         <span className="w-[60px] shrink-0 text-right leading-tight tabular">
           <span className={cn("block text-body font-semibold", done ? "text-sub" : "text-ink")}>{b.start}</span>
           <span className="block text-caption text-sub">~{b.end}</span>

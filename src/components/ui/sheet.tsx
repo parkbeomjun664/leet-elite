@@ -20,6 +20,7 @@ export function useSheetClose() {
  * 목록을 보면서 한 명을 다루는 창 (학생 상세, 출결 입력, 학생 정보 수정)
  * - 768px 이상: 오른쪽에서 밀려 들어오는 패널
  * - 768px 미만(휴대폰): 아래에서 올라오는 하단 시트. 손잡이·제목 줄을 아래로 끌면 닫힌다 (docs/design.md 8번)
+ * - placement="bottom": PC에서도 아래에서 올라오는 시트(가운데 440px). 짧은 확인 창용 (10/12 알림 보내기)
  * Esc 또는 바깥을 누르면 닫힌다. 열림 250ms, 닫힘 150ms 뒤 onClose를 부른다
  */
 export function Sheet({
@@ -31,6 +32,7 @@ export function Sheet({
   footer,
   width = "md:w-[520px]",
   closeRef,
+  placement = "side",
 }: {
   open: boolean;
   onClose: () => void;
@@ -41,6 +43,8 @@ export function Sheet({
   width?: string;
   /** 창 밖(footer 등)에서 닫힘 움직임을 거쳐 닫을 때: closeRef.current?.() */
   closeRef?: Ref<() => void>;
+  /** side = 768 이상 오른쪽 패널(기본) / bottom = 어디서나 하단 시트 */
+  placement?: "side" | "bottom";
 }) {
   const panel = useRef<HTMLDivElement>(null);
   // 창 이름 = 제목 (화면 읽기 프로그램이 "새 학생 등록, 대화 상자"처럼 읽는다, 10/12)
@@ -135,11 +139,16 @@ export function Sheet({
             "absolute flex flex-col bg-card shadow-float outline-none transition-[opacity,translate] duration-[var(--duration-fast)] ease-[var(--ease-in)]",
             // 휴대폰: 하단 시트 (화면 92%까지, 위 모서리 12)
             "inset-x-0 bottom-0 max-h-[92dvh] rounded-t-[var(--radius-mcard)] animate-sheet-up",
-            // 768 이상: 오른쪽 패널
-            // 폭은 width(기본 md:w-[520px])가 정한다. 여기서 폭을 또 주면 cn()이 겹친 클래스를 정리하지 않아 어긋난다
-            "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:rounded-none md:animate-sheet-in",
-            closing && "translate-y-full md:translate-x-6 md:translate-y-0 md:opacity-0",
-            width,
+            placement === "side"
+              ? cn(
+                  // 768 이상: 오른쪽 패널
+                  // 폭은 width(기본 md:w-[520px])가 정한다. 여기서 폭을 또 주면 cn()이 겹친 클래스를 정리하지 않아 어긋난다
+                  "md:inset-y-0 md:right-0 md:left-auto md:max-h-none md:rounded-none md:animate-sheet-in",
+                  closing && "translate-y-full md:translate-x-6 md:translate-y-0 md:opacity-0",
+                  width,
+                )
+              : // 어디서나 하단 시트: 768 이상은 가운데 440px
+                cn("md:mx-auto md:max-w-[440px]", closing && "translate-y-full"),
           )}
         >
           {/* 손잡이: 하단 시트에서만 보이고, 끌어서 닫는다 */}

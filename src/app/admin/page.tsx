@@ -11,8 +11,8 @@ export const metadata: Metadata = { title: "홈" };
 export const dynamic = "force-dynamic";
 
 /**
- * 원장님 새 홈 (10/9 비교용, 기존 /admin 은 그대로): "오늘 시간표가 중심인 홈"
- * PC(1024 이상) = 가운데 오늘 타임라인 + 오른쪽 처리할 일 320px / 휴대폰 = 지금 수업 중 · 다음 수업 · 처리할 일 한 줄(4단계)
+ * 원장님 홈 (10/9 v2 → 10/12 정식 홈): "오늘 시간표가 중심인 홈"
+ * PC(1024 이상) = 위 요약 + 왼쪽 오늘 타임라인 + 오른쪽 처리할 일 360px / 휴대폰 = 지금 수업 중 · 다음 수업 · 처리할 일 한 줄(4단계)
  * 데이터는 src/lib/admin/home-data.ts (기존 가상 데이터·계산 재사용, 새 쿼리 없음)
  */
 export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
@@ -30,15 +30,22 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       <div className="lg:hidden">
         <MobileHome dateLabel={dateLabel} blocks={blocks} initialNow={now} demo={demoTime !== null} todoCount={todos.length} />
       </div>
-      {/* PC: 가운데 타임라인 + 오른쪽 처리할 일 */}
-      <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
-        <TodayTimeline dateLabel={dateLabel} blocks={blocks} initialNow={now} demo={demoTime !== null} />
-        {/* 오른쪽 처리할 일: 스크롤해도 위에 붙어 있다 */}
-        <aside>
-          <div className="sticky top-6 max-h-[calc(100dvh-48px)] overflow-y-auto [scrollbar-gutter:stable]">
-            <TodoPanel items={todos} />
-          </div>
-        </aside>
+      {/* PC: 위 요약 면 → 아래 왼쪽 오늘 시간표 면 + 오른쪽 처리할 일 면 (면 사이 24px, 10/12) */}
+      <div className="hidden lg:block">
+        <TodayTimeline
+          dateLabel={dateLabel}
+          blocks={blocks}
+          initialNow={now}
+          demo={demoTime !== null}
+          aside={
+            // 오른쪽 처리할 일: 스크롤해도 위에 붙어 있다
+            <aside className="sticky top-6">
+              <div className="max-h-[calc(100dvh-48px)] overflow-y-auto rounded-[var(--radius-card)] bg-bg px-5 pt-4 pb-2 [scrollbar-gutter:stable]">
+                <TodoPanel items={todos} />
+              </div>
+            </aside>
+          }
+        />
       </div>
     </>
   );

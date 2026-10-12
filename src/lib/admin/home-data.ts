@@ -1,9 +1,10 @@
 import "server-only";
 import { studentDay } from "@/lib/attendance";
+import { classStartsToday, isHomeworkDue } from "@/lib/admin/homework-due";
 import { buildClassBlocks, sortBlocks, type Block } from "@/lib/admin/timeline";
 import { addDays, addMinutes } from "@/lib/date";
 import { homework, makeups, messages, submissionOf } from "@/lib/mock/activity";
-import { classById, mockAttendanceFor, studentById, students, teacherById } from "@/lib/mock/data";
+import { classById, guardiansOf, mockAttendanceFor, studentById, students, teacherById } from "@/lib/mock/data";
 
 // 원장님 홈 화면 데이터 (10/9 v2 → 10/12 원장님 홈으로 확정): 오늘 시간표 블록 + 처리할 일. PC 홈·휴대폰 홈·처리할 일 화면이 함께 쓴다
 // 지금은 가상 데이터(기존 계산 재사용, 새 쿼리 없음). 실제 DB 연결은 일별 계획의 각 기능 날에
@@ -17,6 +18,8 @@ export type TodoItem = {
   time?: string; // 오른쪽 위 회색
   action: "답장" | "알림" | "연락";
   href: string; // 줄을 누르면 가는 곳
+  /** 알림 받는 사람 (알림 버튼 확인 창에 보여 준다, 10/12): "최지안 보호자" · 2명 */
+  recipients?: { label: string; count: number };
 };
 
 const KIND_ORDER: TodoItem["kind"][] = ["notArrived", "absent", "message", "homework"];
@@ -77,6 +80,7 @@ export function loadAdminHome(date: string, now: string): { blocks: Block[]; tod
       detail: `${className(s.classIds[0])} · ${day.slot.start} 시작`,
       action: "알림",
       href: `/teacher?class=${s.classIds[0]}`,
+      recipients: { label: `${s.name} 보호자`, count: Math.max(1, guardiansOf(s.id).length) },
     });
   }
   // 2) 사유 없는 결석 → 보호자에게 연락 (연락 여부 칸은 아직 없어서 "사유가 비어 있는 결석"으로 대신, 10/9)
@@ -105,13 +109,16 @@ export function loadAdminHome(date: string, now: string): { blocks: Block[]; tod
       href: "/admin/messages",
     });
   }
-  // 4) 숙제 미제출이 많은 반 (어제·오늘 숙제, 반 단위, 절반 이상 미제출) → 반 전체에 알림
+  // 4) 숙제 미제출이 많은 반 (어제·오늘 숙제, 반 단위, 절반 이상 미제출) → 안 낸 학생에게 알림
+  //    그 반 오늘 수업 시작 시각이 지난 뒤에만 (숙제는 수업 때까지 내는 것, 10/12). 처리할 일 개수도 이 목록 그대로
+  const classStart = classStartsToday(entries.map((e) => ({ classId: e.classId, start: e.student.start })));
   const nowKey = `${date} ${now}`;
   const recent = homework.filter((h) => h.createdOn >= addDays(date, -1) && h.createdOn <= date);
   const perClass = new Map<string, { assigned: number; missing: number }>();
   for (const s of enrolled) {
     const mine = recent.filter((h) => h.studentIds.includes(s.id));
     if (mine.length === 0 || !s.classIds[0]) continue;
+    if (!isHomeworkDue({ now, classStart: classStart.get(s.classIds[0]) })) continue;
     const missing = mine.some((h) => {
       const sub = submissionOf(h.id, s.id);
       return !sub || sub.submittedAt > nowKey;
@@ -133,6 +140,7 @@ export function loadAdminHome(date: string, now: string): { blocks: Block[]; tod
         detail: `${c.missing}/${c.assigned}명 아직 안 냈어요 (어제·오늘)`,
         action: "알림",
         href: "/admin/homework",
+        recipients: { label: "숙제를 안 낸 학생", count: c.missing },
       }),
     );
 

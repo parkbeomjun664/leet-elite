@@ -184,7 +184,8 @@ export function AdminChrome({ nav, userName, children }: { nav: NavItem[]; userN
           <div className="lg:hidden group-data-[collapsed=true]/chrome:lg:block">
             <SubNav nav={nav} stickyClass="top-14 lg:top-0" />
           </div>
-          <PageTransition className="mx-auto max-w-[1280px] px-4 py-6 lg:px-8">{children}</PageTransition>
+          {/* 본문 최대 폭 1600 (큰 모니터에서 양옆이 비지 않게, 10/12) */}
+          <PageTransition className="mx-auto max-w-[1600px] px-4 py-6 lg:px-8">{children}</PageTransition>
         </main>
       </div>
 
