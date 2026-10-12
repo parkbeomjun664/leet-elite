@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
-import { saveStudent, type SaveStudentField } from "@/app/admin/students/actions";
+import { createStudent, saveStudent, type SaveStudentField } from "@/app/admin/students/actions";
 import { Trash2 } from "lucide-react";
 import { ComingSoonButton } from "@/components/coming-soon-button";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { isKioskCode } from "@/lib/kiosk";
 import { toast } from "@/lib/toast";
 import { STUDENT_STATUS_LABEL, type ScheduleSlot, type StudentStatus } from "@/lib/mock/types";
 import { PROGRAMS } from "@/lib/students/basic";
+import { suggestCode } from "@/lib/students/code";
 import { RELATIONS } from "@/lib/students/guardian";
 import { DURATION_MAX, DURATION_MIN, MAX_SLOTS, sameSchedule, scheduleOverlap } from "@/lib/students/schedule";
 
@@ -68,16 +69,27 @@ export function AdminStudentSheet({
   classes,
   onClose,
   onSave,
+  mode = "edit",
+  onPartialCreate,
 }: {
   student: AdminStudent;
   others: AdminStudent[];
   classes: ClassOption[];
   onClose: () => void;
   onSave: (next: AdminStudent) => void;
+  /** create = 새 학생 등록 (10/12, STU-01). 같은 창·같은 검사 규칙을 쓴다 */
+  mode?: "edit" | "create";
+  /** 등록은 됐는데 반·수업 시간 저장만 실패했을 때: 그 학생의 수정 창으로 바꿔 다시 저장하게 */
+  onPartialCreate?: (created: AdminStudent) => void;
 }) {
+  const creating = mode === "create";
   // 저장·취소도 창의 닫힘 움직임을 거쳐 닫는다
   const closeSheet = useRef<() => void>(null);
-  const [form, setForm] = useState<AdminStudent>(student);
+  // 출결 번호 추천에 쓰는, 재원·예정 학생이 이미 쓰는 번호
+  const usedCodes = new Set(others.filter((o) => o.status === "enrolled" || o.status === "pending").map((o) => o.attendanceCode));
+  // 등록: 출결 번호를 직접 고치기 전까지는 휴대폰 뒷 4자리(겹치면 빈 번호)로 따라 바꾼다
+  const [codeTouched, setCodeTouched] = useState(!creating);
+  const [form, setForm] = useState<AdminStudent>(() => (creating && !student.attendanceCode ? { ...student, attendanceCode: suggestCode(student.phone, usedCodes) } : student));
   const [tried, setTried] = useState(false); // 저장을 한 번 눌렀는지 (그 뒤부터 필수 항목 오류 표시)
   // 서버가 돌려준 안내 (출결 번호 중복 등). 그 칸을 다시 고치면 지운다
   const [serverError, setServerError] = useState<{ field?: SaveStudentField; error: string } | null>(null);
@@ -145,6 +157,10 @@ export function AdminStudentSheet({
     setTried(true);
     setServerError(null);
     if (!form.name.trim() || !isKioskCode(code) || codeOwner || scheduleError) return;
+    if (creating) {
+      startSaving(() => submitCreate());
+      return;
+    }
     startSaving(async () => {
       const res = await saveStudent({
         basic: {
@@ -197,12 +213,62 @@ export function AdminStudentSheet({
     });
   }
 
+  // 새 학생 등록 (10/12): 학생 한 줄 추가 → 반·수업 시간 저장. 서버가 돌려준 새 id로 목록에 넣는다
+  async function submitCreate() {
+    const res = await createStudent({
+      basic: {
+        name: form.name,
+        phone: form.phone ?? "",
+        school: form.school ?? "",
+        grade: form.grade ?? "",
+        enrolledOn: form.enrolledOn,
+        birthDate: form.birthDate ?? "",
+        attendanceCode: code,
+        programs: form.programs,
+        memo: form.memo,
+      },
+      status: form.status,
+      classesSchedule: { classIds: form.classIds, schedule: form.schedule },
+    });
+    if (!res.ok) {
+      if (res.createdId) {
+        // 학생은 등록됨 → 반·수업 시간 없이 목록에 넣고 그 학생 수정 창으로 바꾼다
+        onPartialCreate?.({ ...form, id: res.createdId, attendanceCode: code, classIds: [], schedule: [] });
+        toast.error(res.error);
+        return;
+      }
+      setServerError({ field: res.field === "status" ? undefined : res.field, error: res.error });
+      toast.error(res.field ? "고칠 곳이 있어요. 빨간 안내를 확인해 주세요" : res.error);
+      return;
+    }
+    const v = res.student;
+    onSave({
+      ...form,
+      id: res.id,
+      name: v.name,
+      phone: v.phone,
+      school: v.school,
+      grade: v.grade,
+      status: res.status,
+      enrolledOn: v.enrolledOn,
+      birthDate: v.birthDate,
+      attendanceCode: v.attendanceCode,
+      programs: [...v.programs],
+      memo: v.memo,
+      classIds: res.classesSchedule?.classIds ?? [],
+      schedule: res.classesSchedule ? [...res.classesSchedule.schedule].sort((a, b) => a.weekday - b.weekday || a.start.localeCompare(b.start)) : [],
+      guardians: [],
+    });
+    toast.success(`${v.name} 학생을 등록했어요`);
+    closeSheet.current?.();
+  }
+
   return (
     <Sheet
       open
       onClose={onClose}
-      title={`${student.name} 정보 수정`}
-      subtitle={[student.school, student.grade, STUDENT_STATUS_LABEL[student.status]].filter(Boolean).join(" · ")}
+      title={creating ? "새 학생 등록" : `${student.name} 정보 수정`}
+      subtitle={creating ? "등록하면 재원생 목록에 바로 나타나요" : [student.school, student.grade, STUDENT_STATUS_LABEL[student.status]].filter(Boolean).join(" · ")}
       width="md:w-[560px]"
       closeRef={closeSheet}
       footer={
@@ -212,7 +278,7 @@ export function AdminStudentSheet({
             취소
           </Button>
           <Button variant="primary" type="submit" form={FORM_ID} state={saving ? "loading" : "idle"} className="flex-1 max-md:h-12 md:flex-none">
-            저장
+            {creating ? "등록" : "저장"}
           </Button>
         </div>
       }
@@ -230,7 +296,10 @@ export function AdminStudentSheet({
                 type="tel"
                 inputMode="tel"
                 value={form.phone ?? ""}
-                onChange={(e) => set("phone", e.target.value)}
+                onChange={(e) => {
+                  set("phone", e.target.value);
+                  if (!codeTouched) set("attendanceCode", suggestCode(e.target.value, usedCodes));
+                }}
                 placeholder="휴대폰 번호"
                 className="tabular"
               />
@@ -241,9 +310,9 @@ export function AdminStudentSheet({
             <Field label="학년" htmlFor="as-grade">
               <Input id="as-grade" value={form.grade ?? ""} onChange={(e) => set("grade", e.target.value)} placeholder="예: 중2" />
             </Field>
-            <Field label="상태" htmlFor="as-status" hint="휴원·퇴원 처리는 10/13에 열려요">
-              <Select id="as-status" value={form.status} disabled onChange={(e) => set("status", e.target.value as StudentStatus)}>
-                {(Object.keys(STUDENT_STATUS_LABEL) as StudentStatus[]).map((s) => (
+            <Field label="상태" htmlFor="as-status" hint={creating ? "휴원·퇴원은 등록한 뒤에 바꿔요" : "휴원·퇴원 처리는 10/13에 열려요"}>
+              <Select id="as-status" value={form.status} disabled={!creating} onChange={(e) => set("status", e.target.value as StudentStatus)}>
+                {(creating ? (["enrolled", "pending"] as StudentStatus[]) : (Object.keys(STUDENT_STATUS_LABEL) as StudentStatus[])).map((s) => (
                   <option key={s} value={s}>
                     {STUDENT_STATUS_LABEL[s]}
                   </option>
@@ -367,16 +436,31 @@ export function AdminStudentSheet({
 
         {/* 출결 코드 · 사용 프로그램 · 메모 */}
         <Section title="출결 · 프로그램 · 메모">
-          <Field label="출결 코드" htmlFor="as-code" required error={codeError} hint="키패드에서 누르는 숫자 4자리. 새 학생은 휴대폰 뒷 4자리, 겹치면 다른 4자리">
-            <div className="max-w-40">
-              <Input
-                id="as-code"
-                inputMode="numeric"
-                maxLength={4}
-                value={form.attendanceCode}
-                onChange={(e) => set("attendanceCode", e.target.value.replace(/\D/g, ""))}
-                className="tabular"
-              />
+          <Field label="출결 코드" htmlFor="as-code" required error={codeError} hint="키패드에서 누르는 숫자 4자리. 휴대폰 뒷 4자리, 겹치면 [빈 번호]로 다른 4자리">
+            <div className="flex items-center gap-2">
+              <div className="w-32">
+                <Input
+                  id="as-code"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={form.attendanceCode}
+                  onChange={(e) => {
+                    setCodeTouched(true); // 직접 고치면 휴대폰 따라 바꾸기를 멈춘다
+                    set("attendanceCode", e.target.value.replace(/\D/g, ""));
+                  }}
+                  className="tabular"
+                />
+              </div>
+              {/* 휴대폰 뒷 4자리 → 겹치면 1001부터 비어 있는 첫 번호 (src/lib/students/code.ts, 여유 작업 B2) */}
+              <Button
+                size="sm"
+                onClick={() => {
+                  setCodeTouched(true);
+                  set("attendanceCode", suggestCode(form.phone, usedCodes));
+                }}
+              >
+                빈 번호
+              </Button>
             </div>
           </Field>
           <fieldset className="mt-4">
@@ -405,7 +489,7 @@ export function AdminStudentSheet({
           }
         >
           {form.guardians.length === 0 ? (
-            <p className="text-body text-sub">연결된 보호자가 없습니다.</p>
+            <p className="text-body text-sub">{creating ? "학생을 등록한 뒤 보호자를 연결해요 (10/20에 열려요)" : "연결된 보호자가 없습니다."}</p>
           ) : (
             <ul className="divide-y divide-line-soft">
               {form.guardians.map((g) => {
@@ -472,7 +556,8 @@ export function AdminStudentSheet({
           )}
         </Section>
 
-        {/* 로그인 계정 (STU-08, AUTH-02) */}
+        {/* 로그인 계정 (STU-08, AUTH-02). 새 학생 등록 중에는 숨긴다 (등록한 뒤에 발급) */}
+        {!creating && (
         <Section title="로그인 계정">
           <InfoList
             items={[
@@ -500,6 +585,7 @@ export function AdminStudentSheet({
             </ComingSoonButton>
           </div>
         </Section>
+        )}
       </form>
     </Sheet>
   );

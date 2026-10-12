@@ -5,9 +5,9 @@ import { gotoReady } from "./ready";
 test("아직 준비 중인 버튼: 누르면 열리는 날짜를 안내", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await gotoReady(page, "/admin/students");
-  await page.getByRole("button", { name: "학생 등록" }).click();
+  await page.getByRole("button", { name: "엑셀로 내보내기" }).click();
   await expect(page.getByTestId("toast")).toHaveAttribute("data-kind", "info");
-  await expect(page.getByTestId("toast")).toContainText("학생 등록 기능은 10/12에 열려요");
+  await expect(page.getByTestId("toast")).toContainText("엑셀 내보내기 기능은 10/22에 열려요");
 });
 
 test("휴대폰: 체크박스는 [여러 명 선택]을 눌렀을 때만, 카드를 누르면 선택", async ({ page }) => {
@@ -122,5 +122,52 @@ test.describe("재원생 표 폭", () => {
     await expect(page.getByRole("list", { name: "재원생" })).toBeVisible();
     await expect(page.getByRole("table")).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+});
+
+// 10/12 새 학생 등록 (STU-01): 수정 창과 같은 창·검사 규칙, 출결 번호는 휴대폰 뒷 4자리 → 겹치면 빈 번호
+test.describe("새 학생 등록", () => {
+  test.use({ viewport: { width: 1280, height: 900 } });
+
+  test("이름이 없으면 등록되지 않고, 휴대폰을 넣으면 출결 번호가 따라 채워진다", async ({ page }) => {
+    await gotoReady(page, "/admin/students");
+    await page.getByRole("button", { name: "학생 등록" }).click();
+    const dialog = page.getByRole("dialog", { name: /새 학생 등록/ });
+    await expect(dialog).toBeVisible();
+    await expect(page).toHaveURL(/new=1/);
+    // 상태는 재원·(입학) 예정만
+    await expect(dialog.getByLabel("상태").locator("option")).toHaveText(["재원", "예정"]);
+    // 로그인 계정 구역은 등록 뒤에
+    await expect(dialog.getByRole("heading", { name: "로그인 계정" })).toHaveCount(0);
+
+    await dialog.getByLabel("학생 휴대폰").fill("010-5550-1987");
+    await expect(dialog.getByLabel(/출결 코드/)).toHaveValue("1987");
+    // 이미 쓰는 번호(조민재 1001)를 넣으면 안내, [빈 번호]로 다른 번호
+    await dialog.getByLabel(/출결 코드/).fill("1001");
+    await expect(dialog.getByText("1001번은 조민재 학생이 쓰고 있어요")).toBeVisible();
+    await dialog.getByRole("button", { name: "빈 번호" }).click();
+    await expect(dialog.getByLabel(/출결 코드/)).toHaveValue("1987");
+
+    await dialog.getByRole("button", { name: "등록" }).click();
+    await expect(dialog.getByText("이름을 입력해 주세요")).toBeVisible();
+    await expect(dialog).toBeVisible();
+  });
+
+  test("등록하면 창이 닫히고 목록에 새 학생 줄이 생긴다", async ({ page }) => {
+    await gotoReady(page, "/admin/students");
+    await page.getByRole("button", { name: "학생 등록" }).click();
+    const dialog = page.getByRole("dialog", { name: /새 학생 등록/ });
+    await dialog.getByLabel("이름").fill("가나다");
+    await dialog.getByLabel("학교").fill("시험초");
+    await dialog.getByRole("button", { name: /^OB-초저/ }).click();
+    await dialog.getByRole("button", { name: "+ 요일 추가" }).click();
+    await dialog.getByRole("button", { name: "등록" }).click();
+    await expect(page.getByTestId("toast")).toContainText("가나다 학생을 등록했어요");
+    await expect(dialog).toHaveCount(0);
+    await expect(page).not.toHaveURL(/new=1/);
+    const row = page.getByRole("row", { name: "가나다 상세 보기" });
+    await expect(row).toBeVisible();
+    await expect(row).toContainText("OB-초저");
+    await expect(page.getByText(/재원 66명/)).toHaveCount(0); // 목록 숫자는 새로고침 때 (서버 값)
   });
 });

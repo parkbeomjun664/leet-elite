@@ -206,6 +206,16 @@
   }
 }
 
+/* 방금 등록·저장한 줄을 잠깐 옅은 회색으로 강조했다가 원래대로 (1.6초, 움직임 줄이기면 바로 끝남) */
+@utility animate-row-flash {
+  animation: row-flash 1.6s var(--ease-out) both;
+}
+@keyframes row-flash {
+  from {
+    background-color: var(--color-line);
+  }
+}
+
 /* 옆으로 밀어 보는 줄의 운영체제 스크롤바 숨김 (src/components/ui/scroll-row.tsx, 10/8) */
 @utility scrollbar-none {
   scrollbar-width: none;

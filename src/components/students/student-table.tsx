@@ -1,16 +1,20 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { Users } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AdminStudentSheet, type AdminStudent } from "@/components/students/admin-student-sheet";
 import { ComingSoonButton } from "@/components/coming-soon-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Input, Select } from "@/components/ui/field";
+import { EmptyState } from "@/components/ui/empty-state";
 import { EmptyLine } from "@/components/ui/panel";
 import { ScrollRow } from "@/components/ui/scroll-row";
 import { Segment } from "@/components/ui/segment";
 import { Table, Td, Th, Tr } from "@/components/ui/table";
 import { cn } from "@/lib/cn";
+import { todayKST } from "@/lib/date";
 import { WEEKDAY_KO } from "@/lib/date";
 import type { ScheduleSlot } from "@/lib/mock/types";
 import { findRange, matchStudent, type SearchHit } from "@/lib/students/search";
@@ -100,6 +104,22 @@ export function StudentTable({
   // 휴대폰·태블릿 카드는 [여러 명 선택]을 눌렀을 때만 체크박스 (선생님 홈과 같은 규칙, 10/1). PC 표는 늘 보인다(에듀OK 방식)
   const [selecting, setSelecting] = useState(false);
   const [editId, setEditId] = useState<string | null>(initialEditId ?? null);
+  // 새 학생 등록 창: 주소 ?new=1 (위쪽 [학생 등록] 버튼이 history로 바꾼다 → 서버를 다시 부르지 않는다, 10/12)
+  const searchParams = useSearchParams();
+  const creating = searchParams.get("new") === "1";
+  const closeCreate = () => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.delete("new");
+    window.history.replaceState(null, "", p.size ? `?${p}` : window.location.pathname);
+  };
+  // 방금 등록한 학생 줄: 잠깐 옅게 강조하고 화면 안으로 (여유 작업 B3)
+  const [flashId, setFlashId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!flashId) return;
+    document.querySelector(`[data-row="${flashId}"]:not([hidden])`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    const t = setTimeout(() => setFlashId(null), 2000);
+    return () => clearTimeout(t);
+  }, [flashId]);
 
   const className = (id: string) => classes.find((c) => c.id === id)?.name ?? "";
 
@@ -221,7 +241,14 @@ export function StudentTable({
       </div>
 
       {visible.length === 0 ? (
-        <EmptyLine>조건에 맞는 학생이 없습니다.</EmptyLine>
+        // 학생이 한 명도 없으면 첫 등록 안내 (등록 창은 아래에서 그대로 열린다), 있는데 걸러서 없으면 조건 안내
+        active.length === 0 ? (
+          <div className="border-y border-line-soft">
+            <EmptyState icon={Users} title="아직 등록된 학생이 없어요" description="위의 [학생 등록]으로 첫 학생을 등록해 주세요" />
+          </div>
+        ) : (
+          <EmptyLine>조건에 맞는 학생이 없습니다.</EmptyLine>
+        )
       ) : (
         <>
         {/* 휴대폰·태블릿·작은 PC(1280 미만): 표 대신 카드 목록. 가로 스크롤 없이 (docs/design.md 8번, 10/8 1024~1279도 카드) */}
@@ -229,7 +256,7 @@ export function StudentTable({
           {visible.map((r) => {
             const checked = selected.has(r.id);
             return (
-              <li key={r.id} className={cn("flex items-stretch rounded-[var(--radius-card)] bg-bg", checked && "bg-card ring-[1.5px] ring-ink")}>
+              <li key={r.id} data-row={r.id} className={cn("flex items-stretch rounded-[var(--radius-card)] bg-bg", checked && "bg-card ring-[1.5px] ring-ink", flashId === r.id && "animate-row-flash")}>
                 {/* [여러 명 선택]일 때는 카드 전체가 선택 버튼(체크 표시는 모양만), 아니면 누르면 수정 창 */}
                 <button
                   type="button"
@@ -309,6 +336,7 @@ export function StudentTable({
               return (
                 <Tr
                   key={r.id}
+                  data-row={r.id}
                   tabIndex={0}
                   aria-label={`${r.name} 상세 보기`}
                   onClick={() => setEditId(r.id)}
@@ -318,7 +346,7 @@ export function StudentTable({
                       setEditId(r.id);
                     }
                   }}
-                  className={cn("press-card cursor-pointer", checked ? "bg-bg" : "bg-card")} // 선택한 줄: 옅은 회색 (분홍은 결석에만, 10/5). 고정 칸이 같은 바탕을 이어받게 불투명 바탕
+                  className={cn("press-card cursor-pointer", checked ? "bg-bg" : "bg-card", flashId === r.id && "animate-row-flash")} // 선택한 줄: 옅은 회색 (분홍은 결석에만, 10/5). 고정 칸이 같은 바탕을 이어받게 불투명 바탕
                 >
                   {/* 체크박스를 눌러도 상세 창은 열리지 않게 */}
                   <Td className="sticky left-0 z-[1] w-10 bg-inherit pr-0" onClick={(e) => e.stopPropagation()}>
@@ -402,6 +430,47 @@ export function StudentTable({
       )}
 
       {/* 원장님용 학생 상세·수정 */}
+      {/* 새 학생 등록 (STU-01, 10/12): 수정 창과 같은 창·검사 규칙 */}
+      {creating && (
+        <AdminStudentSheet
+          key="new"
+          mode="create"
+          student={{
+            id: "",
+            name: "",
+            school: null,
+            grade: null,
+            phone: null,
+            status: "enrolled",
+            enrolledOn: todayKST(),
+            birthDate: null,
+            leftOn: null,
+            classIds: [],
+            schedule: [],
+            attendanceCode: "",
+            programs: [],
+            memo: "",
+            guardians: [],
+          }}
+          others={rows}
+          classes={classes}
+          onClose={closeCreate}
+          onSave={(next) => {
+            setRows((prev) => [...prev, next]);
+            // 거르기·검색에 가려 안 보이면 풀어서 새 줄이 보이게
+            setClassId("all");
+            setQuery("");
+            setFlashId(next.id);
+          }}
+          onPartialCreate={(created) => {
+            // 학생은 등록됨, 반·수업 시간 저장만 실패 → 목록에 넣고 그 학생 수정 창으로
+            setRows((prev) => [...prev, created]);
+            closeCreate();
+            setEditId(created.id);
+          }}
+        />
+      )}
+
       {editing && (
         <AdminStudentSheet
           key={editing.id}

@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
 
 // 재원생 목록을 실제 dev DB에서 (10/7, STU-06). 원장님 계정으로 로그인해서 본다
@@ -180,4 +181,35 @@ test("원장님: 보호자 전화를 고치면 형제 줄에도 같이 바뀐다
   await expect(page.getByTestId("toast")).toContainText("저장했어요");
   await page.reload();
   await expect(brother()).toContainText(before);
+});
+
+// 10/12 새 학생 등록 (STU-01): 실제 DB에 추가되고 새로고침해도 남는다. 끝나면 시험 학생을 지운다 (서버 전용 키)
+const NEW_PREFIX = "e2e등록";
+test.afterAll(async () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY;
+  if (!url || !key) return;
+  const admin = createClient(url, key, { auth: { persistSession: false } });
+  await admin.from("students").delete().like("name", `${NEW_PREFIX}%`); // 반·시간표는 함께 지워진다(cascade)
+});
+
+test("원장님: 새 학생을 등록하면 DB에 남고, 반·수업 시간도 함께 저장된다", async ({ page }) => {
+  await loginAs(page, "admin", "/admin/students");
+  const name = `${NEW_PREFIX}${Date.now() % 100000}`;
+  await page.getByRole("button", { name: "학생 등록" }).click();
+  const dialog = page.getByRole("dialog", { name: "새 학생 등록" });
+  await dialog.getByLabel("이름").fill(name);
+  await dialog.getByLabel("학교").fill("시험초");
+  await dialog.getByRole("button", { name: "빈 번호" }).click(); // 겹치지 않는 번호
+  const code = await dialog.getByLabel(/출결 코드/).inputValue();
+  await dialog.getByRole("button", { name: /^OB-초저/ }).click();
+  await dialog.getByRole("button", { name: "+ 요일 추가" }).click();
+  await dialog.getByRole("button", { name: "등록" }).click();
+  await expect(page.getByTestId("toast")).toContainText(`${name} 학생을 등록했어요`);
+
+  await page.reload();
+  const row = page.getByRole("row", { name: `${name} 상세 보기` });
+  await expect(row).toContainText(code);
+  await expect(row).toContainText("OB-초저");
+  await expect(row).toContainText("월 15:00"); // 새 줄 기본: 월요일 15:00
 });

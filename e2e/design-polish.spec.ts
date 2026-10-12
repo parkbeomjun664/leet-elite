@@ -85,7 +85,7 @@ test.describe("누름 반응", () => {
   test("버튼은 0.97로 작아지고 살짝 어두워진다, 표 줄은 0.99 + 옅은 회색", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await gotoReady(page, "/admin/students");
-    const btn = await pressed(page, 'main button:has-text("학생 등록")');
+    const btn = await pressed(page, 'main button:has-text("엑셀로 내보내기")');
     expect(btn.transform).toBe("matrix(0.97, 0, 0, 0.97, 0, 0)");
     expect(btn.filter).toBe("brightness(0.95)");
     await page.keyboard.press("Escape");
@@ -106,7 +106,7 @@ test.describe("누름 반응", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1280, height: 900 });
     await gotoReady(page, "/admin/students");
-    const btn = await pressed(page, 'main button:has-text("학생 등록")');
+    const btn = await pressed(page, 'main button:has-text("엑셀로 내보내기")');
     expect(btn.transform).toBe("none");
   });
 });

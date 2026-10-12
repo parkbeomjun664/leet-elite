@@ -57,6 +57,12 @@ select pg_temp.expect('선생님A', '담당 학생의 보호자', (select count(
 select pg_temp.expect('선생님A', '다른 선생님 실명', (select count(*) from public.teachers), 1);
 -- 선생님은 학생 정보를 직접 고칠 수 없다 (0줄 수정)
 with u as (update public.students set memo = 'x' returning 1) select pg_temp.expect('선생님A', '학생 정보 직접 수정', (select count(*) from u), 0);
+-- 새 학생 등록도 원장님만 (10/12 STU-01)
+do $$ begin
+  insert into public.students (name, attendance_code) values ('몰래등록', '7777');
+  raise exception 'FAIL [선생님A] 학생 등록이 허용됨';
+exception when insufficient_privilege then raise notice 'ok   [선생님A] 학생 등록 거부';
+end $$;
 -- 대신 담당 학생의 사용 프로그램은 함수로 바꿀 수 있다
 select public.set_student_programs('20000000-0000-0000-0000-000000000001', array['클래스카드']);
 do $$ begin

@@ -1,7 +1,6 @@
-import { Users } from "lucide-react";
 import { StudentTable } from "@/components/students/student-table";
 import { ComingSoonButton } from "@/components/coming-soon-button";
-import { EmptyState } from "@/components/ui/empty-state";
+import { NewStudentButton } from "@/components/students/new-student-button";
 import { PageHeader } from "@/components/ui/panel";
 import { loadAdminStudents } from "@/lib/data/students";
 
@@ -29,19 +28,13 @@ export default async function AdminStudents({ searchParams }: PageProps<"/admin/
             <ComingSoonButton variant="secondary" feature="엑셀 내보내기" opensOn="10/22">
               엑셀로 내보내기
             </ComingSoonButton>
-            <ComingSoonButton variant="primary" feature="학생 등록" opensOn="10/12">
-              학생 등록
-            </ComingSoonButton>
+            {/* 새 학생 등록 (STU-01, 10/12) */}
+            <NewStudentButton />
           </>
         }
       />
-      {rows.length === 0 ? (
-        <div className="border-y border-line-soft">
-          <EmptyState icon={Users} title="아직 등록된 학생이 없어요" description="위의 [학생 등록]으로 첫 학생을 등록해 주세요" />
-        </div>
-      ) : (
-        <StudentTable students={rows} classes={classes} initialEditId={initialEditId} />
-      )}
+      {/* 학생이 없을 때 안내도 목록 부품 안에서 (그래야 [학생 등록] 창이 열린다, 10/12) */}
+      <StudentTable students={rows} classes={classes} initialEditId={initialEditId} />
     </div>
   );
 }

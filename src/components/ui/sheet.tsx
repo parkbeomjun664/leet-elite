@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState, type PointerEvent, type ReactNode, type Ref } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useImperativeHandle, useRef, useState, type PointerEvent, type ReactNode, type Ref } from "react";
 import { cn } from "@/lib/cn";
 
 // 닫힘 움직임 시간 (globals.css --duration-fast와 같게)
@@ -43,6 +43,8 @@ export function Sheet({
   closeRef?: Ref<() => void>;
 }) {
   const panel = useRef<HTMLDivElement>(null);
+  // 창 이름 = 제목 (화면 읽기 프로그램이 "새 학생 등록, 대화 상자"처럼 읽는다, 10/12)
+  const titleId = useId();
   const [closing, setClosing] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   // 끌기: 시작 위치·시각. 끄는 동안은 다시 그리지 않고 style만 바꾼다 (저가 기기에서 끊기지 않게)
@@ -126,6 +128,7 @@ export function Sheet({
           ref={panel}
           role="dialog"
           aria-modal="true"
+          aria-labelledby={titleId}
           tabIndex={-1}
           data-sheet
           className={cn(
@@ -148,7 +151,9 @@ export function Sheet({
             className="flex touch-none items-start justify-between gap-3 border-b border-line-soft px-5 pt-1 pb-4 md:touch-auto md:pt-[calc(1rem+env(safe-area-inset-top,0px))]"
           >
             <div className="min-w-0">
-              <h2 className="truncate text-heading font-bold">{title}</h2>
+              <h2 id={titleId} className="truncate text-heading font-bold">
+                {title}
+              </h2>
               {subtitle && <p className="mt-0.5 truncate text-caption text-sub">{subtitle}</p>}
             </div>
             <button

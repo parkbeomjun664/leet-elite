@@ -134,3 +134,87 @@ export async function saveStudent(input: { basic: unknown; classesSchedule?: unk
   revalidatePath("/admin/students");
   return { ok: true, student: v, classesSchedule: cs, guardians };
 }
+
+export type CreateStudentResult =
+  | { ok: true; id: string; student: StudentBasic; status: "enrolled" | "pending"; classesSchedule: ClassesSchedule | null }
+  | { ok: false; error: string; field?: SaveStudentField | "status"; createdId?: string };
+
+/**
+ * 새 학생 등록 (STU-01, 10/12). 수정 창과 같은 검사 규칙을 쓴다
+ *  1) 기본 정보 + 상태(재원 또는 입학 예정)로 학생 한 줄 추가
+ *  2) 반·수업 시간이 있으면 어제 만든 DB 함수로 저장 (save_student_classes_schedule)
+ * - 원장님만 (RLS: 원장님만 학생을 추가할 수 있다. 선생님 등은 DB가 거부)
+ * - 2)가 실패하면 학생은 이미 등록된 상태 → createdId를 돌려주고 "반·수업 시간만 다시 저장" 안내 (화면은 수정 창으로 바뀜)
+ * - 보호자 연결은 10/20, 로그인 계정은 10/16
+ */
+export async function createStudent(input: { basic: unknown; status: unknown; classesSchedule?: unknown }): Promise<CreateStudentResult> {
+  // id는 새로 만들므로 검사용 자리만 채운다
+  const basic = parseStudentBasic({ ...(input.basic as object), id: "new" });
+  if (!basic.ok) return basic;
+  const v = basic.value;
+  if (input.status !== "enrolled" && input.status !== "pending") return { ok: false, field: "status", error: "상태는 재원 또는 입학 예정만 고를 수 있어요" };
+  const status = input.status;
+
+  let cs: ClassesSchedule | null = null;
+  if (input.classesSchedule !== undefined) {
+    const r = parseClassesSchedule(input.classesSchedule);
+    if (!r.ok) return r;
+    cs = r.value.classIds.length > 0 || r.value.schedule.length > 0 ? r.value : null;
+  }
+
+  if (await isMockRequest()) return { ok: true, id: `new-${Date.now()}`, student: v, status, classesSchedule: cs };
+
+  const supabase = await createClient();
+  const codeOwner = async () => {
+    const { data } = await supabase.from("students").select("name").eq("attendance_code", v.attendanceCode).in("status", [...ACTIVE]).limit(1).maybeSingle();
+    return data?.name ?? null;
+  };
+  const duplicate = (owner: string | null): CreateStudentResult => ({
+    ok: false,
+    field: "attendanceCode",
+    error: owner ? `${v.attendanceCode}번은 ${owner} 학생이 쓰고 있어요` : `${v.attendanceCode}번은 다른 학생이 쓰고 있어요`,
+  });
+  const owner = await codeOwner();
+  if (owner) return duplicate(owner);
+
+  // 1) 학생 한 줄
+  const { data, error } = await supabase
+    .from("students")
+    .insert({
+      name: v.name,
+      phone: v.phone,
+      school: v.school,
+      grade: v.grade,
+      status,
+      enrolled_on: v.enrolledOn,
+      birth_date: v.birthDate,
+      attendance_code: v.attendanceCode,
+      programs: v.programs,
+      memo: v.memo,
+    })
+    .select("id")
+    .single();
+  if (error || !data) {
+    if (error?.code === "23505") return duplicate(await codeOwner()); // 출결 번호가 동시에 겹침
+    if (error?.code === "42501") return { ok: false, error: "학생을 등록할 권한이 없어요." }; // RLS 거부 (선생님 등)
+    console.error("[student] 등록하지 못함", error?.code, error?.message);
+    return { ok: false, error: "등록하지 못했어요. 잠시 후 다시 눌러 주세요." };
+  }
+
+  // 2) 반·수업 시간
+  if (cs) {
+    const { error: e2 } = await supabase.rpc("save_student_classes_schedule", {
+      sid: data.id,
+      new_class_ids: cs.classIds,
+      new_slots: cs.schedule.map((s) => ({ weekday: s.weekday, start_time: s.start, duration_min: s.durationMin })),
+    });
+    if (e2) {
+      console.error("[student] 등록 뒤 반·시간표 저장하지 못함", e2.code, e2.message);
+      revalidatePath("/admin/students");
+      return { ok: false, field: "schedule", createdId: data.id, error: "학생은 등록됐어요. 반·수업 시간만 다시 저장해 주세요." };
+    }
+  }
+
+  revalidatePath("/admin/students");
+  return { ok: true, id: data.id, student: v, status, classesSchedule: cs };
+}
