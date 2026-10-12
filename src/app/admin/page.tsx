@@ -16,15 +16,15 @@ export const dynamic = "force-dynamic";
  * 원장님 홈 v5 (10/12 원장님 의견: "이전 화면이 더 한눈에 보인다", "시간표는 루틴이라 중요하지 않다")
  * 구성은 예전 홈 그대로: 오늘 학원 숫자 5칸 → 확인할 일 → 오늘·다음 보강 · 읽지 않은 학부모 메시지
  * 모양은 v4 토스 스타일: 회색 바탕 + 흰 카드(모서리 20·안 24·사이 16), 카드 제목 20 굵게, 진한 글씨는 숫자·이름에만 (design.md 1-2)
- * 색은 파랑(강조·구분) + 빨강(결석·조퇴·지각) 두 가지만 (10/13 범준님)
+ * 색은 학원 색(버건디) 숫자 + 빨강(결석·조퇴·지각)만 (10/13 범준님)
  * 데이터는 src/lib/admin/summary-data.ts
  */
 
 const CARD = "rounded-[var(--radius-hcard)] bg-card p-6";
 const UNREAD_LIMIT = 5;
 
-// 색은 두 가지만 (10/13 범준님: "색 종류가 많아 눈에 안 들어온다" → 다 빼니 "너무 없다"): 강조·구분은 파랑 하나, 문제(결석 등)는 빨강.
-// 확인할 일 줄은 모두 같은 연한 파랑(처음부터, 10/12), 반 아바타도 같은 파랑, 태그는 결석·조퇴·지각만 빨강. 숫자 칸 옆 점은 없앰
+// 색은 학원 색 한 계열만 (10/13 범준님: 색 종류가 많음 → 회색만은 너무 없음 → 파랑은 뜬금없음): 확인할 일 숫자는 버건디(로고·메뉴 선택과 같은 색), 결석 등은 빨강.
+// 줄 바탕·반 아바타는 회색(연한 버건디는 분홍 = 결석 색이라 쓰지 않음), 태그는 결석·조퇴·지각만 빨강. 숫자 칸 옆 점은 없앰
 
 export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   // 시연용: ?at=16:00 처럼 시각을 지정하면 그 시각 기준 (새로 고침도 멈춘다)
@@ -90,10 +90,10 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
               <li key={c.key} data-check={c.key}>
                 <Link
                   href={c.href}
-                  className="group press-hcard flex items-center gap-3 rounded-[var(--radius-block)] bg-class-1-bg px-4 py-3.5 transition-[filter] hover:brightness-[0.97] md:gap-4"
+                  className="group press-hcard flex items-center gap-3 rounded-[var(--radius-block)] bg-block px-4 py-3.5 transition-[filter] hover:brightness-[0.97] md:gap-4"
                 >
                   <span className="w-[72px] shrink-0 leading-none whitespace-nowrap tabular md:w-28">
-                    <span className="text-figure-md font-bold text-class-1-text">
+                    <span className="text-figure-md font-bold text-brand">
                       <CountUp value={c.value} />
                     </span>
                     {c.total !== undefined && <span className="text-caption text-muted"> / {c.total}</span>}

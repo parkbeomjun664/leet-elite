@@ -50,17 +50,18 @@ test.describe("원장님 홈 PC", () => {
     // 제목에는 숫자를 붙이지 않는다 (종류 수가 건수와 헷갈려서, 10/12)
     await expect(checks.getByRole("heading", { name: "확인할 일", exact: true })).toBeVisible();
     await expect(rows.first().getByRole("link")).toContainText("보기");
-    // 줄은 처음부터 모두 같은 연한 파랑 (10/13 범준님: 색 종류는 줄이되 색은 있게 → 항목별 색 대신 파랑 하나)
+    // 줄은 회색 바탕 + 숫자는 학원 색 버건디 (10/13 범준님: 색 종류는 줄이되 학원 색으로)
     const bgs = await rows.locator("a").evaluateAll((as) => as.map((a) => getComputedStyle(a).backgroundColor));
-    for (const bg of bgs) expect(bg).toBe("rgb(232, 243, 255)");
+    for (const bg of bgs) expect(bg).toBe("rgb(249, 250, 251)");
+    await expect(rows.first().locator(".text-figure-md")).toHaveCSS("color", "rgb(179, 38, 46)");
     // 카드 제목은 20px 굵게: 내용(15px)과 확실히 나뉘게 (10/13)
     const title = checks.getByRole("heading", { name: "확인할 일", exact: true });
     await expect(title).toHaveCSS("font-size", "20px");
     await expect(title).toHaveCSS("font-weight", "700");
-    // 아바타는 모두 같은 파랑, 태그는 결석·조퇴·지각만 빨강 계열·나머지 회색 (색은 파랑·빨강 두 가지)
+    // 아바타는 회색, 태그는 결석·조퇴·지각만 빨강 계열·나머지 회색
     const unread = page.locator("[data-message]");
     const avatarBgs = await unread.locator("[data-avatar]").evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
-    expect(new Set(avatarBgs)).toEqual(new Set(["rgb(232, 243, 255)"]));
+    expect(new Set(avatarBgs)).toEqual(new Set(["rgb(242, 244, 246)"]));
     await expect(unread.locator('[data-group="today"]').first()).toHaveCSS("background-color", "rgb(255, 239, 241)");
     await expect(unread.locator('[data-group="schedule"]').first()).toHaveCSS("background-color", "rgb(242, 244, 246)");
     // 바로가기는 없앴다 (10/13 범준님, 메뉴는 사이드바)

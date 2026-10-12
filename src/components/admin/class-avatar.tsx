@@ -1,12 +1,12 @@
 import { tagGroup, type MessageTag } from "@/lib/admin/message-tag";
 
 // 원장 홈 목록 줄 앞의 반 아바타와 메시지 용건 태그
-// 10/13 범준님 "색 종류가 많아 눈에 안 들어온다" → 반마다 다른 색 대신 파랑 하나, 태그는 오늘 수업에 영향(결석·조퇴·지각)만 빨강
+// 10/13 범준님 "색 종류가 많아 눈에 안 들어온다" → 반마다 다른 색 대신 회색, 태그는 오늘 수업에 영향(결석·조퇴·지각)만 빨강
 
-/** 40px 아바타: 연한 파랑 원 + 반 약칭 (반 구분은 글자로) */
+/** 40px 아바타: 회색 원 + 반 약칭 (반 구분은 글자로) */
 export function ClassAvatar({ short }: { sortOrder?: number; short: string }) {
   return (
-    <span aria-hidden data-avatar className="grid size-10 shrink-0 place-items-center rounded-full bg-class-1-bg text-caption font-bold tracking-tight text-class-1-text">
+    <span aria-hidden data-avatar className="grid size-10 shrink-0 place-items-center rounded-full bg-page text-caption font-bold tracking-tight text-base">
       {short}
     </span>
   );
