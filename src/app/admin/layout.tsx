@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   // 사이드바 프로필 이름: 계정의 실제 이름 (없거나 "총괄관리자" 같은 내부 이름이면 "원장님")
   const name = await myDisplayName();
   return (
-    <AppChrome nav={ADMIN_NAV} role="원장" userName={name} tabs={TABS} extraHomePaths={["/admin/todo"]}>
+    <AppChrome nav={ADMIN_NAV} role="원장" userName={name} tabs={TABS}>
       {children}
     </AppChrome>
   );
