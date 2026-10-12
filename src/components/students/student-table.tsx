@@ -35,8 +35,9 @@ function scheduleLabel(slots: ScheduleSlot[]): string {
   return [...byStart.entries()].map(([start, days]) => `${days.map((d) => WEEKDAY_KO[d]).join("·")} ${start}`).join(" / ");
 }
 
-// 1440 이상에서만 보이는 표 열 (학생 휴대폰·입학일·메모). 그 아래 폭은 줄을 눌러 상세 창에서 본다 (10/8 UI 4)
-const WIDE_ONLY = "hidden min-[1440px]:table-cell";
+// 표 폭이 넉넉할 때만 보이는 열 (학생 휴대폰·입학일·메모). 그 아래 폭은 줄을 눌러 상세 창에서 본다 (10/8 UI 4)
+// 10/12: 화면 폭 1440 기준 → 표가 받은 폭 1380 기준(컨테이너 쿼리). 왼쪽 사이드바를 펼치고 접음에 따라 본문 폭이 달라져서
+const WIDE_ONLY = "hidden @min-[1380px]:table-cell";
 
 /** 검색어가 있는 자리를 옅은 회색 바탕으로 (초성·하이픈 건너뛴 숫자도) */
 function Mark({ text, query }: { text: string; query: string }) {
@@ -67,7 +68,7 @@ function SortTh({
 }) {
   const on = sort.key === sortKey;
   return (
-    <Th aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"} className={cn("p-0", className)}>
+    <Th flush aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"} className={className}>
       <button
         type="button"
         onClick={() => onSort(sortKey)}
@@ -298,7 +299,7 @@ export function StudentTable({
           })}
         </ul>
         {/* PC(1280 이상) 표: 컨테이너 안에 들어오게. 휴대폰·입학일·메모 열은 1440 이상에서만 (그 아래는 줄을 눌러 상세 창에서) */}
-        <div className="hidden xl:block">
+        <div className="@container hidden xl:block">
         <Table>
           <thead>
             <tr>

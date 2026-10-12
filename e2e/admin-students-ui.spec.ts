@@ -96,7 +96,7 @@ test("정렬: PC는 머리글을 눌러, 휴대폰은 선택칸으로", async ({
   expect(cardCodes).toEqual([...cardCodes].sort());
 });
 
-// 10/8 UI 4: 1280 이상 표가 컨테이너 안에, 휴대폰·입학일·메모는 1440 이상에서만, 1024~1279는 카드
+// 10/8 UI 4: 1280 이상 표가 컨테이너 안에, 휴대폰·입학일·메모는 표 폭 1380 이상에서만(10/12), 1024~1279는 카드
 test.describe("재원생 표 폭", () => {
   test("1280: 표가 컨테이너 안에 들어오고(가로 스크롤 없음) 7개 열만", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -110,10 +110,13 @@ test.describe("재원생 표 폭", () => {
     await expect(page.getByRole("columnheader", { name: /이름/ })).toHaveCSS("position", "sticky");
   });
 
-  test("1440: 학생 휴대폰·입학일·메모 열도 보인다", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
+  // 10/12: 화면 폭이 아니라 표가 받은 폭(1380 이상)으로 정한다. 사이드바(220)를 펼친 1440은 표 폭이 모자라 숨김
+  test("표 폭이 넉넉하면(1920) 학생 휴대폰·입학일·메모 열도, 1440(사이드바 펼침)은 숨김", async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 900 });
     await gotoReady(page, "/admin/students");
     for (const name of ["학생 휴대폰", "입학일", "메모"]) await expect(page.getByRole("columnheader", { name: new RegExp(name) })).toBeVisible();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    for (const name of ["학생 휴대폰", "입학일", "메모"]) await expect(page.getByRole("columnheader", { name: new RegExp(name) })).toBeHidden();
   });
 
   test("1024: 표 대신 카드", async ({ page }) => {
@@ -171,3 +174,34 @@ test.describe("새 학생 등록", () => {
     await expect(page.getByText(/재원 66명/)).toHaveCount(0); // 목록 숫자는 새로고침 때 (서버 값)
   });
 });
+
+// 10/12 범준님: 표 머리글이 너무 작고(13px) 정렬 버튼 칸이 아래 칸보다 오른쪽으로 밀려 있었다
+// 머리글 14px, 머리글 글자 시작 = 아래 칸 글자 시작. 사이드바를 펼친 1440에서도 표가 가로로 넘치지 않는다
+for (const width of [1440, 1920]) {
+  test(`재원생 표 ${width}: 머리글 14px, 글자 시작이 아래 칸과 같고, 가로로 넘치지 않는다`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await gotoReady(page, "/admin/students");
+    const table = page.getByRole("table");
+    await expect(table.locator("thead th").nth(1)).toHaveCSS("font-size", "14px");
+    const offsets = await table.evaluate((t) => {
+      // 칸 안 첫 글자의 x
+      const textX = (el: Element) => {
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.textContent!.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) });
+        const node = walker.nextNode();
+        if (!node) return null;
+        const r = document.createRange();
+        r.selectNodeContents(node);
+        return r.getBoundingClientRect().x;
+      };
+      const ths = [...t.querySelectorAll("thead th")].filter((th) => (th as HTMLElement).offsetParent);
+      const tds = [...t.querySelector("tbody tr")!.children].filter((td) => (td as HTMLElement).offsetParent);
+      return ths.slice(1).map((th, i) => {
+        const a = textX(th);
+        const b = textX(tds[i + 1]);
+        return a === null || b === null ? 0 : Math.abs(a - b);
+      });
+    });
+    for (const d of offsets) expect(d).toBeLessThan(2);
+    expect(await table.evaluate((t) => t.parentElement!.scrollWidth <= t.parentElement!.clientWidth)).toBe(true);
+  });
+}

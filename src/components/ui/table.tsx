@@ -12,10 +12,18 @@ export function Table({ className, ...rest }: ComponentProps<"table">) {
   );
 }
 
-export function Th({ className, ...rest }: ComponentProps<"th">) {
+/**
+ * 머리칸. 글씨 14px (10/12 범준님: 13px은 본문 15px보다 너무 작아 보임)
+ * @param flush 안쪽 여백 없음: 칸 안에 정렬 버튼처럼 자기 여백을 가진 것을 넣을 때 (여백이 두 번 들어가 아래 칸과 어긋나지 않게)
+ */
+export function Th({ className, flush = false, ...rest }: ComponentProps<"th"> & { flush?: boolean }) {
   return (
     <th
-      className={cn("border-b border-line-soft bg-card px-3 py-2.5 text-left text-caption font-semibold whitespace-nowrap text-sub", className)}
+      className={cn(
+        "border-b border-line-soft bg-card text-left text-note font-semibold whitespace-nowrap text-sub",
+        !flush && "px-3 py-2.5",
+        className,
+      )}
       {...rest}
     />
   );
