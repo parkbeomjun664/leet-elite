@@ -47,7 +47,8 @@ test.describe("원장님 홈 PC", () => {
     const rows = checks.locator("li[data-check]");
     const n = await rows.count();
     expect(n).toBeGreaterThan(0);
-    await expect(checks.getByRole("heading", { name: `확인할 일 ${n}` })).toBeVisible();
+    // 제목에는 숫자를 붙이지 않는다 (종류 수가 건수와 헷갈려서, 10/12)
+    await expect(checks.getByRole("heading", { name: "확인할 일", exact: true })).toBeVisible();
     await expect(rows.first().getByRole("link")).toContainText("보기");
     // 줄마다 처음부터 서로 다른 연한 색 바탕 (마우스를 올려야 회색이 되던 것 대신, 10/12)
     const bgs = await rows.locator("a").evaluateAll((as) => as.map((a) => getComputedStyle(a).backgroundColor));

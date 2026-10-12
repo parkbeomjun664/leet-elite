@@ -96,7 +96,8 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       {/* 2. 확인할 일 + 바로가기 */}
       <section aria-labelledby="check-title" className={CARD}>
         <h2 id="check-title" className="text-subhead font-semibold text-strong">
-          확인할 일 <span className="tabular">{checks.length}</span>
+          {/* 제목 옆 숫자는 없앰: 종류 수(1)가 줄의 건수(8건)와 헷갈려서 (10/12 범준님) */}
+          확인할 일
         </h2>
         {checks.length === 0 ? (
           <p className="mt-3 text-body text-muted">지금 처리할 일이 없어요.</p>
