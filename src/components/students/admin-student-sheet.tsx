@@ -1,12 +1,12 @@
 "use client";
 
 import { useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
-import { createStudent, saveStudent, type SaveStudentField } from "@/app/admin/students/actions";
+import { createStudent, issueStudentAccount, saveStudent, type SaveStudentField } from "@/app/admin/students/actions";
+import { AccountIssuer, type AccountInfo } from "@/components/accounts/account-issuer";
 import { Trash2 } from "lucide-react";
 import { ComingSoonButton } from "@/components/coming-soon-button";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea, TimeSelect } from "@/components/ui/field";
-import { InfoList } from "@/components/ui/panel";
 import { ToggleChip } from "@/components/ui/segment";
 import { Sheet } from "@/components/ui/sheet";
 import { WEEKDAY_KO } from "@/lib/date";
@@ -46,6 +46,8 @@ export type AdminStudent = {
   programs: string[];
   memo: string;
   guardians: GuardianInfo[];
+  /** 로그인 계정 (STU-08, 10/13). 아직 발급하지 않았으면 null */
+  account: AccountInfo | null;
 };
 
 type ClassOption = { id: string; name: string };
@@ -71,6 +73,7 @@ export function AdminStudentSheet({
   onSave,
   mode = "edit",
   onPartialCreate,
+  onAccountIssued,
 }: {
   student: AdminStudent;
   others: AdminStudent[];
@@ -81,6 +84,8 @@ export function AdminStudentSheet({
   mode?: "edit" | "create";
   /** 등록은 됐는데 반·수업 시간 저장만 실패했을 때: 그 학생의 수정 창으로 바꿔 다시 저장하게 */
   onPartialCreate?: (created: AdminStudent) => void;
+  /** 계정을 발급하면 목록의 그 학생에도 바로 반영 (창을 닫았다 다시 열어도 발급된 계정이 보이게) */
+  onAccountIssued?: (studentId: string, account: AccountInfo) => void;
 }) {
   const creating = mode === "create";
   // 저장·취소도 창의 닫힘 움직임을 거쳐 닫는다
@@ -136,10 +141,9 @@ export function AdminStudentSheet({
   const birthError = serverErrorOf("birthDate");
   const leftOnError = tried && showLeftOn && !form.leftOn ? "날짜를 입력해 주세요" : undefined;
 
-  // 로그인 아이디: 학생 휴대폰 번호. 같은 번호를 쓰는 학생(쌍둥이 등)이 있으면 따로 정해야 한다
-  const phone = form.phone?.trim() || null;
-  const loginId = phone ? digits(phone) : null;
-  const samePhone = phone ? others.filter((o) => o.phone && digits(o.phone) === digits(phone)) : [];
+  // 로그인 아이디 기본값: 저장된 학생 휴대폰 번호. 같은 번호를 쓰는 학생(쌍둥이 등)이 있으면 따로 정해야 한다
+  const savedPhone = student.phone?.trim() || null;
+  const samePhone = savedPhone ? others.filter((o) => o.id !== student.id && o.phone && digits(o.phone) === digits(savedPhone)) : [];
 
   // 바뀐 것만 보낸다: 반·시간표가 그대로면 DB 함수를 부르지 않고, 보호자는 고친 사람만
   const classesChanged = [...form.classIds].sort().join() !== [...student.classIds].sort().join();
@@ -258,6 +262,7 @@ export function AdminStudentSheet({
       classIds: res.classesSchedule?.classIds ?? [],
       schedule: res.classesSchedule ? [...res.classesSchedule.schedule].sort((a, b) => a.weekday - b.weekday || a.start.localeCompare(b.start)) : [],
       guardians: [],
+      account: null,
     });
     toast.success(`${v.name} 학생을 등록했어요`);
     closeSheet.current?.();
@@ -559,31 +564,14 @@ export function AdminStudentSheet({
         {/* 로그인 계정 (STU-08, AUTH-02). 새 학생 등록 중에는 숨긴다 (등록한 뒤에 발급) */}
         {!creating && (
         <Section title="로그인 계정">
-          <InfoList
-            items={[
-              {
-                label: "아이디",
-                value: loginId ? <span className="tabular">{loginId}</span> : <span className="text-sub">미발급</span>,
-              },
-            ]}
+          {/* 계정 발급(10/13). 비밀번호 재설정·사용 중지는 10/19 (AUTH-04·05) */}
+          <AccountIssuer
+            account={student.account}
+            defaultLoginId={samePhone.length > 0 || !savedPhone ? "" : digits(savedPhone)}
+            idHint={samePhone.length > 0 ? `${samePhone.map((o) => o.name).join(", ")} 학생과 같은 번호예요. 아이디를 따로 정해 주세요` : undefined}
+            issueAction={(id) => issueStudentAccount(student.id, id)}
+            onIssued={(account) => onAccountIssued?.(student.id, account)}
           />
-          {samePhone.length > 0 && (
-            <p className="mt-2 text-caption text-warn">
-              {samePhone.map((o) => o.name).join(", ")} 학생과 같은 번호입니다. 아이디를 따로 정해야 합니다.
-            </p>
-          )}
-          {/* 계정 발급(STU-08, 10/16)·비밀번호 재설정·사용 중지(AUTH-04·05, 10/19). 열리기 전에는 날짜 안내 */}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <ComingSoonButton size="sm" feature="계정 발급" opensOn="10/16">
-              계정 발급
-            </ComingSoonButton>
-            <ComingSoonButton size="sm" feature="비밀번호 재설정" opensOn="10/19">
-              비밀번호 재설정
-            </ComingSoonButton>
-            <ComingSoonButton size="sm" variant="danger" feature="사용 중지" opensOn="10/19">
-              사용 중지
-            </ComingSoonButton>
-          </div>
         </Section>
         )}
       </form>

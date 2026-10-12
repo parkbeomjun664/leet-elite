@@ -24,6 +24,7 @@ export async function loadAdminStudents(): Promise<AdminStudentList> {
       .from("students")
       .select(
         `id, name, school, grade, phone, status, enrolled_on, birth_date, left_on, attendance_code, programs, memo,
+         profiles ( login_id, is_active ),
          student_schedules ( weekday, start_time, duration_min ),
          class_members ( class_id, left_on ),
          guardian_students ( guardians ( id, name, relation, phone1, phone2, guardian_students ( student_id, students ( name ) ) ) )`,
@@ -66,6 +67,8 @@ export async function loadAdminStudents(): Promise<AdminStudentList> {
           children: g.guardian_students.map((c) => ({ id: c.student_id, name: c.students?.name ?? "알 수 없음" })),
         }),
       ),
+    // 로그인 계정 (STU-08): students.profile_id → profiles. 원장님은 모든 계정 줄을 읽는다 (RLS admin_all)
+    account: s.profiles ? { loginId: s.profiles.login_id, active: s.profiles.is_active } : null,
   }));
   return { rows, classes: classesRes.data };
 }
@@ -97,6 +100,7 @@ function mockAdminStudents(): AdminStudentList {
         phone2: g.phone2,
         children: g.studentIds.map((id) => ({ id, name: studentById(id)?.name ?? "알 수 없음" })),
       })),
+      account: null, // 가상 데이터에는 로그인 계정이 없다 (시험 모드에서 발급해도 저장되지 않음)
     }));
   const classes = [...mockClasses].sort((a, b) => a.sortOrder - b.sortOrder).map((c) => ({ id: c.id, name: c.name }));
   return { rows, classes };

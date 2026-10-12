@@ -13,14 +13,14 @@ import { MCARD } from "@/components/mobile/styles";
 import { Button } from "@/components/ui/button";
 import { studentDay } from "@/lib/attendance";
 import { addMinutes, formatDateKo, nowTimeKST, todayKST, weekdayOf, WEEKDAY_KO } from "@/lib/date";
+import { EmptyState } from "@/components/ui/empty-state";
+import { loadMyStudent } from "@/lib/data/me-student";
 import { homeworkOfStudent, makeupsOf, messagesOf, submissionOf } from "@/lib/mock/activity";
-import { classById, mockAttendanceFor, students, teacherById } from "@/lib/mock/data";
+import { mockAttendanceFor, teacherById } from "@/lib/mock/data";
+import { UserRoundX } from "lucide-react";
 
-// 가상 데이터라 매 요청마다 "지금" 기준으로 다시 계산한다
+// 매 요청마다 "지금" 기준으로 다시 계산한다
 export const dynamic = "force-dynamic";
-
-// TODO(2단계): 로그인한 학생으로 교체. 지금은 숙제가 있는 첫 재원생 (layout.tsx와 같은 규칙)
-const demoStudent = students.find((s) => s.status === "enrolled" && homeworkOfStudent(s.id).length > 0)!;
 
 /** "2026-09-30" → "9/30 (수)" */
 const shortDate = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))} (${WEEKDAY_KO[weekdayOf(date)]})`;
@@ -33,13 +33,26 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
 
   const date = todayKST();
   const now = demoTime ?? nowTimeKST();
-  const student = demoStudent;
-  const day = studentDay(student, mockAttendanceFor(date, now), date, now);
-  const className = student.classIds.map((id) => classById(id)?.name).filter(Boolean).join(" · ");
+  // 로그인한 학생 (10/13): 이름·반·수업 시간은 DB. 숙제·보강·메시지·출결은 아직 가상 데이터(activityId, 숙제 10/14~)
+  const me = await loadMyStudent();
+  if (!me) {
+    return (
+      <EmptyState
+        icon={UserRoundX}
+        title="계정에 연결된 학생 정보가 없어요"
+        description="학원에 카카오톡으로 문의해 주세요"
+        className="py-16"
+      />
+    );
+  }
+  const { student, className, activityId } = me;
+  const aid = activityId ?? "";
+  // 출결은 가상 데이터 id로 찾는다 (없으면 기록 없음 → 수업 시간으로만 상태 표시)
+  const day = studentDay({ ...student, id: aid || student.id }, activityId ? mockAttendanceFor(date, now) : [], date, now);
 
-  const homeworkItems: HomeworkItem[] = homeworkOfStudent(student.id).map((hw) => {
+  const homeworkItems: HomeworkItem[] = (activityId ? homeworkOfStudent(aid) : []).map((hw) => {
     // 지금(또는 시연 시각)보다 뒤에 낸 제출은 아직 없는 것으로 본다 (가상 데이터가 저녁 제출을 미리 만들어 둠)
-    const found = submissionOf(hw.id, student.id);
+    const found = submissionOf(hw.id, aid);
     const sub = found && found.submittedAt <= `${date} ${now}` ? found : null;
     return {
       id: hw.id,
@@ -55,7 +68,7 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
   const submittedItems = homeworkItems.filter((h) => h.submitted);
 
   // 예정된 보강만 (오늘 것은 끝나기 전까지 보여 준다)
-  const makeupItems: MakeupItem[] = makeupsOf(student.id)
+  const makeupItems: MakeupItem[] = (activityId ? makeupsOf(aid) : [])
     .filter((m) => m.status === "scheduled" && (m.date > date || (m.date === date && addMinutes(m.start, m.durationMin) > now)))
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
     .map((m) => ({
@@ -68,7 +81,7 @@ export default async function StudentHome({ searchParams }: PageProps<"/student"
     }));
 
   // 학생 대화방(학원 ↔ 학생)의 최근 2개. 학부모 대화방은 학생에게 보이지 않는다 (MSG-05, 9/30 결정)
-  const messageItems: MessageItem[] = messagesOf(student.id, "student")
+  const messageItems: MessageItem[] = (activityId ? messagesOf(aid, "student") : [])
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt))
     .slice(0, 2)
     .map((m) => ({

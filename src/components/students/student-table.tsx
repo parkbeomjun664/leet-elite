@@ -452,6 +452,7 @@ export function StudentTable({
             programs: [],
             memo: "",
             guardians: [],
+            account: null,
           }}
           others={rows}
           classes={classes}
@@ -483,11 +484,13 @@ export function StudentTable({
             // 보호자는 형제가 함께 쓰므로, 같은 보호자가 연결된 다른 학생 줄도 같이 바꾼다 (10/9)
             setRows((prev) =>
               prev.map((r) =>
-                r.id === next.id ? next : { ...r, guardians: r.guardians.map((g) => next.guardians.find((n) => n.id === g.id) ?? g) },
+                // 계정은 창을 연 뒤 발급됐을 수 있으므로 목록 쪽 값을 그대로 둔다
+                r.id === next.id ? { ...next, account: r.account } : { ...r, guardians: r.guardians.map((g) => next.guardians.find((n) => n.id === g.id) ?? g) },
               ),
             );
             // 창은 저장 뒤 닫힘 움직임을 거쳐 onClose로 닫힌다
           }}
+          onAccountIssued={(id, account) => setRows((prev) => prev.map((r) => (r.id === id ? { ...r, account } : r)))}
         />
       )}
     </div>

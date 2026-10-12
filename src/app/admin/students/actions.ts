@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { issueAccount, type IssueAccountResult } from "@/lib/accounts/issue";
 import { isMockRequest } from "@/lib/data/source";
 import { parseStudentBasic, type StudentBasic, type StudentBasicField } from "@/lib/students/basic";
 import { parseGuardian, type GuardianEdit, type GuardianField } from "@/lib/students/guardian";
@@ -145,7 +146,7 @@ export type CreateStudentResult =
  *  2) 반·수업 시간이 있으면 어제 만든 DB 함수로 저장 (save_student_classes_schedule)
  * - 원장님만 (RLS: 원장님만 학생을 추가할 수 있다. 선생님 등은 DB가 거부)
  * - 2)가 실패하면 학생은 이미 등록된 상태 → createdId를 돌려주고 "반·수업 시간만 다시 저장" 안내 (화면은 수정 창으로 바뀜)
- * - 보호자 연결은 10/20, 로그인 계정은 10/16
+ * - 보호자 연결은 10/20, 로그인 계정은 등록한 뒤 수정 창에서 발급 (issueStudentAccount)
  */
 export async function createStudent(input: { basic: unknown; status: unknown; classesSchedule?: unknown }): Promise<CreateStudentResult> {
   // id는 새로 만들므로 검사용 자리만 채운다
@@ -217,4 +218,14 @@ export async function createStudent(input: { basic: unknown; status: unknown; cl
 
   revalidatePath("/admin/students");
   return { ok: true, id: data.id, student: v, status, classesSchedule: cs };
+}
+
+/**
+ * 학생 로그인 계정 발급 (STU-08, AUTH-02, 10/13). 아이디는 기본이 휴대폰 번호, 형제가 같은 번호면 원장님이 따로 정한다
+ * 임시 비밀번호는 화면에 한 번만 보여 주고 저장하지 않는다. 첫 로그인 때 바꾸게 된다 (AUTH-03)
+ */
+export async function issueStudentAccount(studentId: string, loginId: string): Promise<IssueAccountResult> {
+  const result = await issueAccount("student", String(studentId), String(loginId));
+  if (result.ok) revalidatePath("/admin/students");
+  return result;
 }
