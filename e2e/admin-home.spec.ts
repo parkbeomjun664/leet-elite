@@ -50,10 +50,17 @@ test.describe("원장님 홈 PC", () => {
     // 제목에는 숫자를 붙이지 않는다 (종류 수가 건수와 헷갈려서, 10/12)
     await expect(checks.getByRole("heading", { name: "확인할 일", exact: true })).toBeVisible();
     await expect(rows.first().getByRole("link")).toContainText("보기");
-    // 줄마다 처음부터 서로 다른 연한 색 바탕 (마우스를 올려야 회색이 되던 것 대신, 10/12)
+    // 줄은 처음부터 같은 회색 바탕 (10/13 범준님 "색이 너무 많다" → 항목별 색 대신 회색 하나)
     const bgs = await rows.locator("a").evaluateAll((as) => as.map((a) => getComputedStyle(a).backgroundColor));
-    for (const bg of bgs) expect(bg).not.toBe("rgba(0, 0, 0, 0)");
-    expect(new Set(bgs).size).toBe(bgs.length);
+    for (const bg of bgs) expect(bg).toBe("rgb(249, 250, 251)");
+    // 카드 제목은 20px 굵게: 내용(15px)과 확실히 나뉘게 (10/13)
+    const title = checks.getByRole("heading", { name: "확인할 일", exact: true });
+    await expect(title).toHaveCSS("font-size", "20px");
+    await expect(title).toHaveCSS("font-weight", "700");
+    // 아바타·용건 태그도 회색 (색은 결석 숫자의 빨강만)
+    const unread = page.locator("[data-message]");
+    const chipBgs = await unread.locator("[data-avatar], [data-tag]").evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
+    expect(new Set(chipBgs)).toEqual(new Set(["rgb(242, 244, 246)"]));
     // 바로가기 4개
     await expect(page.getByRole("navigation", { name: "바로가기" }).getByRole("link")).toHaveCount(4);
     // 시간표 중심 구성은 없앴다 (원장님: "시간표는 루틴이라 중요하지 않다")

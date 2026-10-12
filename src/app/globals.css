@@ -102,10 +102,10 @@
   --text-figure-sm--line-height: 1.2;
   --text-lead: 1.125rem;
   --text-lead--line-height: 1.4;
-  /* 토스 스타일 홈: 히어로 숫자 32 · 카드 제목·반 이름 17 */
+  /* 토스 스타일 홈: 히어로 숫자 32 · 카드 제목 20 (10/13 범준님: 17은 내용과 구분이 안 됨) */
   --text-hero: 32px;
   --text-hero--line-height: 1.15;
-  --text-subhead: 17px;
+  --text-subhead: 20px;
   --text-subhead--line-height: 1.4;
   /* v4: 요약 오른쪽 숫자 20 · 상태 문장 14 · 기준 시각·태그 12 */
   --text-stat: 20px;

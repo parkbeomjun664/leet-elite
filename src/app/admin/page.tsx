@@ -3,8 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ClassAvatar, TagChip } from "@/components/admin/class-avatar";
 import { AutoRefresh, CountUp } from "@/components/admin/home-live";
-import { classTone } from "@/lib/admin/class-color";
-import { loadAdminSummary, type SummaryMakeup, type SummaryStat } from "@/lib/admin/summary-data";
+import { loadAdminSummary, type SummaryMakeup } from "@/lib/admin/summary-data";
 import { cn } from "@/lib/cn";
 import { formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
 
@@ -16,7 +15,8 @@ export const dynamic = "force-dynamic";
 /**
  * 원장님 홈 v5 (10/12 원장님 의견: "이전 화면이 더 한눈에 보인다", "시간표는 루틴이라 중요하지 않다")
  * 구성은 예전 홈 그대로: 오늘 학원 숫자 5칸 → 확인할 일 → 바로가기 → 오늘·다음 보강 · 읽지 않은 학부모 메시지
- * 모양은 v4 토스 스타일: 회색 바탕 + 흰 카드(모서리 20·안 24·사이 16), 진한 글씨는 숫자·이름에만, 반 색 아바타·용건 태그 (design.md 1-2)
+ * 모양은 v4 토스 스타일: 회색 바탕 + 흰 카드(모서리 20·안 24·사이 16), 카드 제목 20 굵게, 진한 글씨는 숫자·이름에만 (design.md 1-2)
+ * 색은 결석 숫자의 빨강만. 아바타·용건 태그도 회색 (10/13 범준님)
  * 데이터는 src/lib/admin/summary-data.ts
  */
 
@@ -31,16 +31,8 @@ const SHORTCUTS = [
   { label: "메시지", href: "/admin/messages" },
 ];
 
-// 확인할 일 줄 바탕: 처음부터 항목마다 연한 색으로 구분 (10/12 범준님: 마우스를 올려야 회색이 되는 대신)
-// 미등원 주황 · 메시지 파랑 · 선생님 보라 · 숙제 청록. 반 색 토큰을 빌려 쓴다 (연한 바탕 위 보조 글씨 대비 4.55 이상)
-const CHECK_TONE: Record<string, { bg: string; text: string }> = {
-  notArrived: { bg: classTone(3).bg, text: classTone(3).text },
-  unread: { bg: classTone(1).bg, text: classTone(1).text },
-  teachers: { bg: classTone(4).bg, text: classTone(4).text },
-  homework: { bg: classTone(6).bg, text: classTone(6).text },
-};
-
-const DOT: Record<NonNullable<SummaryStat["dot"]>, string> = { arrive: "bg-arrive", danger: "bg-danger" };
+// 색은 결석 숫자의 빨강 하나만 (10/13 범준님: "전체적으로 색이 너무 많다").
+// 확인할 일 줄은 처음부터 회색 바탕(마우스를 올려야 보이는 대신, 10/12), 숫자 옆 점·반 색 아바타·색 태그는 없앰
 
 export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   // 시연용: ?at=16:00 처럼 시각을 지정하면 그 시각 기준 (새로 고침도 멈춘다)
@@ -72,7 +64,6 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
             <li key={st.key} data-stat={st.key} className={cn(i === stats.length - 1 && "max-sm:col-span-2")}>
               <Link href={st.href} className="press-hcard flex h-full flex-col gap-1.5 rounded-[var(--radius-block)] bg-block px-4 py-3.5">
                 <span className="flex items-center gap-1.5 text-caption text-muted">
-                  {st.dot && <span aria-hidden className={cn("size-2 shrink-0 rounded-full", DOT[st.dot])} />}
                   {st.label}
                 </span>
                 <span className="tabular">
@@ -95,25 +86,25 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
 
       {/* 2. 확인할 일 + 바로가기 */}
       <section aria-labelledby="check-title" className={CARD}>
-        <h2 id="check-title" className="text-subhead font-semibold text-strong">
+        <h2 id="check-title" className="text-subhead font-bold tracking-tight text-strong">
           {/* 제목 옆 숫자는 없앰: 종류 수(1)가 줄의 건수(8건)와 헷갈려서 (10/12 범준님) */}
           확인할 일
         </h2>
         {checks.length === 0 ? (
           <p className="mt-3 text-body text-muted">지금 처리할 일이 없어요.</p>
         ) : (
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-4 space-y-2">
             {checks.map((c) => (
               <li key={c.key} data-check={c.key}>
                 <Link
                   href={c.href}
                   className={cn(
                     "group press-hcard flex items-center gap-3 rounded-[var(--radius-block)] px-4 py-3.5 transition-[filter] hover:brightness-[0.97] md:gap-4",
-                    CHECK_TONE[c.key]?.bg ?? "bg-block",
+                    "bg-block",
                   )}
                 >
                   <span className="w-[72px] shrink-0 leading-none whitespace-nowrap tabular md:w-28">
-                    <span className={cn("text-figure-md font-bold", CHECK_TONE[c.key]?.text ?? "text-strong")}>
+                    <span className="text-figure-md font-bold text-strong">
                       <CountUp value={c.value} />
                     </span>
                     {c.total !== undefined && <span className="text-caption text-muted"> / {c.total}</span>}
@@ -154,7 +145,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           {todayMakeups.length === 0 ? (
             <p className="mt-3 text-body text-muted">오늘 보강 일정이 없어요.</p>
           ) : (
-            <ul className="mt-2">
+            <ul className="mt-3">
               {todayMakeups.map((m) => (
                 <MakeupRow key={m.id} m={m} />
               ))}
@@ -177,7 +168,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           {messages.length === 0 ? (
             <p className="mt-3 text-body text-muted">읽지 않은 메시지가 없어요.</p>
           ) : (
-            <ul className="mt-2">
+            <ul className="mt-3">
               {messages.slice(0, UNREAD_LIMIT).map((m) => (
                 <li key={m.id} data-message>
                   {/* TODO(11/24 메시지): 해당 학생 대화방으로 바로 이동 */}
@@ -234,7 +225,7 @@ function MakeupRow({ m }: { m: SummaryMakeup }) {
 function ListHeader({ id, title, href }: { id: string; title: string; href: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <h2 id={id} className="text-subhead font-semibold text-strong">
+      <h2 id={id} className="text-subhead font-bold tracking-tight text-strong">
         {title}
       </h2>
       <Link href={href} className="-my-3 inline-flex min-h-11 items-center text-caption font-semibold text-base hover:underline">
