@@ -24,7 +24,7 @@ import { cn } from "@/lib/cn";
 import { activeItem, isActive, type NavItem } from "@/lib/nav";
 
 // 원장님 화면 틀 (10/12 확정: 상단 메뉴 대신 왼쪽 사이드바, decisions.md)
-// PC(1024 이상) = 왼쪽 사이드바 220px. 위쪽 [‹‹] 버튼으로 아이콘만 남는 64px 막대로 접고 펼친다(이 컴퓨터에 기억)
+// PC(1024 이상) = 왼쪽 사이드바 220px. 오른쪽 경계 가운데 [‹‹] 버튼으로 아이콘만 남는 64px 막대로 접고 펼친다(이 컴퓨터에 기억)
 // 휴대폰·태블릿 = 얇은 머리줄 + 아래 탭 5개(홈·출결·숙제·메시지·더보기)
 // 하위 메뉴(재원생·휴퇴원생·보호자 등)는 사이드바에서 그 메뉴 아래에 펼친다. 사이드바를 접었거나 휴대폰이면 본문 맨 위 하위 메뉴 줄로
 
@@ -81,25 +81,29 @@ export function AdminChrome({ nav, userName, children }: { nav: NavItem[]; userN
           collapsed ? "w-16" : "w-[220px]",
         )}
       >
-        <div className={cn("flex h-16 shrink-0 items-center", collapsed ? "justify-center" : "justify-between pr-2 pl-5")}>
-          {!collapsed && (
-            <Link href={home} className="flex min-w-0 items-center gap-2" aria-label="홈으로">
-              <Image src="/brand/leet-mark.png" alt="" width={407} height={512} className="h-7 w-auto" />
-              <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>
-              <span className="truncate text-[15px] font-semibold text-ink">영어학원</span>
-            </Link>
-          )}
-          <button
-            type="button"
-            onClick={toggle}
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? "메뉴 펼치기" : "메뉴 접기"}
-            title={collapsed ? "메뉴 펼치기" : "메뉴 접기"}
-            className="press grid size-9 place-items-center rounded-[var(--radius-control)] text-sub hover:bg-line-soft hover:text-ink"
-          >
-            {collapsed ? <ChevronsRight aria-hidden className="size-[18px]" /> : <ChevronsLeft aria-hidden className="size-[18px]" />}
-          </button>
+        <div className={cn("flex h-16 shrink-0 items-center", collapsed ? "justify-center" : "pl-5")}>
+          <Link href={home} className="flex min-w-0 items-center gap-2" aria-label="홈으로">
+            <Image src="/brand/leet-mark.png" alt="" width={407} height={512} className="h-7 w-auto" />
+            {!collapsed && (
+              <>
+                <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>
+                <span className="truncate text-[15px] font-semibold text-ink">영어학원</span>
+              </>
+            )}
+          </Link>
         </div>
+
+        {/* 접기·펼치기: 사이드바 오른쪽 경계 세로 가운데에 걸친 동그란 버튼 (10/12 범준님) */}
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? "메뉴 펼치기" : "메뉴 접기"}
+          title={collapsed ? "메뉴 펼치기" : "메뉴 접기"}
+          className="press absolute top-1/2 -right-3.5 z-40 grid size-7 -translate-y-1/2 place-items-center rounded-full border border-line bg-card text-sub shadow-[var(--shadow-chip)] hover:text-ink"
+        >
+          {collapsed ? <ChevronsRight aria-hidden className="size-4" /> : <ChevronsLeft aria-hidden className="size-4" />}
+        </button>
 
         <nav aria-label="주 메뉴" className={cn("flex-1 overflow-y-auto py-2", collapsed ? "px-2" : "px-3")}>
           <ul className="space-y-0.5">
