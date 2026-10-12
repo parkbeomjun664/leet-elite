@@ -140,8 +140,8 @@ test("준비 중 화면: 아이콘 40px, 본문 위에서 30% 지점, [홈으로
   const icon = page.locator("main svg").first();
   const box = (await icon.boundingBox())!;
   expect(Math.round(box.width)).toBe(40);
-  // 본문 칸(상단 메뉴 65px 아래) 높이의 30% 근처에서 시작 (±24px)
-  const target = 65 + (900 - 65) * 0.3;
+  // 본문 칸 높이의 30% 근처에서 시작 (±24px). 10/12부터 원장님 화면은 상단 메뉴 없이 왼쪽 사이드바
+  const target = 900 * 0.3;
   expect(Math.abs(box.y - target)).toBeLessThanOrEqual(24);
   await page.getByRole("main").getByRole("link", { name: "홈으로" }).click();
   await expect(page).toHaveURL(/\/admin$/);

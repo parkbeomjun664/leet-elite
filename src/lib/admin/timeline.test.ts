@@ -52,6 +52,6 @@ describe("상태·순서·요약", () => {
       e("c1", "나", "15:00", "16:00", "absent"),
       e("c2", "다", "17:00", "18:00"),
     ]);
-    expect(summarize(blocks, "15:30")).toEqual({ inClass: 1, arrived: 1, total: 3, absent: 1 });
+    expect(summarize(blocks, "15:30")).toEqual({ inClass: 1, arrived: 1, total: 3, absent: 1, notArrived: 0 });
   });
 });

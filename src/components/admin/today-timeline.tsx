@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import { nowTimeKST } from "@/lib/date";
+import { AttendanceBar, AttendanceLegend } from "@/components/admin/attendance-bar";
 import { blockState, summarize, type Block, type BlockState } from "@/lib/admin/timeline";
 import { cn } from "@/lib/cn";
 
@@ -33,9 +34,12 @@ export function DaySummary({ dateLabel, blocks, now, titleId }: { dateLabel: str
   const s = summarize(blocks, now);
   return (
     <header>
-      <h1 id={titleId} className="text-lead font-bold tracking-tight tabular">
-        {dateLabel}
-      </h1>
+      <div className="flex items-baseline justify-between gap-3">
+        <h1 id={titleId} className="text-lead font-bold tracking-tight tabular">
+          {dateLabel}
+        </h1>
+        <span className="text-caption text-sub tabular">{now} 기준</span>
+      </div>
       <p className="mt-1 text-heading text-ink tabular" aria-live="polite">
         {/* 줄이 바뀌어도 "결석 0"처럼 한 덩어리는 붙어 있게 */}
         <span className="whitespace-nowrap">
@@ -57,6 +61,11 @@ export function DaySummary({ dateLabel, blocks, now, titleId }: { dateLabel: str
           결석 <b className="font-bold">{s.absent}</b>
         </span>
       </p>
+      {/* 오늘 전체 출결: 상태별 색 막대 + 범례 (10/12, 한 가지 초록 대신) */}
+      <div className="mt-3 space-y-2">
+        <AttendanceBar counts={{ arrived: s.arrived, notArrived: s.notArrived, absent: s.absent, total: s.total }} className="h-2.5" />
+        <AttendanceLegend counts={{ arrived: s.arrived, notArrived: s.notArrived, absent: s.absent, total: s.total }} />
+      </div>
     </header>
   );
 }
@@ -80,12 +89,14 @@ export function TodayTimeline({
   })();
 
   return (
-    <section aria-labelledby="timeline-title" className="space-y-6">
+    <section aria-labelledby="timeline-title" className="space-y-5">
       <DaySummary dateLabel={dateLabel} blocks={blocks} now={now} titleId="timeline-title" />
 
       {blocks.length === 0 ? (
         <p className="text-body text-sub">오늘은 수업이 없어요.</p>
       ) : (
+        <div>
+        <h2 className="mb-1 text-caption font-semibold text-sub">오늘 시간표</h2>
         <ol aria-label="오늘 시간표" className="relative">
           {/* 세로선 (시각 칸 오른쪽) */}
           <span aria-hidden className="absolute top-2 bottom-2 left-[71px] w-px bg-line-soft" />
@@ -97,6 +108,7 @@ export function TodayTimeline({
           ))}
           {nowIndex === blocks.length && <NowLine now={now} />}
         </ol>
+        </div>
       )}
     </section>
   );
@@ -137,15 +149,9 @@ function BlockRow({ b, state }: { b: Block; state: BlockState }) {
           <span className={cn("truncate text-body font-bold", done ? "text-sub" : "text-ink")}>{b.className}</span>
           {b.teacherName && <span className="truncate text-caption text-sub">{b.teacherName}</span>}
         </span>
-        {/* 등원 진행 막대 x/y */}
+        {/* 출결 막대: 상태별 색 (등원 초록 · 미등원 주황 · 결석 분홍 · 수업 전 회색) */}
         <span className="mt-1.5 flex items-center gap-2">
-          <span
-            className="h-1.5 w-28 shrink-0 overflow-hidden rounded-full bg-line-soft"
-            role="img"
-            aria-label={`등원 ${b.arrived}명 / ${b.total}명`}
-          >
-            <span className="block h-full rounded-full bg-ok transition-[width] duration-[var(--duration-base)]" style={{ width: `${b.total ? (b.arrived / b.total) * 100 : 0}%` }} />
-          </span>
+          <AttendanceBar counts={b} className="w-40 shrink-0" />
           <span className="text-caption text-sub tabular">
             등원 {b.arrived}/{b.total}
             {b.absent > 0 && ` · 결석 ${b.absent}`}
@@ -170,7 +176,7 @@ function BlockRow({ b, state }: { b: Block; state: BlockState }) {
   const href = b.kind === "class" ? `/teacher?class=${b.classId}` : "/admin/makeups";
   return (
     <li>
-      <Link href={href} className="press-card -mx-2 flex items-start gap-2 rounded-[var(--radius-control)] px-2 py-3 hover:bg-bg">
+      <Link href={href} className="press-card -mx-2 flex items-start gap-2 rounded-[var(--radius-control)] px-2 py-2.5 hover:bg-bg">
         <span className="w-[60px] shrink-0 text-right leading-tight tabular">
           <span className={cn("block text-body font-semibold", done ? "text-sub" : "text-ink")}>{b.start}</span>
           <span className="block text-caption text-sub">~{b.end}</span>

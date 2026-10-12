@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { TodoItem } from "@/lib/admin/home-v2-data";
+import type { TodoItem } from "@/lib/admin/home-data";
 import { cn } from "@/lib/cn";
 import { mockSave } from "@/lib/mock/save";
 import { toast } from "@/lib/toast";

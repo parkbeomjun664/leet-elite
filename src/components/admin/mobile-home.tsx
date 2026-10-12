@@ -2,6 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { AttendanceBar } from "@/components/admin/attendance-bar";
 import { DaySummary, useClock } from "@/components/admin/today-timeline";
 import { blockState, type Block, type ClassBlock } from "@/lib/admin/timeline";
 import { cn } from "@/lib/cn";
@@ -29,12 +30,12 @@ export function MobileHome({
   const next = blocks.filter((b) => blockState(b, now) === "예정").slice(0, NEXT_LIMIT);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <DaySummary dateLabel={dateLabel} blocks={blocks} now={now} titleId="mobile-home-title" />
 
       {/* 처리할 일 한 줄 → 목록 화면 */}
       <Link
-        href="/admin/home-v2/todo"
+        href="/admin/todo"
         className="press-card -mx-1 flex min-h-14 items-center justify-between gap-3 rounded-[var(--radius-mcard)] bg-bg px-4"
       >
         <span className="text-body font-semibold text-ink">
@@ -65,9 +66,7 @@ export function MobileHome({
                     </span>
                     {b.teacherName && <span className="block text-caption text-sub">{b.teacherName}</span>}
                     <span className="mt-3 flex items-center gap-2">
-                      <span className="h-2 flex-1 overflow-hidden rounded-full bg-line-soft" role="img" aria-label={`등원 ${b.arrived}명 / ${b.total}명`}>
-                        <span className="block h-full rounded-full bg-ok" style={{ width: `${b.total ? (b.arrived / b.total) * 100 : 0}%` }} />
-                      </span>
+                      <AttendanceBar counts={b} className="flex-1" />
                       <span className="shrink-0 text-caption text-sub tabular">
                         등원 <b className="font-bold text-ink">{b.arrived}</b>/{b.total}
                       </span>

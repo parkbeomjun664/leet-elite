@@ -10,13 +10,12 @@ const PAGES = [
   ["학생 홈", "/student?at=08:00"],
   ["학부모 홈", "/parent?at=16:00"],
   ["출결 키패드", "/kiosk"],
-  ["원장님 홈", "/admin"],
+  ["원장님 홈", "/admin?at=16:00"],
+  ["원장님 처리할 일", "/admin/todo?at=16:00"],
   ["재원생 목록", "/admin/students"],
   ["학생 정보 수정 창", "/admin/students?edit=s010"],
   ["로그인", "/login"],
   ["개인정보 처리방침", "/privacy"],
-  ["원장님 새 홈", "/admin/home-v2?at=16:00"],
-  ["원장님 새 홈 처리할 일", "/admin/home-v2/todo?at=16:00"],
 ] as const;
 
 async function violations(page: Page) {

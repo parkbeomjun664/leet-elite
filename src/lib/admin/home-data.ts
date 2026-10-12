@@ -5,7 +5,7 @@ import { addDays, addMinutes } from "@/lib/date";
 import { homework, makeups, messages, submissionOf } from "@/lib/mock/activity";
 import { classById, mockAttendanceFor, studentById, students, teacherById } from "@/lib/mock/data";
 
-// 원장님 새 홈(10/9 v2) 화면 데이터: 오늘 시간표 블록 + 처리할 일. PC 홈·휴대폰 홈·처리할 일 화면이 함께 쓴다
+// 원장님 홈 화면 데이터 (10/9 v2 → 10/12 원장님 홈으로 확정): 오늘 시간표 블록 + 처리할 일. PC 홈·휴대폰 홈·처리할 일 화면이 함께 쓴다
 // 지금은 가상 데이터(기존 계산 재사용, 새 쿼리 없음). 실제 DB 연결은 일별 계획의 각 기능 날에
 
 /** 처리할 일 한 줄. action = 바로 처리 버튼 글자 (지금은 누르면 처리한 것으로 표시만, 실제 답장·알림은 메시지 11/24·알림 11/30에 연결) */
@@ -32,7 +32,7 @@ function msgTime(sentAt: string, today: string): string {
   return `${Number(day.slice(5, 7))}/${Number(day.slice(8, 10))}`;
 }
 
-export function loadHomeV2(date: string, now: string): { blocks: Block[]; todos: TodoItem[] } {
+export function loadAdminHome(date: string, now: string): { blocks: Block[]; todos: TodoItem[] } {
   const records = mockAttendanceFor(date, now);
   const enrolled = students.filter((s) => s.status === "enrolled");
   const days = enrolled.map((s) => ({ s, day: studentDay(s, records, date, now) }));

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
 import { ScrollRow } from "@/components/ui/scroll-row";
+import { cn } from "@/lib/cn";
 import { usePathname } from "next/navigation";
 import { activeItem, isActive, type NavItem } from "@/lib/nav";
 
@@ -79,12 +80,13 @@ export function TopBar({ nav, roleLabel, userName }: Props) {
  * 헤더 안에 있으면 이 줄이 생기고 없어질 때마다 본문 전체가 45px 밀려(CLS) 보여서, 본문 칸 안으로 옮겼다
  * 스크롤해도 헤더 바로 아래에 붙어 있다 (헤더 높이: PC 65px, 좁은 화면 메뉴 둘째 줄까지 113px)
  */
-export function SubNav({ nav }: { nav: NavItem[] }) {
+/** @param stickyClass 붙어 있을 위치 (기본: 선생님 화면 상단 메뉴 아래. 원장님 사이드바 화면은 따로 준다) */
+export function SubNav({ nav, stickyClass = "top-[113px] lg:top-[65px]" }: { nav: NavItem[]; stickyClass?: string }) {
   const pathname = usePathname();
   const current = activeItem(nav, pathname);
   if (!current?.children) return null;
   return (
-    <nav aria-label={`${current.label} 하위 메뉴`} className="sticky top-[113px] z-20 border-b border-line-soft bg-card lg:top-[65px]">
+    <nav aria-label={`${current.label} 하위 메뉴`} className={cn("sticky z-20 border-b border-line-soft bg-card", stickyClass)}>
       <ScrollRow activeKey={pathname} className="mx-auto max-w-[1280px]">
         <ul className="flex px-1">
           {current.children.map((child) => {

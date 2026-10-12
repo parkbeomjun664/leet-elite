@@ -100,7 +100,7 @@ export function sortBlocks(blocks: Block[]): Block[] {
   return [...blocks].sort((a, b) => a.start.localeCompare(b.start) || (a.kind === b.kind ? label(a).localeCompare(label(b), "ko") : a.kind === "class" ? -1 : 1));
 }
 
-/** 한 문장 요약에 쓰는 숫자: 지금 수업 중인 반 수 · 오늘 등원/수업 · 결석 */
+/** 한 문장 요약·오늘 전체 막대에 쓰는 숫자: 지금 수업 중인 반 수 · 오늘 등원/수업 · 결석 · 미등원 */
 export function summarize(blocks: Block[], now: string) {
   const classBlocks = blocks.filter((b): b is ClassBlock => b.kind === "class");
   return {
@@ -108,5 +108,6 @@ export function summarize(blocks: Block[], now: string) {
     arrived: classBlocks.reduce((n, b) => n + b.arrived, 0),
     total: classBlocks.reduce((n, b) => n + b.total, 0),
     absent: classBlocks.reduce((n, b) => n + b.absent, 0),
+    notArrived: classBlocks.reduce((n, b) => n + b.notArrived, 0),
   };
 }
