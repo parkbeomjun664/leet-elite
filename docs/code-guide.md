@@ -55,7 +55,10 @@ leet-elite/
 ## 5. 기능별로 어디를 보면 되나
 | 기능 | 파일 |
 |---|---|
-| 상단 메뉴 바꾸기 | `src/lib/nav.ts` (메뉴 목록), `src/components/top-bar.tsx` (모양) |
+| 메뉴 바꾸기 | `src/lib/nav.ts` (메뉴 목록), `src/components/app-chrome.tsx` (왼쪽 사이드바·아래 탭, 10/12), `src/components/top-bar.tsx` (하위 메뉴 줄만) |
+| 사이드바 프로필·로그아웃 | `src/components/profile-menu.tsx`, 이름 `src/lib/auth/me.ts` |
+| 원장님 홈 | `src/app/admin/page.tsx` (화면), `src/lib/admin/summary-data.ts` (숫자·확인할 일·보강·메시지 계산), `src/lib/admin/message-tag.ts` (용건 분류·시간·정렬), `src/lib/admin/class-color.ts` (반 색) |
+| 학생 등록·수정 | `src/app/admin/students/actions.ts` (`createStudent`·`saveStudent`), 창 `src/components/students/admin-student-sheet.tsx`, 목록 `student-table.tsx` |
 | 색 바꾸기 | `src/app/globals.css`의 `@theme` |
 | 미등원 규칙 바꾸기 | `src/lib/attendance.ts`의 `studentDay` |
 | 출결 입력 창 | `src/components/attendance/attendance-form.tsx` |
@@ -91,3 +94,16 @@ leet-elite/
   - **화면 전환**: React `<ViewTransition key={주소}>`로 감싸면 주소가 바뀔 때 새 본문이 들어오는 움직임을 CSS(`::view-transition-new`)로 줄 수 있다 (`src/components/page-transition.tsx`)
   - **글꼴과 화면 밀림**: `font-display: swap`은 "먼저 다른 글꼴로 보여 주고 도착하면 바꿔 끼움"이라 글자 폭이 바뀌며 화면이 밀린다. `optional`은 "바로 오면 쓰고 늦으면 이번엔 안 씀"이라 밀리지 않는다 (`src/app/pretendard.css`)
   - **품질 자동 검사 3종**: 접근성(axe, `e2e/a11y.spec.ts`), 스크린샷 비교(`e2e/visual.spec.ts`), Lighthouse(`scripts/lighthouse.mjs`). 스크린샷은 날짜가 바뀌면 화면이 달라지므로 테스트 서버의 "오늘"을 `LEET_TODAY`로 고정한다
+- **10/7~10/9** (자세한 것은 `progress.md` 세션 기록) 재원생 목록 DB 읽기, 학생 정보·반·시간표·보호자·생년월일 저장(`src/app/admin/students/actions.ts`, 검사 규칙 `src/lib/students/`), 반·시간표를 한 번에 저장하는 DB 함수(중간에 끊겨 반만 남지 않게)
+- **10/12** 학생 등록, 화면 틀 통일, 원장 홈 디자인 확정
+  - **등록 = 수정 창 재사용**: 새 화면을 만들지 않고 수정 창에 `mode="create"`를 준다. 검사 규칙도 같은 것을 쓰니 "등록 땐 되고 수정 땐 안 되는" 어긋남이 없다. 학생 저장은 됐는데 반·시간 저장만 실패하면 그 학생 수정 창으로 넘겨 이어서 저장 (`createStudent`, `admin-student-sheet.tsx`)
+  - **주소로 창 열기**: `?new=1`을 `history.pushState`로만 바꾸면 서버를 다시 부르지 않고 창이 열린다. 뒤로 가기로 닫히고, 주소를 공유하면 창이 열린 채로 보인다 (`new-student-button.tsx`, `student-table.tsx`)
+  - **화면 틀 하나로**: 원장님·선생님 화면이 같은 틀(`src/components/app-chrome.tsx`)을 쓴다. 메뉴 목록(`src/lib/nav.ts`)과 역할만 바꿔 넘긴다. 집으로 치면 같은 설계도에 방 이름표만 다르게 붙인 것
+  - **바탕색을 화면이 고른다**: 틀은 본문 안에 `data-tone="page"` 표시가 있으면 바탕을 회색으로 바꾼다(CSS `:has()`, Tailwind `has-[[data-tone=page]]:bg-page`). 틀이 화면 내용을 몰라도 된다
+  - **컨테이너 쿼리 = 내 방 크기로 가구 배치**: 화면(집) 전체 폭이 아니라 표가 받은 폭(방 크기)으로 열 수를 정한다. 사이드바를 접고 펼치면 방 크기가 달라지기 때문 (`@container` + `@min-[1380px]:`, `student-table.tsx`)
+  - **글씨 대비는 계산으로 확인**: 색 두 개의 밝기 비(대비)가 4.5 이상이어야 작은 글씨가 잘 읽힌다. 새 바탕색을 쓰기 전에 node 한 줄로 계산한다(상대 휘도 공식, `docs/workflow.md` 6번 10/12). 연한 회색·밝은 파랑은 점·막대로만 쓰고 글씨는 짙은 쪽 토큰으로
+  - **숫자 카운트업**: 처음 그릴 때는 바로 그 값(서버와 같은 글자 → 하이드레이션 어긋남 없음), 값이 바뀔 때만 250ms 동안 세어 올라간다. 끝으로 갈수록 느려지는 곡선(ease-out), 움직임 줄이기면 바로 (`src/lib/use-count-up.ts`)
+  - **메시지 용건 자동 분류 = 단어 규칙 + 순서**: "부터·일정" → 일정, "데리러·일찍" → 조퇴, "늦을" → 지각, "쉬게·아파" → 결석, 나머지 문의. 규칙 순서가 중요하다("다음 주부터 30분 늦출 수 있을까요"는 지각이 아니라 일정) (`src/lib/admin/message-tag.ts`, 시험으로 문장마다 확인)
+  - **숙제 미제출은 마감이 지나야 미제출**: 숙제는 다음 수업 때까지 내는 것이라, 그 반 오늘 수업 시작 시각이 지나야 센다 (`src/lib/admin/homework-due.ts`)
+  - **반 색**: 반 정렬 순서로 6색을 돌려 쓰고(`src/lib/admin/class-color.ts`), 같은 반은 어디서나 같은 색. Tailwind는 코드에 적힌 클래스 이름만 만들어서, 색 클래스 이름을 문자열로 다 적어 둔다
+  - **하루에 디자인을 여러 번 바꿨다가 원장님 의견으로 예전 구성으로 돌아왔다**: 실제 사용자가 무엇을 먼저 보는지(숫자 요약·확인할 일)가 디자인 원칙보다 앞선다. 과정은 `docs/preview/`(old·v2~v5)와 decisions.md에 남김
