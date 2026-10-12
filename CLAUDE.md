@@ -32,7 +32,7 @@ LEET영어학원 전용 학원 관리 앱(PWA). 에듀OK의 출결·숙제·소�
 
 ## 디자인
 - 기준은 **`docs/design.md`** (색·글자·여백·부품·모션). 색은 `src/app/globals.css`의 토큰만 쓴다. 임의의 hex 금지
-- 상태→색은 `src/lib/status-colors.ts` 함수 하나로. 분홍은 결석에만, 버건디(brand)는 로고·주 버튼·선택 표시에만(결석 글씨에는 쓰지 않음, 10/9)
+- 상태→색은 `src/lib/status-colors.ts` 함수 하나로. 분홍은 결석에만, 버건디(brand)는 로고·주 버튼·선택 표시·원장 홈 확인할 일 숫자에만(결석 글씨에는 쓰지 않음 10/9, 연한 버건디 바탕은 분홍이라 쓰지 않음 10/13)
 - 화면은 `src/components/ui/`, `src/components/mobile/`의 공통 부품을 쓴다
 
 ## 코드 규칙
