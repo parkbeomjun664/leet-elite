@@ -59,6 +59,8 @@ leet-elite/
 | 사이드바 프로필·로그아웃 | `src/components/profile-menu.tsx`, 이름 `src/lib/auth/me.ts` |
 | 원장님 홈 | `src/app/admin/page.tsx` (화면), `src/lib/admin/summary-data.ts` (숫자·확인할 일·보강·메시지 계산), `src/lib/admin/message-tag.ts` (용건 분류·시간·정렬), `src/lib/admin/class-color.ts` (반 색) |
 | 학생 등록·수정 | `src/app/admin/students/actions.ts` (`createStudent`·`saveStudent`), 창 `src/components/students/admin-student-sheet.tsx`, 목록 `student-table.tsx` |
+| 계정 발급 | 서버 `src/lib/accounts/issue.ts` (`issueAccount`), 임시 비밀번호 `src/lib/auth/temp-password.ts`, 화면 부품 `src/components/accounts/account-issuer.tsx`, 선생님 화면 `src/components/teachers/teacher-list.tsx` (10/13) |
+| 학생 화면의 "나" | `src/lib/data/me-student.ts` (`loadMyStudent`, 10/13) |
 | 색 바꾸기 | `src/app/globals.css`의 `@theme` |
 | 미등원 규칙 바꾸기 | `src/lib/attendance.ts`의 `studentDay` |
 | 출결 입력 창 | `src/components/attendance/attendance-form.tsx` |
@@ -107,3 +109,10 @@ leet-elite/
   - **숙제 미제출은 마감이 지나야 미제출**: 숙제는 다음 수업 때까지 내는 것이라, 그 반 오늘 수업 시작 시각이 지나야 센다 (`src/lib/admin/homework-due.ts`)
   - **반 색**: 반 정렬 순서로 6색을 돌려 쓰고(`src/lib/admin/class-color.ts`), 같은 반은 어디서나 같은 색. Tailwind는 코드에 적힌 클래스 이름만 만들어서, 색 클래스 이름을 문자열로 다 적어 둔다
   - **하루에 디자인을 여러 번 바꿨다가 원장님 의견으로 예전 구성으로 돌아왔다**: 실제 사용자가 무엇을 먼저 보는지(숫자 요약·확인할 일)가 디자인 원칙보다 앞선다. 과정은 `docs/preview/`(old·v2~v5)와 decisions.md에 남김
+- **10/13** 계정 발급 (선생님·학생)
+  - **관리자 키는 "마스터키"**: 계정 만들기는 Supabase 관리자 키로만 되고, 이 키는 RLS(금고 자물쇠)를 건너뛴다. 그래서 마스터키를 꺼내기 *전에* 부른 사람이 원장님인지 직접 확인한다(`isActiveAdmin`). 출입증(토큰)만 보지 않고 DB의 계정 줄도 본다. 토큰은 최대 1시간 늦게 바뀌어서, 방금 사용 중지된 원장님 계정이 그 사이 발급하지 못하게 하려고 (`src/lib/accounts/issue.ts`)
+  - **여러 단계 저장은 "실패하면 되돌리기"**: 계정 → profiles → 학생 줄 연결 세 번에 나눠 저장하므로, 두 번째나 세 번째가 실패하면 첫 번째에서 만든 계정을 지운다. 그래야 "로그인은 되는데 누군지 모르는 계정"이 남지 않는다. 학생 줄 연결은 `profile_id is null`일 때만 바꿔서, 두 창에서 동시에 눌러도 한 명에게 계정이 둘 생기지 않는다
+  - **비밀번호는 진짜 무작위로**: `Math.random()`은 예측될 수 있어 `crypto.getRandomValues`를 쓴다. 31글자 중 하나를 고를 때 그냥 `% 31`을 하면 앞 글자가 아주 조금 더 자주 나와서, 고르게 나누어떨어지는 범위 밖의 값은 버리고 다시 뽑는다 (`temp-password.ts`의 `pick`)
+  - **같은 요청에서 두 번 읽지 않기**: 학생 화면은 머리줄(layout)과 본문(page)이 둘 다 "로그인한 학생"이 필요하다. React `cache()`로 감싸면 한 요청 안에서는 DB를 한 번만 읽고 결과를 나눠 쓴다 (`me-student.ts`)
+  - **form 안의 또 다른 버튼**: 학생 수정 창 전체가 하나의 form이라, 아이디 칸에서 Enter를 치면 바깥 [저장]이 눌린다. 발급 칸은 Enter를 막고(`preventDefault`) 발급을 누른 것으로 바꾼다. 버튼은 모두 `type="button"` (`account-issuer.tsx`)
+  - **실제 DB 시험은 스스로 치운다**: `e2e/accounts-db.spec.ts`는 아이디를 `e2e-`로 시작하게 만들고, 시작 전·끝난 뒤 둘 다 지운다. 중간에 멈춘 지난 실행의 찌꺼기도 다음 실행에서 정리된다
