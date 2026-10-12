@@ -150,7 +150,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
       {/* 3. 오늘 보강 · 읽지 않은 학부모 메시지 (PC 2단은 두 카드 높이를 같게 — 10/12 범준님: 안정감, 휴대폰은 위아래) */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section aria-labelledby="makeup-title" className={CARD}>
-          <ListHeader id="makeup-title" title="오늘 보강" count={todayMakeups.length} href="/admin/makeups" />
+          <ListHeader id="makeup-title" title="오늘 보강" href="/admin/makeups" />
           {todayMakeups.length === 0 ? (
             <p className="mt-3 text-body text-muted">오늘 보강 일정이 없어요.</p>
           ) : (
@@ -173,7 +173,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         </section>
 
         <section aria-labelledby="unread-title" className={CARD}>
-          <ListHeader id="unread-title" title="읽지 않은 학부모 메시지" count={messages.length} href="/admin/messages" />
+          <ListHeader id="unread-title" title="읽지 않은 학부모 메시지" href="/admin/messages" />
           {messages.length === 0 ? (
             <p className="mt-3 text-body text-muted">읽지 않은 메시지가 없어요.</p>
           ) : (
@@ -230,12 +230,12 @@ function MakeupRow({ m }: { m: SummaryMakeup }) {
   );
 }
 
-/** 카드 머리: 제목 + 개수, 오른쪽 "전체 보기" */
-function ListHeader({ id, title, count, href }: { id: string; title: string; count: number; href: string }) {
+/** 카드 머리: 제목, 오른쪽 "전체 보기" (제목 옆 개수는 없앰, 10/12 범준님) */
+function ListHeader({ id, title, href }: { id: string; title: string; href: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
       <h2 id={id} className="text-subhead font-semibold text-strong">
-        {title} <span className="tabular">{count}</span>
+        {title}
       </h2>
       <Link href={href} className="-my-3 inline-flex min-h-11 items-center text-caption font-semibold text-base hover:underline">
         전체 보기
