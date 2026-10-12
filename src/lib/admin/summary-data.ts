@@ -10,7 +10,7 @@ import { classById, mockAttendanceFor, studentById, students, teacherById, teach
 import { workLogsFor } from "@/lib/mock/work";
 
 // 원장 홈 v5 데이터 (10/12 원장님 의견 "이전 화면이 더 한눈에 보인다", "시간표는 루틴이라 중요하지 않다")
-// 예전 홈(커밋 2d626f9)의 구성 그대로: 오늘 학원 숫자 5칸 → 확인할 일 → 바로가기 → 오늘·다음 보강 · 읽지 않은 학부모 메시지
+// 예전 홈(커밋 2d626f9)의 구성 그대로: 오늘 학원 숫자 5칸 → 확인할 일 → 오늘·다음 보강 · 읽지 않은 학부모 메시지
 // 모양만 v4 토스 스타일(회색 바탕 + 흰 카드, 반 색 아바타, 용건 태그). 지금은 가상 데이터, 실제 DB는 각 기능 날에
 
 export type SummaryStat = { key: string; label: string; value: number; total?: number; href: string; dot?: "arrive" | "danger" };

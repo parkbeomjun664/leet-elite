@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * 원장님 홈 v5 (10/12 원장님 의견: "이전 화면이 더 한눈에 보인다", "시간표는 루틴이라 중요하지 않다")
- * 구성은 예전 홈 그대로: 오늘 학원 숫자 5칸 → 확인할 일 → 바로가기 → 오늘·다음 보강 · 읽지 않은 학부모 메시지
+ * 구성은 예전 홈 그대로: 오늘 학원 숫자 5칸 → 확인할 일 → 오늘·다음 보강 · 읽지 않은 학부모 메시지
  * 모양은 v4 토스 스타일: 회색 바탕 + 흰 카드(모서리 20·안 24·사이 16), 카드 제목 20 굵게, 진한 글씨는 숫자·이름에만 (design.md 1-2)
  * 색은 결석 숫자의 빨강만. 아바타·용건 태그도 회색 (10/13 범준님)
  * 데이터는 src/lib/admin/summary-data.ts
@@ -22,14 +22,6 @@ export const dynamic = "force-dynamic";
 
 const CARD = "rounded-[var(--radius-hcard)] bg-card p-6";
 const UNREAD_LIMIT = 5;
-
-// 바로가기 (HOME-02): 자주 쓰는 4개
-const SHORTCUTS = [
-  { label: "숙제 등록", href: "/admin/homework/new" },
-  { label: "출결", href: "/admin/attendance" },
-  { label: "보강", href: "/admin/makeups" },
-  { label: "메시지", href: "/admin/messages" },
-];
 
 // 색은 결석 숫자의 빨강 하나만 (10/13 범준님: "전체적으로 색이 너무 많다").
 // 확인할 일 줄은 처음부터 회색 바탕(마우스를 올려야 보이는 대신, 10/12), 숫자 옆 점·반 색 아바타·색 태그는 없앰
@@ -84,7 +76,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         </ul>
       </section>
 
-      {/* 2. 확인할 일 + 바로가기 */}
+      {/* 2. 확인할 일 (바로가기는 10/13 범준님: 없앰. 메뉴는 왼쪽 사이드바) */}
       <section aria-labelledby="check-title" className={CARD}>
         <h2 id="check-title" className="text-subhead font-bold tracking-tight text-strong">
           {/* 제목 옆 숫자는 없앰: 종류 수(1)가 줄의 건수(8건)와 헷갈려서 (10/12 범준님) */}
@@ -123,19 +115,6 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
             ))}
           </ul>
         )}
-        {/* 바로가기: 자주 쓰는 4개 (회색 알약) */}
-        <nav aria-label="바로가기" className="mt-4 flex flex-wrap items-center gap-2 border-t border-page pt-4">
-          <span className="mr-1 text-caption font-semibold text-muted">바로가기</span>
-          {SHORTCUTS.map((m) => (
-            <Link
-              key={m.label}
-              href={m.href}
-              className="press inline-flex h-11 items-center rounded-full bg-page px-4 text-caption font-semibold text-strong hover:bg-line-soft md:h-9"
-            >
-              {m.label}
-            </Link>
-          ))}
-        </nav>
       </section>
 
       {/* 3. 오늘 보강 · 읽지 않은 학부모 메시지 (PC 2단은 두 카드 높이를 같게 — 10/12 범준님: 안정감, 휴대폰은 위아래) */}

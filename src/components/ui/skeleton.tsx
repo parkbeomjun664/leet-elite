@@ -131,7 +131,7 @@ export function SkeletonPage({ immediate }: { immediate?: boolean }) {
   );
 }
 
-/** 원장님 홈 모양 (src/app/admin/page.tsx와 같은 순서·높이): 날짜 줄 · 오늘 숫자 줄 · 확인할 일 · 바로가기 · 보강/메시지 2단 (10/9) */
+/** 원장님 홈 모양 (src/app/admin/page.tsx와 같은 순서·높이): 날짜 줄 · 오늘 숫자 줄 · 확인할 일 · 보강/메시지 2단 (10/9, 바로가기는 10/13 없앰) */
 export function SkeletonAdminHome() {
   return (
     <SkeletonGroup immediate label="홈 불러오는 중" className="space-y-12">
@@ -162,12 +162,6 @@ export function SkeletonAdminHome() {
               </div>
             ))}
           </div>
-        </div>
-        <div className="flex items-center gap-2 overflow-hidden">
-          <Skeleton className="mr-1 h-3.5 w-12 shrink-0" />
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-11 w-[72px] shrink-0 rounded-full md:h-9" />
-          ))}
         </div>
       </div>
       <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-10">

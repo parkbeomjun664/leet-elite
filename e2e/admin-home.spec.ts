@@ -6,7 +6,7 @@ import { gotoReady } from "./ready";
 test.describe("원장님 홈 PC", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("예전 구성(숫자 5칸 → 확인할 일 → 바로가기 → 보강·메시지)을 토스 스타일 카드로", async ({ page }) => {
+  test("예전 구성(숫자 5칸 → 확인할 일 → 보강·메시지)을 토스 스타일 카드로", async ({ page }) => {
     await gotoReady(page, "/admin?at=16:00");
     // 회색 바탕 #F2F4F6 + 흰 카드(모서리 20, 안 여백 24, 그림자 없음)
     expect(await page.evaluate(() => getComputedStyle(document.querySelector("[data-collapsed]")!).backgroundColor)).toBe("rgb(242, 244, 246)");
@@ -61,8 +61,8 @@ test.describe("원장님 홈 PC", () => {
     const unread = page.locator("[data-message]");
     const chipBgs = await unread.locator("[data-avatar], [data-tag]").evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
     expect(new Set(chipBgs)).toEqual(new Set(["rgb(242, 244, 246)"]));
-    // 바로가기 4개
-    await expect(page.getByRole("navigation", { name: "바로가기" }).getByRole("link")).toHaveCount(4);
+    // 바로가기는 없앴다 (10/13 범준님, 메뉴는 사이드바)
+    await expect(page.getByRole("navigation", { name: "바로가기" })).toHaveCount(0);
     // 시간표 중심 구성은 없앴다 (원장님: "시간표는 루틴이라 중요하지 않다")
     await expect(page.getByRole("list", { name: "오늘 시간표" })).toHaveCount(0);
   });
