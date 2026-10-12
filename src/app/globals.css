@@ -42,6 +42,19 @@
   --color-status-alert-bg: var(--color-brand-tint);
   --color-status-alert-fg: var(--color-brand);
 
+  /* 토스 스타일 한 벌 (10/12 원장 홈 v3, design.md 1-2): 회색 바탕 + 흰 카드, 상태색은 점·얇은 막대에만
+     글씨에 쓰는 회색·빨강은 흰 바탕 대비 4.5 이상인 짙은 쪽(muted·danger-text)을 쓴다. 옅은 쪽(muted-soft·danger)은 점·아이콘·막대만 */
+  --color-page: #f2f4f6; /* 원장 홈 페이지 바탕, 처리할 일 아바타·답장 버튼 바탕 */
+  --color-strong: #191f28; /* 지금 봐야 할 것만: 히어로 숫자·반 이름·시각 */
+  --color-muted: #6b7684; /* 보조 글씨 (흰 바탕 4.62) */
+  --color-muted-soft: #8b95a1; /* 아이콘·점·흐린 글씨 장식 (글씨로는 대비 부족 3.04) */
+  --color-arrive: #00c471; /* 등원 점·막대 */
+  --color-live: #3182f6; /* 진행 중 점·막대, 지금 시각 선 */
+  --color-caution: #ff9f0a; /* 미등원 경고 점 */
+  --color-danger: #f04452; /* 결석 점 */
+  --color-danger-text: #d91f2f; /* 로그아웃 같은 위험한 행동 글씨 (흰 바탕 5.02) */
+  --color-brand-soft: #fcebec; /* 프로필 아바타 바탕 */
+
   /* 글자 5단계: 제목 / 소제목 / 본문 / 보조 / 숫자 (키패드는 따로, design.md 2번) */
   /* 제목·숫자만 화면 폭에 따라 (휴대폰 22 → PC 24, 숫자 24 → 28). 본문·보조는 고정 (docs/design.md 8번) */
   --text-title: clamp(1.375rem, 1.3rem + 0.3vw, 1.5rem);
@@ -63,12 +76,21 @@
   --text-figure-sm--line-height: 1.2;
   --text-lead: 1.125rem;
   --text-lead--line-height: 1.4;
+  /* 토스 스타일 홈: 히어로 숫자 32 · 카드 제목·반 이름 17 */
+  --text-hero: 32px;
+  --text-hero--line-height: 1.15;
+  --text-subhead: 17px;
+  --text-subhead--line-height: 1.4;
 
   /* 모서리: 배지 4 / 버튼·입력 6 / 관리 카드·시트 8 / 휴대폰 카드 12 */
   --radius-badge: 4px;
   --radius-control: 6px;
   --radius-card: 8px;
   --radius-mcard: 12px;
+  /* 토스 스타일: 홈 카드 20 · 사이드바 프로필 카드 16 · 작은 버튼 8 */
+  --radius-hcard: 20px;
+  --radius-pcard: 16px;
+  --radius-button-sm: 8px;
 
   /* 그림자 2단계 */
   --shadow-chip: 0 1px 2px rgb(26 26 26 / 0.06);
@@ -233,6 +255,15 @@
     background-color: var(--color-line-soft);
   }
 }
+/* 토스 스타일 흰 카드 누름: 0.98 (바탕색은 그대로) */
+@utility press-hcard {
+  transition-property: transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-out);
+  &:active {
+    transform: scale(0.98);
+  }
+}
 /* 누르는 카드·목록 줄: 0.99 + 검정 4% 바탕 (손끝에 눌렸다는 표시) */
 @utility press-card {
   transition-property: transform, color, background-color, border-color, box-shadow;
@@ -304,6 +335,7 @@ body {
   /* 누를 때 작아지는 움직임도 끈다 (바탕색 변화만 남김) */
   .press:active,
   .press-card:active,
+  .press-hcard:active,
   .press-key:active,
   [class*="active:scale-"]:active,
   [class*="]:scale-"] {

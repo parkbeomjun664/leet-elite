@@ -114,7 +114,7 @@ test.describe("누름 반응", () => {
 test("선생님 홈 오른쪽 상세(1280): 따로 스크롤·스크롤바 자리·머리 고정, 사용 프로그램은 회색 테두리 칩 (10/8 UI 7 → 10/9 데스크 패턴)", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await gotoReady(page, "/teacher?at=16:00");
-  const panel = page.locator("aside");
+  const panel = page.locator("main aside");
   await expect(panel).toHaveCSS("overflow-y", "auto");
   await expect(panel).toHaveCSS("scrollbar-gutter", "stable");
   await expect(panel.locator("header")).toHaveCSS("position", "sticky");

@@ -183,7 +183,7 @@ export function SkeletonComingSoon() {
   return (
     <SkeletonGroup
       immediate
-      className="flex flex-col items-center px-4 pt-[max(1rem,calc((100dvh-113px)*0.3-24px))] lg:pt-[max(1rem,calc((100dvh-65px)*0.3-24px))]"
+      className="flex flex-col items-center px-4 pt-[max(1rem,calc((100dvh-56px)*0.3-24px))] lg:pt-[max(1rem,calc(100dvh*0.3-24px))]"
     >
       <Skeleton className="mb-3 size-10 rounded-full" />
       <Skeleton className="h-[30px] w-32" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell } from "lucide-react";
+import { Bell, Clock, NotebookPen, UserX, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -14,6 +14,7 @@ import { toast } from "@/lib/toast";
 // 원장님 새 홈 오른쪽 "처리할 일" (10/9 v2 3단계): 미등원 · 사유 없는 결석 · 읽지 않은 메시지 · 숙제 미제출 많은 반
 // 바로 처리 버튼을 누르면 그 줄이 부드럽게 접히며 사라지고(먼저 반영), 뒤에서 저장한다. 저장이 실패하면 다시 나타나고 알린다
 // [알림]은 바로 보내지 않고 받는 사람 수를 보여 주는 확인 창(휴대폰 하단 시트) → [보내기]를 눌러야 보낸다 (10/12)
+// v3(10/12 토스 스타일): 줄 앞 36px 원형(메시지 = 보낸 사람 첫 글자, 나머지 = 종류 아이콘), 답장 = 연회색 바탕 + 진한 글씨 32px·모서리 8
 // 지금은 가짜 저장: 실제 답장·알림은 메시지(11/24)·푸시 알림(11/30) 기능 날에 연결
 
 const LEAVE_MS = 250; // 접히는 시간 (모션 토큰 slow)
@@ -25,6 +26,25 @@ const KIND_LABEL: Record<TodoItem["kind"], string> = {
   message: "메시지",
   homework: "숙제",
 };
+
+const KIND_ICON: Record<Exclude<TodoItem["kind"], "message">, LucideIcon> = { notArrived: Clock, absent: UserX, homework: NotebookPen };
+
+/** 줄 앞 36px 원 (연한 회색 바탕) */
+function TodoAvatar({ it }: { it: TodoItem }) {
+  if (it.kind === "message") {
+    return (
+      <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-page text-body font-semibold text-strong">
+        {it.title.trim().charAt(0)}
+      </span>
+    );
+  }
+  const Icon = KIND_ICON[it.kind];
+  return (
+    <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-page text-muted">
+      <Icon className="size-[18px]" strokeWidth={1.8} />
+    </span>
+  );
+}
 
 export function TodoPanel({
   items,
@@ -85,12 +105,12 @@ export function TodoPanel({
     <section aria-labelledby="todo-v2-title" className={className}>
       <h2
         id="todo-v2-title"
-        className="flex items-baseline gap-2 text-caption font-semibold text-sub"
+        className="flex items-baseline gap-2 text-subhead font-semibold text-strong"
       >
         {title} <span className="tabular">{count}</span>
       </h2>
       {count === 0 ? (
-        <p className="mt-3 text-body text-sub">지금 처리할 일이 없어요.</p>
+        <p className="mt-3 text-body text-muted">지금 처리할 일이 없어요.</p>
       ) : (
         <ul className="mt-2">
           {visible.map((it) => (
@@ -106,22 +126,23 @@ export function TodoPanel({
               )}
             >
               <div className="min-h-0 overflow-hidden">
-                <div className="flex items-start gap-3 border-b border-line py-2.5">
+                <div className="flex items-center gap-3 py-3">
+                  <TodoAvatar it={it} />
                   <Link
                     href={it.href}
                     className="min-w-0 flex-1 rounded-[var(--radius-control)] hover:underline"
                   >
                     <span className="flex items-baseline justify-between gap-2">
-                      <span className="truncate text-body font-bold text-ink">
+                      <span data-todo-title className="truncate text-body font-semibold text-strong">
                         {it.title}
                       </span>
                       {it.time && (
-                        <span className="shrink-0 text-caption text-sub tabular">
+                        <span className="shrink-0 text-caption text-muted tabular">
                           {it.time}
                         </span>
                       )}
                     </span>
-                    <span className="mt-0.5 block truncate text-caption text-sub">
+                    <span className="mt-0.5 block truncate text-caption text-muted">
                       <span className="sr-only">{KIND_LABEL[it.kind]} · </span>
                       {it.detail}
                     </span>
@@ -134,10 +155,11 @@ export function TodoPanel({
                       it.action === "알림" ? setConfirming(it) : handle(it)
                     }
                     className={cn(
-                      "press mt-0.5 inline-flex h-11 shrink-0 items-center gap-1 rounded-full px-3.5 text-caption font-semibold text-ink md:h-8",
+                      // 휴대폰은 손가락 44px, 768 이상 32px. 모서리 8
+                      "press inline-flex h-11 shrink-0 items-center gap-1 rounded-[var(--radius-button-sm)] px-3 text-caption font-semibold text-strong md:h-8",
                       it.action === "알림"
-                        ? "border border-line bg-card pl-3 hover:bg-bg"
-                        : "bg-line hover:bg-line-soft",
+                        ? "border border-line bg-card pl-2.5 hover:bg-page"
+                        : "bg-page hover:bg-line-soft",
                     )}
                   >
                     {it.action === "알림" && (
@@ -150,12 +172,12 @@ export function TodoPanel({
             </li>
           ))}
           {hiddenMessages > 0 && (
-            <li className="py-3 text-caption text-sub">
+            <li className="pt-2 text-caption text-muted">
               읽지 않은 메시지 외{" "}
               <span className="tabular">{hiddenMessages}</span>건은{" "}
               <Link
                 href="/admin/messages"
-                className="font-semibold text-ink hover:underline"
+                className="font-semibold text-strong hover:underline"
               >
                 메시지 화면
               </Link>

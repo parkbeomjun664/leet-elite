@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BriefcaseBusiness,
   CalendarCheck,
   CalendarClock,
   ChevronsLeft,
@@ -17,65 +18,82 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { LogoutButton } from "@/components/logout-button";
 import { PageTransition } from "@/components/page-transition";
+import { ProfileMenu } from "@/components/profile-menu";
 import { SubNav } from "@/components/top-bar";
 import { cn } from "@/lib/cn";
 import { activeItem, isActive, type NavItem } from "@/lib/nav";
 
-// 원장님 화면 틀 (10/12 확정: 상단 메뉴 대신 왼쪽 사이드바, decisions.md)
+// 원장님·선생님 화면 틀 (10/12: 원장님 사이드바 확정 → 같은 날 선생님 화면도 같은 틀, decisions.md)
 // PC(1024 이상) = 왼쪽 사이드바 220px. 오른쪽 경계 가운데 [‹‹] 버튼으로 아이콘만 남는 64px 막대로 접고 펼친다(이 컴퓨터에 기억)
-// 휴대폰·태블릿 = 얇은 머리줄 + 아래 탭 5개(홈·출결·숙제·메시지·더보기)
+//   맨 아래 = 프로필 카드(이니셜 아바타 · 이름 · 역할 · ⋯ → 내 정보 · 로그아웃). 접으면 아바타만
+// 휴대폰·태블릿 = 얇은 머리줄(오른쪽 아바타 → 같은 메뉴) + 아래 탭 5개
 // 하위 메뉴(재원생·휴퇴원생·보호자 등)는 사이드바에서 그 메뉴 아래에 펼친다. 사이드바를 접었거나 휴대폰이면 본문 맨 위 하위 메뉴 줄로
+// 본문에 data-tone="page"가 있으면(원장 홈) 바탕을 토스 스타일 회색으로 (design.md 1-2)
 
 const ICON: Record<string, LucideIcon> = {
   홈: House,
   출결: CalendarCheck,
   숙제: NotebookPen,
   학생관리: Users,
+  "담당 학생": Users,
   "반·선생님": School,
   보강: CalendarClock,
   메시지: MessageCircle,
+  출퇴근: BriefcaseBusiness,
+  더보기: Ellipsis,
 };
 
-const COLLAPSE_KEY = "leet-admin-sidebar"; // "collapsed" 이면 접힘
+export type ChromeTab = { label: string; href: string };
 
-export function AdminChrome({ nav, userName, children }: { nav: NavItem[]; userName: string; children: ReactNode }) {
+export function AppChrome({
+  nav,
+  role,
+  userName,
+  tabs,
+  extraHomePaths = [],
+  children,
+}: {
+  nav: NavItem[];
+  role: "원장" | "선생님";
+  userName: string | null;
+  /** 휴대폰 아래 탭 (5개) */
+  tabs: ChromeTab[];
+  /** 아래 탭에서 홈으로 칠 다른 주소 (원장 홈의 처리할 일 목록 등) */
+  extraHomePaths?: string[];
+  children: ReactNode;
+}) {
   const pathname = usePathname();
   const current = activeItem(nav, pathname);
   const home = nav[0].href;
+  const collapseKey = role === "원장" ? "leet-admin-sidebar" : "leet-teacher-sidebar"; // "collapsed" 이면 접힘
 
   // 접힘 상태: 이 컴퓨터에만 기억 (저장소를 못 쓰면 펼친 채로)
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
     try {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- 처음 한 번 저장된 값을 읽어 온다 (서버에서는 알 수 없음)
-      if (localStorage.getItem(COLLAPSE_KEY) === "collapsed") setCollapsed(true);
+      if (localStorage.getItem(collapseKey) === "collapsed") setCollapsed(true);
     } catch {}
-  }, []);
+  }, [collapseKey]);
   const toggle = () =>
     setCollapsed((c) => {
       try {
-        localStorage.setItem(COLLAPSE_KEY, c ? "open" : "collapsed");
+        localStorage.setItem(collapseKey, c ? "open" : "collapsed");
       } catch {}
       return !c;
     });
 
-  // 휴대폰 아래 탭 5개
-  const tabs: { label: string; href: string; icon: LucideIcon }[] = [
-    { label: "홈", href: home, icon: House },
-    { label: "출결", href: "/admin/attendance", icon: CalendarCheck },
-    { label: "숙제", href: "/admin/homework", icon: NotebookPen },
-    { label: "메시지", href: "/admin/messages", icon: MessageCircle },
-    { label: "더보기", href: "/admin/more", icon: Ellipsis },
-  ];
-  const tabActive = (href: string) => (href === home ? pathname === home || pathname === "/admin/todo" : isActive(pathname, href));
+  const tabActive = (href: string) => (href === home ? pathname === home || extraHomePaths.includes(pathname) : isActive(pathname, href));
 
   return (
-    <div data-collapsed={collapsed} className="group/chrome min-h-dvh bg-card lg:flex">
+    <div
+      data-collapsed={collapsed}
+      className="group/chrome min-h-dvh bg-card has-[[data-tone=page]]:bg-page lg:flex"
+    >
       {/* ── PC: 왼쪽 사이드바 ── */}
       <aside
-        aria-label="원장님 메뉴"
+        aria-label={`${role === "원장" ? "원장님" : "선생님"} 메뉴`}
         className={cn(
           "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-line-soft bg-bg transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)] lg:flex",
           collapsed ? "w-16" : "w-[220px]",
@@ -155,14 +173,9 @@ export function AdminChrome({ nav, userName, children }: { nav: NavItem[]; userN
           </ul>
         </nav>
 
-        <div className={cn("flex shrink-0 items-center gap-2 border-t border-line-soft py-4 text-body", collapsed ? "justify-center px-1" : "justify-between px-5")}>
-          {!collapsed && (
-            <span className="min-w-0 leading-tight">
-              <b className="block truncate font-semibold text-ink">{userName}</b>
-              <span className="text-caption text-sub">원장님</span>
-            </span>
-          )}
-          <LogoutButton className={cn("shrink-0", collapsed ? "text-[11px]" : "text-caption")} />
+        {/* 프로필: 바깥 여백 12 + 화면 끝에서 16 + 안전 영역 */}
+        <div className={cn("shrink-0 px-3 pt-3 pb-[calc(16px+env(safe-area-inset-bottom,0px))]", collapsed && "flex justify-center px-0")}>
+          <ProfileMenu name={userName} role={role} homeHref={home} variant={collapsed ? "avatar" : "card"} />
         </div>
       </aside>
 
@@ -175,14 +188,14 @@ export function AdminChrome({ nav, userName, children }: { nav: NavItem[]; userN
               <span className="text-[17px] font-extrabold tracking-tight text-brand">LEET</span>
               <span className="text-body font-semibold text-ink">영어학원</span>
             </Link>
-            <LogoutButton className="shrink-0 text-caption" />
+            <ProfileMenu name={userName} role={role} homeHref={home} variant="header" />
           </div>
         </header>
 
         <main className="pb-[calc(80px+env(safe-area-inset-bottom,0px))] lg:pb-0">
           {/* 하위 메뉴 줄: 휴대폰, 또는 사이드바를 접었을 때만 (펼친 사이드바에는 이미 있다) */}
           <div className="lg:hidden group-data-[collapsed=true]/chrome:lg:block">
-            <SubNav nav={nav} stickyClass="top-14 lg:top-0" />
+            <SubNav nav={nav} />
           </div>
           {/* 본문 최대 폭 1600 (큰 모니터에서 양옆이 비지 않게, 10/12) */}
           <PageTransition className="mx-auto max-w-[1600px] px-4 py-6 lg:px-8">{children}</PageTransition>
@@ -194,7 +207,7 @@ export function AdminChrome({ nav, userName, children }: { nav: NavItem[]; userN
         <ul className="grid h-16 grid-cols-5">
           {tabs.map((it) => {
             const on = tabActive(it.href);
-            const Icon = it.icon;
+            const Icon = ICON[it.label] ?? House;
             return (
               <li key={it.href}>
                 <Link

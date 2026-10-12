@@ -236,12 +236,12 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
   return (
     // 상담 데스크 패턴 (10/9 화면별 참고 패턴): 위 = 날짜·숫자·반 거르기, 아래 = 왼쪽 학생 목록(360px, 따로 스크롤) + 오른쪽 상세(머리 고정)
     // 768 이하: 목록만 보이고, 학생을 누르면 상세 화면으로 바뀐다(뒤로 버튼·휴대폰 뒤로 가기로 목록)
-    // PC는 화면 높이에 맞춰 페이지는 움직이지 않고 목록·상세만 스크롤된다 (상단 메뉴: 1024 이상 65px, 그 아래 113px, 본문 위아래 여백 48px)
-    <div className="flex flex-col gap-5 min-[769px]:h-[calc(100dvh-113px-48px)] lg:h-[calc(100dvh-65px-48px)]">
+    // PC는 화면 높이에 맞춰 페이지는 움직이지 않고 목록·상세만 스크롤된다 (10/12 사이드바: PC는 머리줄 없음, 1024 아래는 머리줄 56px + 아래 탭 80px, 본문 위아래 여백 48px)
+    <div className="flex flex-col gap-5 min-[769px]:h-[calc(100dvh-56px-80px-48px)] lg:h-[calc(100dvh-48px)]">
       {mobileDetailDay ? (
         // ── 768 이하: 학생 상세 화면 ──
         <div className="-mx-4 -mt-6">
-          <div className="sticky top-[113px] z-10 flex h-16 items-center gap-1 border-b border-line-soft bg-card px-2">
+          <div className="sticky top-14 z-10 flex h-16 items-center gap-1 border-b border-line-soft bg-card px-2">
             <button
               type="button"
               onClick={closeMobileDetail}
@@ -436,7 +436,7 @@ export function AttendanceBoard({ date, dateLabel, nowTime, demo = false, classe
 
       {/* 여러 명 선택 중: 아래 줄에서 한 번에 처리 (ATT-04) */}
       {selecting && (
-        <div className="fixed inset-x-0 bottom-0 z-20 animate-sheet-up border-t border-line-soft bg-card/95 shadow-float backdrop-blur">
+        <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom,0px))] z-20 animate-sheet-up lg:bottom-0 border-t border-line-soft bg-card/95 shadow-float backdrop-blur">
           <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-2 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
             <span className="mr-1 text-body">
               {chosen.length > 0 ? (

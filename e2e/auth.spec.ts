@@ -80,7 +80,10 @@ test.describe("시험 계정", () => {
     await expect(page).toHaveURL(/\/teacher$/);
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/teacher$/);
-    await page.getByRole("button", { name: "로그아웃" }).click();
+    // 선생님 화면 로그아웃: 사이드바 프로필 메뉴 → 로그아웃 → "로그아웃할까요?" 확인 (10/12)
+    await page.getByRole("button", { name: /^내 계정 메뉴/ }).filter({ visible: true }).click();
+    await page.getByRole("menuitem", { name: "로그아웃" }).click();
+    await page.getByRole("menu", { name: "로그아웃 확인" }).getByRole("menuitem", { name: "로그아웃" }).click();
     await expect(page).toHaveURL(/\/login$/);
     await page.goto("/teacher");
     await expect(page).toHaveURL(/\/login\?next=/);

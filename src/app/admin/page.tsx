@@ -25,12 +25,13 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   const dateLabel = formatDateKo(date).replace(/^\d+년 /, "");
 
   return (
-    <>
+    // data-tone="page": 이 화면만 바탕을 토스 스타일 회색으로 (app-chrome.tsx, design.md 1-2)
+    <div data-tone="page">
       {/* 휴대폰·태블릿(1024 미만): 요약 · 처리할 일 한 줄 · 지금 수업 중 · 다음 수업 */}
       <div className="lg:hidden">
         <MobileHome dateLabel={dateLabel} blocks={blocks} initialNow={now} demo={demoTime !== null} todoCount={todos.length} />
       </div>
-      {/* PC: 위 요약 면 → 아래 왼쪽 오늘 시간표 면 + 오른쪽 처리할 일 면 (면 사이 24px, 10/12) */}
+      {/* PC: 위 요약 카드 → 아래 왼쪽 오늘 시간표 카드 + 오른쪽 처리할 일 카드 (카드 사이 16px, 10/12 v3) */}
       <div className="hidden lg:block">
         <TodayTimeline
           dateLabel={dateLabel}
@@ -40,13 +41,13 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
           aside={
             // 오른쪽 처리할 일: 스크롤해도 위에 붙어 있다
             <aside className="sticky top-6">
-              <div className="max-h-[calc(100dvh-48px)] overflow-y-auto rounded-[var(--radius-card)] bg-bg px-5 pt-4 pb-2 [scrollbar-gutter:stable]">
+              <div className="max-h-[calc(100dvh-48px)] overflow-y-auto rounded-[var(--radius-hcard)] bg-card p-6 [scrollbar-gutter:stable]">
                 <TodoPanel items={todos} />
               </div>
             </aside>
           }
         />
       </div>
-    </>
+    </div>
   );
 }

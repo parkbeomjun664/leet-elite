@@ -14,22 +14,37 @@ test.describe("원장님 홈 PC", () => {
     await expect(page.locator("p[aria-live]").filter({ visible: true })).toHaveText(/^(지금 \d+개 반 수업 중|지금 수업 중인 반은 없어요) · 등원 \d+\/\d+ · 결석 \d+$/);
 
     const timeline = page.getByRole("list", { name: "오늘 시간표" });
-    const starts = await timeline.locator("li a > span:first-child > span:first-child").allInnerTexts();
+    const starts = await timeline.locator("li a [data-start]").allInnerTexts();
     expect(starts.length).toBeGreaterThan(0);
     expect(starts).toEqual([...starts].sort()); // 시간순
     await expect(timeline.getByRole("listitem", { name: "지금 16:00" })).toBeVisible();
 
-    // 오늘 전체 출결: 상태별로 나눈 막대 + 범례 (등원·미등원·결석·수업 전)
+    // 오늘 전체 출결: 등원만 채운 6px 막대 (등원 → 미등원 → 결석 → 수업 전 순서로 읽힌다)
     const bar = page.getByRole("img", { name: /^등원 \d+, 미등원 \d+, 결석 \d+, 수업 전 \d+ \(전체 \d+명\)$/ }).first();
     await expect(bar).toBeVisible();
     // 막대는 등원만 채운다 (결석·미등원은 숫자로만, 10/12)
     await expect(bar.locator("span")).toHaveCount(1);
-    await expect(bar.locator("span")).toHaveClass(/bg-ok/);
-    // 범례 순서: 등원 → 미등원 → 결석 → 수업 전
-    const legend = await page.locator("header ul").filter({ visible: true }).first().getByRole("listitem").allInnerTexts();
-    expect(legend.map((t) => t.replace(/\s*\d+$/, "").trim())).toEqual(["등원", "미등원", "결석", "수업 전"]);
-    // 날짜는 크게 (title 토큰 22px 이상)
-    expect(parseFloat(await page.getByRole("heading", { level: 1 }).filter({ visible: true }).evaluate((el) => getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(22);
+    await expect(bar.locator("span")).toHaveClass(/bg-arrive/);
+    await expect(bar).toHaveCSS("height", "6px");
+    // v3 위계(10/12): 히어로 "등원 x/y" 32px 700 진한 검정, 나머지 숫자는 15px 보조 회색, 순서 미등원 → 결석 → 수업 전
+    const hero = page.locator("[data-hero]").filter({ visible: true });
+    await expect(hero).toHaveText(/^등원 \d+\/\d+$/);
+    await expect(hero).toHaveCSS("font-size", "32px");
+    await expect(hero).toHaveCSS("font-weight", "700");
+    await expect(hero).toHaveCSS("color", "rgb(25, 31, 40)");
+    const rest = page.locator("[data-summary-rest]").filter({ visible: true });
+    // 화면 읽기 프로그램은 위 한 문장을 읽고 이 칸은 숨긴다(aria-hidden) → li로 찾는다
+    expect((await rest.locator("li").allInnerTexts()).map((t) => t.replace(/\s*\d+$/, "").trim())).toEqual(["미등원", "결석", "수업 전"]);
+    await expect(rest).toHaveCSS("font-size", "15px");
+    // 토스 스타일: 회색 바탕 #F2F4F6 + 흰 카드(모서리 20, 안 여백 24, 그림자 없음)
+    expect(await page.evaluate(() => getComputedStyle(document.querySelector("[data-collapsed]")!).backgroundColor)).toBe("rgb(242, 244, 246)");
+    const card = page.locator("section", { has: page.getByRole("heading", { name: "오늘 시간표" }) });
+    await expect(card).toHaveCSS("border-radius", "20px");
+    await expect(card).toHaveCSS("box-shadow", "none");
+    await expect(card).toHaveCSS("padding-top", "24px");
+    // 진행 중인 반만 왼쪽 파랑 4px 막대
+    await expect(timeline.locator('a[data-state="수업 중"] [data-live-bar]').first()).toHaveCSS("width", "4px");
+    await expect(timeline.locator('a[data-state="예정"] [data-live-bar]')).toHaveCount(0);
   });
 
   test("다른 원장님 화면도 같은 사이드바, 접으면 아이콘만 + 하위 메뉴 줄, 다시 열어도 기억", async ({ page }) => {
@@ -50,6 +65,51 @@ test.describe("원장님 홈 PC", () => {
     await expect.poll(async () => (await aside.boundingBox())!.width).toBe(220);
   });
 
+  test("사이드바 프로필: 이름·역할, 누르면 내 정보·로그아웃(빨강), 로그아웃은 한 번 더 묻는다, 키보드로도", async ({ page }) => {
+    await gotoReady(page, "/admin?at=16:00");
+    const aside = page.getByRole("complementary", { name: "원장님 메뉴" });
+    // 가상 데이터에는 계정 이름이 없어 "원장님" (내부 이름 "총괄관리자"는 보이지 않는다)
+    const trigger = aside.getByRole("button", { name: "내 계정 메뉴: 원장님 원장" });
+    await expect(trigger).toBeVisible();
+    await expect(aside).not.toContainText("총괄관리자");
+    await expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    // 키보드: Enter로 열면 첫 항목에 초점, ↓로 로그아웃, Esc로 닫으면 프로필 버튼으로
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    const menu = page.getByRole("menu", { name: "내 계정" });
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "내 정보" })).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    const logout = menu.getByRole("menuitem", { name: "로그아웃" });
+    await expect(logout).toBeFocused();
+    await expect(logout).toHaveCSS("color", "rgb(217, 31, 47)");
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+
+    // 로그아웃 → 확인 → 취소하면 그대로 이 화면
+    await trigger.click();
+    await page.getByRole("menuitem", { name: "로그아웃" }).click();
+    const confirm = page.getByRole("menu", { name: "로그아웃 확인" });
+    await expect(confirm).toContainText("로그아웃할까요?");
+    await confirm.getByRole("menuitem", { name: "취소" }).click();
+    await expect(page).toHaveURL(/\/admin\?at=16/);
+
+    // 바깥을 누르면 닫힌다
+    await page.getByRole("heading", { name: "오늘 시간표" }).click();
+    await expect(page.getByRole("menu")).toHaveCount(0);
+
+    // 접으면 아바타만, 눌러도 같은 메뉴
+    await page.getByRole("button", { name: "메뉴 접기" }).click();
+    await expect(aside.getByText("원장", { exact: true })).toHaveCount(0);
+    await aside.getByRole("button", { name: /^내 계정 메뉴/ }).click();
+    await expect(page.getByRole("menuitem", { name: "내 정보" })).toBeVisible();
+    await page.getByRole("menuitem", { name: "내 정보" }).click();
+    await expect(page).toHaveURL(/\/admin\/me$/);
+    await page.getByRole("button", { name: "메뉴 펼치기" }).click();
+  });
+
   test("예전 주소 /admin/home-v2 는 홈으로", async ({ page }) => {
     await page.goto("/admin/home-v2?at=16:00");
     await expect(page).toHaveURL(/\/admin\?at=16/);
@@ -68,7 +128,7 @@ test.describe("원장님 홈 PC", () => {
     await gotoReady(page, "/admin?at=16:00");
     const panel = page.locator("section").filter({ has: page.getByRole("heading", { name: /^처리할 일/ }) });
     const row = panel.locator("ul > li").filter({ has: page.getByRole("button", { name: "알림" }) }).first();
-    const title = (await row.locator("span.font-bold").first().innerText()).trim();
+    const title = (await row.locator("[data-todo-title]").innerText()).trim();
     // 알림(테두리)과 답장(회색 면)은 모양이 다르다
     await expect(row.getByRole("button", { name: "알림" })).toHaveCSS("border-top-width", "1px");
     await expect(panel.getByRole("button", { name: "답장" }).first()).toHaveCSS("border-top-width", "0px");
@@ -107,7 +167,7 @@ test.describe("원장님 홈 PC", () => {
     const panel = page.locator("section").filter({ has: page.getByRole("heading", { name: /^처리할 일/ }) });
     // 확인 창이 없는 답장 줄로 본다
     const first = panel.locator("ul > li").filter({ has: page.getByRole("button", { name: "답장" }) }).first();
-    const title = (await first.locator("span.font-bold").first().innerText()).trim();
+    const title = (await first.locator("[data-todo-title]").innerText()).trim();
     const before = await panel.getByRole("heading").innerText();
     await first.getByRole("button").click();
     await expect(panel.getByText(title, { exact: true })).toHaveCount(0);
@@ -117,7 +177,7 @@ test.describe("원장님 홈 PC", () => {
     // 실패 흉내: 다시 나타나고 실패 안내
     await page.evaluate(() => (window.__leetFailSave = true));
     const next = panel.locator("ul > li").filter({ has: page.getByRole("button", { name: "답장" }) }).first();
-    const title2 = (await next.locator("span.font-bold").first().innerText()).trim();
+    const title2 = (await next.locator("[data-todo-title]").innerText()).trim();
     await next.getByRole("button").click();
     await expect(page.getByTestId("toast")).toHaveAttribute("data-kind", "error");
     await expect(panel.getByText(title2, { exact: true })).toBeVisible();
@@ -135,6 +195,22 @@ test.describe("원장님 홈 휴대폰 375", () => {
     await expect(tabs).toHaveCount(5);
     await expect(tabs.first()).toHaveAttribute("aria-current", "page");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    // 흰 카드가 한 줄로 쌓인다: 요약·처리할 일·다음 수업 카드의 왼쪽 끝과 폭이 같고, 위에서 아래로
+    const boxes = await Promise.all(
+      [page.locator("header").filter({ has: page.locator("[data-hero]") }), page.getByRole("link", { name: /^처리할 일/ }), page.locator("section", { has: page.getByRole("heading", { name: "다음 수업" }) })].map(
+        async (l) => (await l.filter({ visible: true }).boundingBox())!,
+      ),
+    );
+    for (const b of boxes) {
+      expect(Math.round(b.x)).toBe(16);
+      expect(Math.round(b.width)).toBe(375 - 32);
+    }
+    expect(boxes[0].y).toBeLessThan(boxes[1].y);
+    expect(boxes[1].y).toBeLessThan(boxes[2].y);
+    // 휴대폰 머리줄 오른쪽 아바타 → 같은 메뉴
+    await page.getByRole("banner").getByRole("button", { name: /^내 계정 메뉴/ }).click();
+    await expect(page.getByRole("menuitem", { name: "로그아웃" })).toBeVisible();
+    await page.keyboard.press("Escape");
     // 처리할 일 한 줄 → 목록 화면
     await page.getByRole("link", { name: /^처리할 일/ }).click();
     await expect(page).toHaveURL(/\/admin\/todo/);
@@ -143,5 +219,25 @@ test.describe("원장님 홈 휴대폰 375", () => {
     await tabs.last().click();
     await expect(page).toHaveURL(/\/admin\/more/);
     await expect(page.getByRole("link", { name: "기존 홈 보기 (비교용)" })).toHaveCount(0);
+  });
+});
+
+// 10/12: 선생님 화면도 같은 사이드바 + 같은 프로필 부품 (역할만 "선생님")
+test.describe("선생님 화면 사이드바", () => {
+  test.use({ viewport: { width: 1280, height: 900 } });
+
+  test("메뉴 아이콘·접기, 프로필은 이름 + 선생님", async ({ page }) => {
+    await gotoReady(page, "/teacher?at=16:00");
+    const aside = page.getByRole("complementary", { name: "선생님 메뉴" });
+    await expect(aside.getByRole("navigation", { name: "주 메뉴" }).getByRole("link")).toHaveCount(6);
+    await expect(aside.getByRole("link", { name: "홈", exact: true })).toHaveAttribute("aria-current", "page");
+    const trigger = aside.getByRole("button", { name: /^내 계정 메뉴: .+ 선생님$/ });
+    await expect(trigger).toBeVisible();
+    await trigger.click();
+    await expect(page.getByRole("menuitem", { name: "로그아웃" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "메뉴 접기" }).click();
+    await expect.poll(async () => (await aside.boundingBox())!.width).toBe(64);
+    await page.getByRole("button", { name: "메뉴 펼치기" }).click();
   });
 });

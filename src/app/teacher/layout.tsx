@@ -1,21 +1,25 @@
-import { SubNav, TopBar } from "@/components/top-bar";
-import { TEACHER_NAV } from "@/lib/nav";
-import { PageTransition } from "@/components/page-transition";
+import { AppChrome, type ChromeTab } from "@/components/app-chrome";
+import { myDisplayName } from "@/lib/auth/me";
+import { isMockRequest } from "@/lib/data/source";
 import { teachers } from "@/lib/mock/data";
+import { TEACHER_NAV } from "@/lib/nav";
 
-// TODO(2단계): 로그인한 선생님으로 교체. 지금은 가상 데이터의 첫 번째 선생님으로 표시
-const demoTeacher = teachers[0];
+// 선생님 화면 틀: 원장님과 같은 사이드바 + 아래 프로필(역할 "선생님") · 휴대폰 아래 탭 (10/12 범준님, 상단 메뉴에서 바꿈)
+// 휴대폰 아래 탭은 5칸이라 출퇴근은 사이드바(PC)에서만. 출퇴근 기능 날(12/7)에 탭 구성을 다시 본다
+const TABS: ChromeTab[] = [
+  { label: "홈", href: "/teacher" },
+  { label: "숙제", href: "/teacher/homework" },
+  { label: "담당 학생", href: "/teacher/students" },
+  { label: "보강", href: "/teacher/makeups" },
+  { label: "메시지", href: "/teacher/messages" },
+];
 
-export default function TeacherLayout({ children }: LayoutProps<"/teacher">) {
-  // 흰 바탕, 구역은 여백·라벨·1px 선으로 (10/7 오후, docs/design.md 1-1)
+export default async function TeacherLayout({ children }: LayoutProps<"/teacher">) {
+  // 실제 로그인 = 계정 이름, 가상 데이터 시험 = 첫 번째 가상 선생님 이름
+  const name = (await myDisplayName()) ?? ((await isMockRequest()) ? teachers[0].nickname : null);
   return (
-    <div className="min-h-dvh bg-card">
-      <TopBar nav={TEACHER_NAV} roleLabel="선생님" userName={demoTeacher.nickname} />
-      {/* 하위 메뉴 줄은 본문 칸 맨 위에, 여백 칸은 주소마다 새로 (메뉴 이동 중 화면 밀림 0, 10/8) */}
-      <main>
-        <SubNav nav={TEACHER_NAV} />
-        <PageTransition className="mx-auto max-w-[1280px] px-4 py-6">{children}</PageTransition>
-      </main>
-    </div>
+    <AppChrome nav={TEACHER_NAV} role="선생님" userName={name} tabs={TABS}>
+      {children}
+    </AppChrome>
   );
 }
