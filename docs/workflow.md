@@ -84,6 +84,7 @@ CLAUDE.md의 "작업 규칙"·"개인정보·보안"에 있는 내용은 여기�
 - (10/12) aria-hidden 칸 안의 요소는 화면 흐름 테스트에서 `getByRole`로 안 잡힌다 → `locator("li")`·`data-*` 속성으로 찾는다. 시험용 `data-*`(data-stat·data-check·data-makeup·data-message·data-avatar·data-tag·data-time·data-asof·data-value)를 원장 홈에 달아 두었다
 - (10/12) 지난 커밋의 화면을 캡처할 때: 작업 트리가 깨끗한지 확인 → `git checkout <커밋> -- src next.config.ts` → `rm -rf .next/dev/types` → 서버 켜고 캡처 → `git checkout HEAD -- src next.config.ts` → 옛 커밋에만 있던 파일이 "A"로 남으니 `git rm -f`로 지움 → `npx next typegen` → tsc. (작업 중 변경이 있으면 `git stash push -u` → 캡처 → `git stash pop`)
 - (10/12) 셸(node -e·heredoc)로 정규식이 든 코드를 고치면 역슬래시가 빠진다(`\d`→`d`). 정규식이 있는 줄은 Edit 도구로 고친다
+- (10/12) 시작 화면(로고)은 `LEET_E2E=1` 서버에서 그리지 않는다. 시작 화면을 확인하려면 `LEET_E2E` 없이 서버를 켜고(로그인 화면에서도 보임) 새 브라우저(새 탭)로 연다. 같은 탭은 두 번째부터 안 보임(sessionStorage `leet-splash`)
 - (10/12) 화면 흐름 테스트 전체(`npx playwright test`)를 돌리면 `admin-students-db.spec.ts:18`이 dev DB의 손으로 등록된 학생 "e" 때문에 실패한다(재원 66명). 범준님이 지우기 전까지는 이 하나는 알려진 실패
 
 ## 6-1. 디자인 품질 자동 검사 (10/6)

@@ -357,6 +357,19 @@ body {
   }
 }
 
+/* 시작 화면(로고, src/components/splash.tsx): 처음 연 탭에서만 보이고(on), 준비되면 0.3초 동안 사라진다(done → off) */
+#splash {
+  display: none;
+}
+html[data-splash="on"] #splash,
+html[data-splash="done"] #splash {
+  display: grid;
+}
+html[data-splash="done"] #splash {
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+}
+
 /* 움직임 줄이기 설정이면 모든 움직임을 끈다 (색은 바로 바뀐다) */
 @media (prefers-reduced-motion: reduce) {
   *,

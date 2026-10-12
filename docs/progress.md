@@ -14,6 +14,7 @@
       - 없앤 것: 시간표·상태별 히어로·처리할 일 패널·알림 확인 시트·태그 바꾸기·`/admin/todo`. 알림 확인 시트·태그 바꾸기는 메시지·숙제 화면을 만들 때 그 화면에 다시 (decisions.md 10/12 v5)
     - **화면 틀**: 원장님·선생님 모두 `src/components/app-chrome.tsx`(왼쪽 사이드바 220↔64, 오른쪽 경계 가운데 네모 36px 접기 버튼, localStorage `leet-admin-sidebar`·`leet-teacher-sidebar`, 맨 아래 프로필 `profile-menu.tsx`, 휴대폰 머리줄 56px + 아래 탭 5개). 상단 메뉴 TopBar는 지움, `top-bar.tsx`에는 SubNav만. 본문에 `data-tone="page"`가 있으면 바탕 회색(원장 홈만)
     - **프로필 이름**: `src/lib/auth/me.ts` `myDisplayName()` = profiles.display_name, 괄호 안 지우고 "총괄관리자"·"관리자"면 null → "원장님"/"선생님". "내 정보"는 `/admin/me`·`/teacher/me`(준비 중 화면, catch-all)
+    - **시작 화면**: 처음 연 탭에서만 LEET 로고(`src/components/splash.tsx`, `src/lib/splash-script.ts`), 0.6초 뒤 사라짐. 시험 모드(LEET_E2E=1)에서는 안 그림
     - **재원생 표**: 머리글 14px(`Th`), 정렬 버튼 칸은 `<Th flush>`, 휴대폰·입학일·메모 열은 표 폭 1380 이상(컨테이너 쿼리 `@min-[1380px]`)
     - **디자인 기준**: `docs/design.md` 1-2(토스 스타일, 원장 홈만). 토큰은 `globals.css`(page·strong·base·muted #646E7C·muted-soft·dim·block·arrive·live·live-text·caution·danger·danger-text·brand-soft·class-1~6 bg/fg/text, text-hero 32·subhead 17·stat 20·note 14·micro 12, radius-hcard 20·pcard 16·block 12·button-sm 8·tag 6, press-hcard). 글씨는 대비 4.5 이상으로 보정(명세의 #8B95A1·#B0B8C1·#F04452·#3182F6은 글씨에 안 씀)
   - **원장님 확정 사항 (10/12 카톡)**

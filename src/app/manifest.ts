@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone", // 주소창 없이 앱처럼
     orientation: "any",
-    background_color: "#F6F4F3",
+    background_color: "#FFFFFF", // 앱 시작 화면 바탕 = 시작 로고 화면(흰색)과 같게 (10/12)
     theme_color: "#B3262E",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
