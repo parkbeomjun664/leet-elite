@@ -12,6 +12,8 @@ const PAGES = [
   ["출결 키패드", "/kiosk"],
   ["원장님 홈", "/admin?at=16:00"],
   ["원장님 처리할 일", "/admin/todo?at=16:00"],
+  ["원장님 홈 첫 수업 전", "/admin?at=10:42"],
+  ["원장님 홈 수업 끝", "/admin?at=22:30"],
   ["재원생 목록", "/admin/students"],
   ["학생 정보 수정 창", "/admin/students?edit=s010"],
   ["로그인", "/login"],

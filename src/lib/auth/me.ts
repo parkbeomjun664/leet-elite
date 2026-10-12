@@ -6,9 +6,12 @@ import { createClient } from "@/lib/supabase/server";
 // "총괄관리자"처럼 계정을 만들 때 붙인 내부 이름이면 보이지 않는다 → 화면은 "원장님"·"선생님"으로 대신
 const INTERNAL_NAMES = /^(총괄)?관리자$|^admin$/i;
 
-/** 사람에게 보여 줄 이름만 남긴다 (빈 값·내부 이름이면 null) */
+/** 사람에게 보여 줄 이름만 남긴다: 괄호 안 내부 정보는 지우고, 빈 값·내부 이름이면 null (10/12 v4) */
 export function displayableName(name: string | null | undefined): string | null {
-  const n = name?.trim();
+  const n = name
+    ?.replace(/[(（[][^)）\]]*[)）\]]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!n || INTERNAL_NAMES.test(n)) return null;
   return n;
 }

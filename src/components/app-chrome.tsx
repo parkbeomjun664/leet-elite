@@ -111,16 +111,16 @@ export function AppChrome({
           </Link>
         </div>
 
-        {/* 접기·펼치기: 사이드바 오른쪽 경계 세로 가운데에 걸친 동그란 버튼 (10/12 범준님) */}
+        {/* 접기·펼치기: 사이드바 오른쪽 경계 세로 가운데에 걸친 네모 버튼 36px (10/12 범준님: 동그라미 28px은 너무 작다) */}
         <button
           type="button"
           onClick={toggle}
           aria-expanded={!collapsed}
           aria-label={collapsed ? "메뉴 펼치기" : "메뉴 접기"}
           title={collapsed ? "메뉴 펼치기" : "메뉴 접기"}
-          className="press absolute top-1/2 -right-3.5 z-40 grid size-7 -translate-y-1/2 place-items-center rounded-full border border-line bg-card text-sub shadow-[var(--shadow-chip)] hover:text-ink"
+          className="press absolute top-1/2 -right-[18px] z-40 grid size-9 -translate-y-1/2 place-items-center rounded-[var(--radius-button-sm)] border border-line bg-card text-sub shadow-[var(--shadow-chip)] hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
-          {collapsed ? <ChevronsRight aria-hidden className="size-4" /> : <ChevronsLeft aria-hidden className="size-4" />}
+          {collapsed ? <ChevronsRight aria-hidden className="size-5" /> : <ChevronsLeft aria-hidden className="size-5" />}
         </button>
 
         <nav aria-label="주 메뉴" className={cn("flex-1 overflow-y-auto py-2", collapsed ? "px-2" : "px-3")}>

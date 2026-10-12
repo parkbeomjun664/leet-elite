@@ -12,6 +12,8 @@ export type ClassBlock = {
   classId: string;
   className: string;
   teacherName: string | null;
+  /** 반 정렬 순서 → 반 색 (class-color.ts) */
+  sortOrder?: number;
   start: string; // 가장 이른 시작
   end: string; // 가장 늦은 끝
   students: TimelineStudent[];
@@ -44,7 +46,7 @@ export const toMin = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hh
  * @param entries 오늘 수업이 있는 학생 하나당 하나 (학생이 여러 반이면 첫 반 기준)
  */
 export function buildClassBlocks(
-  entries: { classId: string; className: string; teacherName: string | null; student: TimelineStudent }[],
+  entries: { classId: string; className: string; teacherName: string | null; sortOrder?: number; student: TimelineStudent }[],
 ): ClassBlock[] {
   const byClass = new Map<string, typeof entries>();
   for (const e of entries) byClass.set(e.classId, [...(byClass.get(e.classId) ?? []), e]);
@@ -59,6 +61,7 @@ export function buildClassBlocks(
       classId,
       className: first.className,
       teacherName: first.teacherName,
+      sortOrder: first.sortOrder,
       start: first.student.start,
       end: first.student.end,
       students: [],
@@ -109,5 +112,54 @@ export function summarize(blocks: Block[], now: string) {
     total: classBlocks.reduce((n, b) => n + b.total, 0),
     absent: classBlocks.reduce((n, b) => n + b.absent, 0),
     notArrived: classBlocks.reduce((n, b) => n + b.notArrived, 0),
+  };
+}
+
+// ── v4 (10/12): 요약 카드 히어로 3상태 · 블록 오른쪽 "n시간 후" · 진행 막대 시점 ──
+
+/** 분 → "3시간 49분" · "40분" · "2시간" */
+export function durationKo(min: number): string {
+  const m = Math.max(0, Math.round(min));
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  if (h === 0) return `${r}분`;
+  return r === 0 ? `${h}시간` : `${h}시간 ${r}분`;
+}
+
+/** 아직 시작 전인 블록의 오른쪽 글: "40분 후" · "2시간 후"(시간은 내림) · 1분도 안 남으면 "곧" */
+export function untilLabel(start: string, now: string): string {
+  const left = toMin(start) - toMin(now);
+  if (left < 1) return "곧";
+  if (left < 60) return `${left}분 후`;
+  return `${Math.floor(left / 60)}시간 후`;
+}
+
+/** 진행 막대는 그 반 수업 시작 10분 전부터 (그 전에는 숨김) */
+export const PROGRESS_LEAD_MIN = 10;
+export function showProgress(b: { start: string }, now: string): boolean {
+  return toMin(now) >= toMin(b.start) - PROGRESS_LEAD_MIN;
+}
+
+export type DayPhase =
+  | { phase: "none" } // 오늘 수업 없음
+  | { phase: "before"; first: ClassBlock; minutesToFirst: number }
+  | { phase: "during"; live: ClassBlock[]; next: ClassBlock | null }
+  | { phase: "after"; lastEnd: string };
+
+/**
+ * 오늘의 단계: 첫 수업 전 / 수업 중(첫 수업 시작 ~ 마지막 수업·보강 끝) / 모든 수업 끝
+ * 수업 중에는 지금 진행 중인 반과(쉬는 사이면 빈 목록) 다음에 시작할 반
+ */
+export function dayPhase(blocks: Block[], now: string): DayPhase {
+  const classBlocks = blocks.filter((b): b is ClassBlock => b.kind === "class").sort((a, b) => a.start.localeCompare(b.start));
+  if (classBlocks.length === 0) return { phase: "none" };
+  const first = classBlocks[0];
+  const lastEnd = blocks.reduce((m, b) => (b.end > m ? b.end : m), "00:00");
+  if (now < first.start) return { phase: "before", first, minutesToFirst: toMin(first.start) - toMin(now) };
+  if (now >= lastEnd) return { phase: "after", lastEnd };
+  return {
+    phase: "during",
+    live: classBlocks.filter((b) => blockState(b, now) === "수업 중"),
+    next: classBlocks.find((b) => b.start > now) ?? null,
   };
 }

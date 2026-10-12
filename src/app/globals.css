@@ -46,14 +46,40 @@
      글씨에 쓰는 회색·빨강은 흰 바탕 대비 4.5 이상인 짙은 쪽(muted·danger-text)을 쓴다. 옅은 쪽(muted-soft·danger)은 점·아이콘·막대만 */
   --color-page: #f2f4f6; /* 원장 홈 페이지 바탕, 처리할 일 아바타·답장 버튼 바탕 */
   --color-strong: #191f28; /* 지금 봐야 할 것만: 히어로 숫자·반 이름·시각 */
-  --color-muted: #6b7684; /* 보조 글씨 (흰 바탕 4.62) */
-  --color-muted-soft: #8b95a1; /* 아이콘·점·흐린 글씨 장식 (글씨로는 대비 부족 3.04) */
+  --color-base: #4e5968; /* 본문 글씨 (흰 바탕 7.11) — v4 */
+  --color-muted: #646e7c; /* 보조 글씨. 명세 #8B95A1은 글씨로 대비 부족이라 짙게 (흰 5.17 · 블록 #F9FAFB 4.95 · 진행 블록 4.80, 10/12 v4) */
+  --color-muted-soft: #8b95a1; /* 명세의 보조 회색: 아이콘·점·⋯ 같은 장식만 (글씨로는 3.04) */
+  --color-dim: #b0b8c1; /* 명세의 흐림: 빈 원·구분 점 같은 장식만 (글씨로는 2.0) */
+  --color-block: #f9fafb; /* 시간표 반 블록 바탕 */
+  --color-live-tint: #f2f7ff; /* 진행 중 반 블록 바탕 */
+  --color-live-text: #1b64da; /* "진행 중" 글씨 (#3182F6은 글씨로 3.71) */
   --color-arrive: #00c471; /* 등원 점·막대 */
   --color-live: #3182f6; /* 진행 중 점·막대, 지금 시각 선 */
   --color-caution: #ff9f0a; /* 미등원 경고 점 */
   --color-danger: #f04452; /* 결석 점 */
   --color-danger-text: #d91f2f; /* 로그아웃 같은 위험한 행동 글씨 (흰 바탕 5.02) */
   --color-brand-soft: #fcebec; /* 프로필 아바타 바탕 */
+
+  /* 반 색 6쌍 (10/12 v4): 반마다 한 쌍, 시간표 점·처리할 일 아바타에 같은 반은 같은 색 (src/lib/admin/class-color.ts)
+     bg = 연한 톤(아바타 바탕) · fg = 진한 톤(점) · text = 연한 바탕 위 글씨용으로 더 짙게 (대비 4.8 이상) */
+  --color-class-1-bg: #e8f3ff;
+  --color-class-1-fg: #3182f6;
+  --color-class-1-text: #1b64da;
+  --color-class-2-bg: #e5f8ee;
+  --color-class-2-fg: #00a661;
+  --color-class-2-text: #007a47;
+  --color-class-3-bg: #fff4e5;
+  --color-class-3-fg: #e08a00;
+  --color-class-3-text: #9a5b00;
+  --color-class-4-bg: #f3eeff;
+  --color-class-4-fg: #7b5cfa;
+  --color-class-4-text: #5b3fd6;
+  --color-class-5-bg: #ffeff1;
+  --color-class-5-fg: #e5484d;
+  --color-class-5-text: #c02a31;
+  --color-class-6-bg: #eaf7f8;
+  --color-class-6-fg: #0f9aa8;
+  --color-class-6-text: #0a6c76;
 
   /* 글자 5단계: 제목 / 소제목 / 본문 / 보조 / 숫자 (키패드는 따로, design.md 2번) */
   /* 제목·숫자만 화면 폭에 따라 (휴대폰 22 → PC 24, 숫자 24 → 28). 본문·보조는 고정 (docs/design.md 8번) */
@@ -81,6 +107,13 @@
   --text-hero--line-height: 1.15;
   --text-subhead: 17px;
   --text-subhead--line-height: 1.4;
+  /* v4: 요약 오른쪽 숫자 20 · 상태 문장 14 · 기준 시각·태그 12 */
+  --text-stat: 20px;
+  --text-stat--line-height: 1.2;
+  --text-note: 14px;
+  --text-note--line-height: 1.45;
+  --text-micro: 12px;
+  --text-micro--line-height: 1.4;
 
   /* 모서리: 배지 4 / 버튼·입력 6 / 관리 카드·시트 8 / 휴대폰 카드 12 */
   --radius-badge: 4px;
@@ -91,6 +124,8 @@
   --radius-hcard: 20px;
   --radius-pcard: 16px;
   --radius-button-sm: 8px;
+  --radius-block: 12px; /* 시간표 반 블록 */
+  --radius-tag: 6px; /* 용건 태그 */
 
   /* 그림자 2단계 */
   --shadow-chip: 0 1px 2px rgb(26 26 26 / 0.06);
