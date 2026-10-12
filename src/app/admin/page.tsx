@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ClassAvatar, TagChip } from "@/components/admin/class-avatar";
 import { AutoRefresh, CountUp } from "@/components/admin/home-live";
+import { classTone } from "@/lib/admin/class-color";
 import { loadAdminSummary, type SummaryMakeup, type SummaryStat } from "@/lib/admin/summary-data";
 import { cn } from "@/lib/cn";
 import { formatDateKo, nowTimeKST, todayKST } from "@/lib/date";
@@ -29,6 +30,15 @@ const SHORTCUTS = [
   { label: "보강", href: "/admin/makeups" },
   { label: "메시지", href: "/admin/messages" },
 ];
+
+// 확인할 일 줄 바탕: 처음부터 항목마다 연한 색으로 구분 (10/12 범준님: 마우스를 올려야 회색이 되는 대신)
+// 미등원 주황 · 메시지 파랑 · 선생님 보라 · 숙제 청록. 반 색 토큰을 빌려 쓴다 (연한 바탕 위 보조 글씨 대비 4.55 이상)
+const CHECK_TONE: Record<string, { bg: string; text: string }> = {
+  notArrived: { bg: classTone(3).bg, text: classTone(3).text },
+  unread: { bg: classTone(1).bg, text: classTone(1).text },
+  teachers: { bg: classTone(4).bg, text: classTone(4).text },
+  homework: { bg: classTone(6).bg, text: classTone(6).text },
+};
 
 const DOT: Record<NonNullable<SummaryStat["dot"]>, string> = { arrive: "bg-arrive", danger: "bg-danger" };
 
@@ -91,12 +101,18 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         {checks.length === 0 ? (
           <p className="mt-3 text-body text-muted">지금 처리할 일이 없어요.</p>
         ) : (
-          <ul className="mt-2">
+          <ul className="mt-3 space-y-2">
             {checks.map((c) => (
-              <li key={c.key} data-check={c.key} className="border-b border-page last:border-0">
-                <Link href={c.href} className="group press-hcard -mx-2 flex items-center gap-3 rounded-[var(--radius-block)] px-2 py-3.5 hover:bg-block md:gap-4">
+              <li key={c.key} data-check={c.key}>
+                <Link
+                  href={c.href}
+                  className={cn(
+                    "group press-hcard flex items-center gap-3 rounded-[var(--radius-block)] px-4 py-3.5 transition-[filter] hover:brightness-[0.97] md:gap-4",
+                    CHECK_TONE[c.key]?.bg ?? "bg-block",
+                  )}
+                >
                   <span className="w-[72px] shrink-0 leading-none whitespace-nowrap tabular md:w-28">
-                    <span className="text-figure-md font-bold text-strong">
+                    <span className={cn("text-figure-md font-bold", CHECK_TONE[c.key]?.text ?? "text-strong")}>
                       <CountUp value={c.value} />
                     </span>
                     {c.total !== undefined && <span className="text-caption text-muted"> / {c.total}</span>}
