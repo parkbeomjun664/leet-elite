@@ -42,9 +42,6 @@ function avatarOfStudent(studentId: string): Avatar {
   return { sortOrder: cls?.sortOrder, short: cls ? classShort(cls.name) : "학원" };
 }
 
-// 확인할 일 줄 순서: 숙제 먼저 (10/13 범준님)
-const CHECK_ORDER = ["homework", "feedback", "notArrived", "unread", "teachers", "makeupNeeded"];
-
 export function loadAdminSummary(date: string, now: string) {
   const records = mockAttendanceFor(date, now);
   const nowKey = `${date} ${now}`;
@@ -92,16 +89,17 @@ export function loadAdminSummary(date: string, now: string) {
 
   // 읽지 않은 메시지 (확인할 일은 학생 대화방도 센다, 아래 목록은 학부모만)
   const unreadList = messages.filter((m) => (m.from === "parent" || m.from === "student") && !m.read);
-  // 오늘 학원 숫자 5칸. 숙제 제출을 첫 칸에 (10/13 범준님: 원장님이 가장 먼저 쓰는 기능이라 눈에 띄게)
+
+  // 오늘 학원 숫자 5칸 (예전 그대로)
   const stats: SummaryStat[] = [
-    { key: "homework", label: `숙제 제출 (학생 ${todaySubStudents}명)`, value: todaySubs.length, href: "/admin/homework" },
     { key: "attendance", label: "출결 (등원 / 수업)", value: arrived, total: withClass, href: "/admin/attendance", dot: "arrive" },
     { key: "absent", label: "결석", value: absent, href: "/admin/attendance", dot: "danger" },
+    { key: "homework", label: `숙제 제출 (학생 ${todaySubStudents}명)`, value: todaySubs.length, href: "/admin/homework" },
     { key: "makeup", label: "보강", value: todayMakeups.length, href: "/admin/makeups" },
     { key: "teachers", label: "선생님 출근", value: inTeachers.length, total: teachers.length, href: "/admin/work-logs" },
   ];
 
-  // 확인할 일: 숫자가 있는 것만. 숙제 줄(미제출·피드백)이 맨 위 (CHECK_ORDER, 10/13 범준님)
+  // 확인할 일: 숫자가 있는 것만 (예전 그대로)
   const checks: SummaryCheck[] = [
     { key: "notArrived", title: "미등원 학생", value: notArrived.length, unit: "명", detail: namesPreview(notArrived.map((d) => d.student.name)), href: "/admin/attendance" },
     {
@@ -146,9 +144,7 @@ export function loadAdminSummary(date: string, now: string) {
       detail: namesPreview(makeupTodo.map((m) => studentById(m.studentId)?.name ?? "알 수 없음")),
       href: "/admin/makeups",
     },
-  ]
-    .filter((c) => c.value > 0)
-    .sort((a, b) => CHECK_ORDER.indexOf(a.key) - CHECK_ORDER.indexOf(b.key));
+  ].filter((c) => c.value > 0);
 
   const makeupRow = (m: (typeof makeups)[number], time: string, isToday: boolean): SummaryMakeup => {
     const s = studentById(m.studentId);
