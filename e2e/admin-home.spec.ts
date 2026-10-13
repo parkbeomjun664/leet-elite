@@ -79,6 +79,18 @@ test.describe("원장님 홈 PC", () => {
     await expect(hw).toContainText(/\d+\s*\/ \d+\s*명/);
   });
 
+  test("아침(수업 전)에도 확인할 일이 비지 않는다: 피드백 안 한 숙제·보강 잡을 학생 (10/13)", async ({ page }) => {
+    await gotoReady(page, "/admin?at=08:50");
+    const checks = page.locator("li[data-check]");
+    // 수업 전이라 미등원·숙제 미제출은 없다
+    await expect(page.locator('li[data-check="notArrived"], li[data-check="homework"]')).toHaveCount(0);
+    await expect(page.locator('li[data-check="feedback"]')).toContainText(/피드백 안 한 숙제/);
+    await expect(page.locator('li[data-check="feedback"]').getByRole("link")).toHaveAttribute("href", "/admin/homework");
+    await expect(page.locator('li[data-check="makeupNeeded"]')).toContainText(/보강 잡을 학생/);
+    await expect(page.locator('li[data-check="makeupNeeded"]').getByRole("link")).toHaveAttribute("href", "/admin/makeups");
+    expect(await checks.count()).toBeGreaterThanOrEqual(3);
+  });
+
   test("보강: 반 색 아바타, 진행 중(파랑)·n시간 후·다음 보강", async ({ page }) => {
     const card = page.locator("section", { has: page.getByRole("heading", { name: /^오늘 보강/ }) });
     await gotoReady(page, "/admin?at=16:00");

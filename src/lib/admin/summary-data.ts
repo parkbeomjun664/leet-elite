@@ -1,6 +1,7 @@
 import "server-only";
 import { studentDay } from "@/lib/attendance";
 import { classShort } from "@/lib/admin/class-color";
+import { needsMakeup, waitingFeedback } from "@/lib/admin/checks";
 import { classStartsToday, isHomeworkDue } from "@/lib/admin/homework-due";
 import { classifyMessage, compareTodos, messageTime, tagGroup, type MessageTag } from "@/lib/admin/message-tag";
 import { untilLabel } from "@/lib/admin/timeline";
@@ -76,6 +77,16 @@ export function loadAdminSummary(date: string, now: string) {
   );
   const hwAssigned = assignedDue.length;
 
+  // 피드백 안 한 숙제: 최근 3일(주말을 넘겨 월요일 아침에도 금요일 제출이 보이게) 제출, 선생님 코멘트 없음 (10/13)
+  const noFeedback = waitingFeedback(submissions, addDays(date, -3), nowKey);
+  // 보강 잡을 학생: 최근 7일(오늘 포함) 결석 중 그 뒤 보강이 없는 재원생 (10/13)
+  const enrolledIds = new Set(enrolled.map((s) => s.id));
+  const recentAbsences = [
+    ...Array.from({ length: 7 }, (_, i) => addDays(date, -(i + 1))).flatMap((day) => mockAttendanceFor(day)),
+    ...records,
+  ].filter((a) => a.status === "absent" && enrolledIds.has(a.studentId));
+  const makeupTodo = needsMakeup(recentAbsences, makeups);
+
   // 읽지 않은 메시지 (확인할 일은 학생 대화방도 센다, 아래 목록은 학부모만)
   const unreadList = messages.filter((m) => (m.from === "parent" || m.from === "student") && !m.read);
 
@@ -116,6 +127,22 @@ export function loadAdminSummary(date: string, now: string) {
       unit: "명",
       detail: namesPreview(missingHw.map((s) => s.name)),
       href: "/admin/homework",
+    },
+    {
+      key: "feedback",
+      title: "피드백 안 한 숙제 (최근 3일)",
+      value: noFeedback.length,
+      unit: "건",
+      detail: namesPreview([...new Set(noFeedback.map((s) => studentById(s.studentId)?.name ?? "알 수 없음"))]),
+      href: "/admin/homework",
+    },
+    {
+      key: "makeupNeeded",
+      title: "보강 잡을 학생 (최근 1주 결석)",
+      value: makeupTodo.length,
+      unit: "명",
+      detail: namesPreview(makeupTodo.map((m) => studentById(m.studentId)?.name ?? "알 수 없음")),
+      href: "/admin/makeups",
     },
   ].filter((c) => c.value > 0);
 
