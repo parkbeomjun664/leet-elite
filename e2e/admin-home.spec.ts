@@ -35,7 +35,7 @@ test.describe("원장님 홈 PC", () => {
     await expect(summary.locator("[data-asof]")).toHaveText("16:00 기준");
     const stats = summary.locator("li[data-stat]");
     await expect(stats).toHaveCount(5);
-    expect(await stats.evaluateAll((ls) => ls.map((l) => l.getAttribute("data-stat")))).toEqual(["attendance", "absent", "homework", "makeup", "teachers"]);
+    expect(await stats.evaluateAll((ls) => ls.map((l) => l.getAttribute("data-stat")))).toEqual(["homework", "attendance", "absent", "makeup", "teachers"]); // 숙제 첫 칸 (10/13)
     const att = summary.locator('[data-stat="attendance"] [data-value]');
     await expect(att).toHaveCSS("font-size", "32px");
     await expect(att).toHaveCSS("font-weight", "700");
@@ -50,15 +50,17 @@ test.describe("원장님 홈 PC", () => {
     await expect(stats.first()).toHaveCSS("border-left-width", "0px");
     const dots = await stats.locator("[data-dot]").evaluateAll((ds) => ds.map((d) => [getComputedStyle(d).width, getComputedStyle(d).backgroundColor]));
     expect(dots).toEqual([
+      ["6px", "rgb(49, 130, 246)"],
       ["6px", "rgb(0, 196, 113)"],
       ["6px", "rgb(240, 68, 82)"],
-      ["6px", "rgb(49, 130, 246)"],
       ["6px", "rgb(123, 92, 250)"],
       ["6px", "rgb(139, 149, 161)"],
     ]);
 
     // 확인할 일: 제목의 개수 = 줄 수, 줄마다 "보기"
     const rows = checks.locator("li[data-check]");
+    // 숙제 줄(미제출·피드백)이 맨 위 (10/13 범준님)
+    expect((await rows.evaluateAll((ls) => ls.map((l) => l.getAttribute("data-check")))).slice(0, 2)).toEqual(["homework", "feedback"]);
     const n = await rows.count();
     expect(n).toBeGreaterThan(0);
     // 제목에는 숫자를 붙이지 않는다 (종류 수가 건수와 헷갈려서, 10/12)
