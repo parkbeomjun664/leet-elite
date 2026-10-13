@@ -199,7 +199,13 @@ erDiagram
 |---|---|
 | id, submission_id, storage_path, sort_order, width, height, created_at | |
 
-> 저장소: 비공개 버킷 `homework-photos/{student_id}/{submission_id}/{uuid}.jpg`. 조회는 서명 URL(짧은 만료)
+> 저장소: 비공개 버킷 `homework-photos/{student_id}/{submission_id}/{uuid}.jpg`. 조회는 서명 URL(짧은 만료). JPEG만, 한 장 5MB까지(보통 0.3~0.6MB로 줄여 올림)
+>
+> 10/14 마이그레이션(`20261014000000_homework.sql`)에서 정한 것
+> - 제출물이 있는 숙제는 지우면 DB가 막는다(`submissions → homework_targets` restrict, 오류 23001) → 앱은 삭제 대신 보관(`archived_at`, HW-12). 보관된 숙제에는 새 제출 불가
+> - 학생·선생님이 같은 제출 줄을 고치므로 트리거 `submissions_guard`가 나눈다: 학생은 자기 글만, 담당 선생님·원장님은 피드백만(남긴 사람·시각은 DB가 채움). 제출 대상(숙제·학생·날짜)은 못 바꿈
+> - 매일 숙제 제출은 기간 안의 날짜(`for_date`)로 하루 한 번, 일반 숙제는 날짜 없이 한 번(`unique nulls not distinct`). 사진은 한 제출에 10장(순서 0~9)
+> - 퇴원생 사진 삭제(NF-10)는 서버가 보관함 파일을 먼저 지운 뒤 제출 줄을 지운다 (10/23 휴원·퇴원 때)
 
 ### 보강
 
@@ -280,8 +286,9 @@ type: `homework_submitted`, `feedback_added`, `message`, `check_in`, `check_out`
 | classes / class_members | RW | 담당 R | 본인 소속 R | 자녀 소속 R |
 | attendance | RW | 담당 RW | 본인 R | 자녀 R |
 | absence_requests | RW | 담당 R | - | 자녀 RW(생성) |
-| homework / targets | RW | 담당 학생 대상 RW | 본인 대상 R | 자녀 대상 R |
-| submissions / photos | RW | 담당 R + teacher_comment W | 본인 RW | 자녀 R |
+| homework / targets | RW | 담당 학생 대상 R, 자기가 만든 숙제 RW(대상은 담당 학생만) | 본인 대상 R | 자녀 대상 R |
+| submissions / photos | RW | 담당 R + teacher_comment W(학생 글은 못 고침) | 본인 제출·글 수정·사진 추가/삭제(피드백 칸은 못 고침) | 자녀 R(사진 포함, HW-08) |
+| storage `homework-photos` | R·삭제 | 담당 학생 R | 본인 제출 폴더에 올리기·R·삭제 | 자녀 R |
 | makeups | RW | 담당 RW | 본인 R | 자녀 R |
 | conversations / messages | 전체 | 참여 중인 대화 | 참여 중인 대화 | 참여 중인 대화 |
 | work_logs | RW | 본인 RW(출퇴근) | - | - |

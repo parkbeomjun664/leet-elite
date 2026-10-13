@@ -11,3 +11,19 @@ create function auth.uid() returns uuid language sql stable as $$
 $$;
 grant usage on schema auth to anon, authenticated;
 grant usage on schema public to anon, authenticated;
+
+-- 사진 보관함 흉내 (10/14 숙제 사진). Supabase에는 storage 스키마·buckets·objects가 원래 있고 objects에 RLS가 켜져 있다
+create schema storage;
+create table storage.buckets (
+  id text primary key, name text not null, public boolean default false,
+  file_size_limit bigint, allowed_mime_types text[]
+);
+create table storage.objects (
+  id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets (id),
+  name text not null, owner uuid default auth.uid(), created_at timestamptz default now(),
+  unique (bucket_id, name)
+);
+alter table storage.objects enable row level security;
+grant usage on schema storage to anon, authenticated;
+grant select, insert, update, delete on storage.objects to authenticated;
+grant select on storage.buckets to authenticated;

@@ -277,6 +277,201 @@ exception when insufficient_privilege then raise notice 'ok   [로그인한 사�
 end $$;
 reset role;
 
+-- ── 숙제·제출·사진 (10/14, HW-01~12) ──────────────────────────
+-- 숙제 H1: 선생님A가 학생1·2에게 / H2: 선생님B가 학생3에게 / H3: 원장님이 학생1에게 매일 숙제(10/1~10/3)
+-- 반 소속은 위 시험 뒤 상태: 반A = 학생1·2, 반B = 학생3. 선생님B는 위에서 사용 중지됨
+set role authenticated;
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+do $$ begin
+  insert into public.homework (kind, title, created_by) values ('general', '퇴사 뒤 숙제', '00000000-0000-0000-0000-0000000000b1');
+  raise exception 'FAIL [선생님B 사용 중지] 숙제 등록이 허용됨';
+exception when insufficient_privilege then raise notice 'ok   [선생님B 사용 중지] 숙제 등록 거부';
+end $$;
+reset role;
+update public.teachers set is_active = true where nickname = 'Ben';
+set role authenticated;
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+insert into public.homework (id, kind, title, created_by) values ('50000000-0000-0000-0000-000000000001', 'general', 'H1 단어 시험', '00000000-0000-0000-0000-0000000000a1');
+insert into public.homework_targets values ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001'), ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002');
+-- 다른 반 학생은 대상에 넣을 수 없다
+do $$ begin
+  insert into public.homework_targets values ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000003');
+  raise exception 'FAIL [선생님A] 다른 반 학생을 숙제 대상에 넣음';
+exception when insufficient_privilege then raise notice 'ok   [선생님A] 다른 반 학생 숙제 대상 거부';
+end $$;
+-- 남의 이름으로 숙제를 만들 수 없다
+do $$ begin
+  insert into public.homework (kind, title, created_by) values ('general', '가짜', '00000000-0000-0000-0000-0000000000b1');
+  raise exception 'FAIL [선생님A] 다른 사람 이름으로 숙제 등록';
+exception when insufficient_privilege then raise notice 'ok   [선생님A] 다른 사람 이름으로 숙제 등록 거부';
+end $$;
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+insert into public.homework (id, kind, title, created_by) values ('50000000-0000-0000-0000-000000000002', 'general', 'H2 독해', '00000000-0000-0000-0000-0000000000b1');
+insert into public.homework_targets values ('50000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000003');
+with u as (update public.homework set title = '바꿈' where id = '50000000-0000-0000-0000-000000000001' returning 1)
+  select pg_temp.expect('선생님B', '다른 선생님 숙제 수정', (select count(*) from u), 0);
+select pg_temp.login('00000000-0000-0000-0000-00000000000a');
+insert into public.homework (id, kind, title, starts_on, ends_on, created_by) values ('50000000-0000-0000-0000-000000000003', 'daily', 'H3 매일 듣기', '2026-10-01', '2026-10-03', '00000000-0000-0000-0000-00000000000a');
+insert into public.homework_targets values ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into public.homework (kind, title) values ('daily', '기간 없는 매일 숙제');
+  raise exception 'FAIL 기간 없는 매일 숙제가 허용됨';
+exception when check_violation then raise notice 'ok   매일 숙제는 기간이 있어야 함';
+end $$;
+
+select pg_temp.expect('원장님', '숙제 전체', (select count(*) from public.homework), 3);
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.expect('선생님A', '숙제 (담당 학생 대상 H1·H3)', (select count(*) from public.homework), 2);
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+select pg_temp.expect('선생님B', '숙제 (H2만)', (select count(*) from public.homework), 1);
+select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.expect('학생1', '내 숙제 (H1·H3)', (select count(*) from public.homework), 2);
+select pg_temp.expect('학생1', '숙제 대상 줄 (내 것만)', (select count(*) from public.homework_targets), 2);
+select pg_temp.login('00000000-0000-0000-0000-0000000000d1');
+select pg_temp.expect('보호자', '자녀 숙제 (H1·H3)', (select count(*) from public.homework), 2);
+select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
+select pg_temp.expect('키패드', '숙제', (select count(*) from public.homework), 0);
+
+-- 학생 제출: 본인 것만, 피드백 칸은 못 채운다
+select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
+insert into public.submissions (id, homework_id, student_id, comment, teacher_comment)
+  values ('60000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', '다 했어요', '셀프 칭찬');
+select pg_temp.expect('학생1', '제출하며 넣은 피드백은 지워짐', (select count(*) from public.submissions where teacher_comment is not null), 0);
+do $$ begin
+  insert into public.submissions (homework_id, student_id) values ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002');
+  raise exception 'FAIL [학생1] 형제 숙제를 대신 제출';
+exception when insufficient_privilege then raise notice 'ok   [학생1] 다른 학생 이름으로 제출 거부';
+end $$;
+do $$ begin
+  insert into public.submissions (homework_id, student_id) values ('50000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001');
+  raise exception 'FAIL [학생1] 내 숙제가 아닌 것에 제출';
+exception when foreign_key_violation then raise notice 'ok   [학생1] 대상이 아닌 숙제 제출 거부';
+end $$;
+do $$ begin
+  insert into public.submissions (homework_id, student_id) values ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001');
+  raise exception 'FAIL [학생1] 같은 숙제 두 번 제출';
+exception when unique_violation then raise notice 'ok   [학생1] 일반 숙제는 한 번만 제출 (그 뒤는 수정)';
+end $$;
+-- 매일 숙제: 기간 안 날짜로 하루 한 번
+insert into public.submissions (homework_id, student_id, for_date) values ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '2026-10-01');
+do $$ begin
+  insert into public.submissions (homework_id, student_id, for_date) values ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '2026-10-09');
+  raise exception 'FAIL 매일 숙제 기간 밖 제출';
+exception when check_violation then raise notice 'ok   매일 숙제 기간 밖 날짜 거부';
+end $$;
+do $$ begin
+  insert into public.submissions (homework_id, student_id) values ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001');
+  raise exception 'FAIL 매일 숙제를 날짜 없이 제출';
+exception when check_violation then raise notice 'ok   매일 숙제는 날짜가 있어야 함';
+end $$;
+-- 학생은 자기 글만 고친다
+with u as (update public.submissions set comment = '고쳤어요' where id = '60000000-0000-0000-0000-000000000001' returning 1)
+  select pg_temp.expect('학생1', '내 제출 글 수정', (select count(*) from u), 1);
+do $$ begin
+  update public.submissions set teacher_comment = '참 잘했어요' where id = '60000000-0000-0000-0000-000000000001';
+  raise exception 'FAIL [학생1] 선생님 피드백을 고침';
+exception when insufficient_privilege then raise notice 'ok   [학생1] 선생님 피드백 수정 거부';
+end $$;
+
+-- 선생님 피드백: 담당 선생님만, 학생 글은 못 고침, 누가·언제는 DB가 채움
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+with u as (update public.submissions set teacher_comment = '남의 반' where id = '60000000-0000-0000-0000-000000000001' returning 1)
+  select pg_temp.expect('선생님B', '다른 반 학생 제출에 피드백', (select count(*) from u), 0);
+select pg_temp.expect('선생님B', '다른 반 학생 제출 보기', (select count(*) from public.submissions), 0);
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+update public.submissions set teacher_comment = '잘했어요', teacher_comment_by = null where id = '60000000-0000-0000-0000-000000000001';
+select pg_temp.expect('선생님A', '피드백 남긴 사람·시각이 자동으로', (select count(*) from public.submissions
+  where id = '60000000-0000-0000-0000-000000000001' and teacher_comment_by = '00000000-0000-0000-0000-0000000000a1' and teacher_comment_at is not null), 1);
+do $$ begin
+  update public.submissions set comment = '대신 고침' where id = '60000000-0000-0000-0000-000000000001';
+  raise exception 'FAIL [선생님A] 학생 제출 글을 고침';
+exception when insufficient_privilege then raise notice 'ok   [선생님A] 학생 제출 글 수정 거부';
+end $$;
+select pg_temp.login('00000000-0000-0000-0000-0000000000d1');
+select pg_temp.expect('보호자', '자녀 제출 보기', (select count(*) from public.submissions), 2);
+do $$ begin
+  insert into public.submissions (homework_id, student_id) values ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002');
+  raise exception 'FAIL [보호자] 자녀 대신 제출';
+exception when insufficient_privilege then raise notice 'ok   [보호자] 자녀 대신 제출 거부';
+end $$;
+
+-- 사진 줄: 학생 본인 폴더 경로만, 최대 10장
+select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
+insert into public.submission_photos (submission_id, storage_path, sort_order) values
+  ('60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001/60000000-0000-0000-0000-000000000001/a.jpg', 0);
+do $$ begin
+  insert into public.submission_photos (submission_id, storage_path, sort_order) values
+    ('60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002/60000000-0000-0000-0000-000000000001/b.jpg', 1);
+  raise exception 'FAIL [학생1] 다른 학생 폴더 경로로 사진 줄';
+exception when insufficient_privilege then raise notice 'ok   [학생1] 다른 학생 폴더 경로 사진 줄 거부';
+end $$;
+do $$ begin
+  insert into public.submission_photos (submission_id, storage_path, sort_order) values
+    ('60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001/60000000-0000-0000-0000-000000000001/k.jpg', 10);
+  raise exception 'FAIL 11번째 사진이 허용됨';
+exception when check_violation then raise notice 'ok   사진은 한 제출에 10장까지';
+end $$;
+
+-- 사진 보관함 (storage.objects): 학생 본인 제출 폴더에만 올리고, 볼 수 있는 사람만 본다
+insert into storage.objects (bucket_id, name) values ('homework-photos', '20000000-0000-0000-0000-000000000001/60000000-0000-0000-0000-000000000001/a.jpg');
+do $$ begin
+  insert into storage.objects (bucket_id, name) values ('homework-photos', '20000000-0000-0000-0000-000000000002/60000000-0000-0000-0000-000000000001/x.jpg');
+  raise exception 'FAIL [학생1] 다른 학생 폴더에 파일 올림';
+exception when insufficient_privilege then raise notice 'ok   [학생1] 다른 학생 폴더에 올리기 거부';
+end $$;
+do $$ begin
+  insert into storage.objects (bucket_id, name) values ('homework-photos', '20000000-0000-0000-0000-000000000001/69999999-0000-0000-0000-000000000000/x.jpg');
+  raise exception 'FAIL [학생1] 없는 제출 폴더에 파일 올림';
+exception when insufficient_privilege then raise notice 'ok   [학생1] 없는 제출 폴더 거부';
+end $$;
+do $$ begin
+  insert into storage.objects (bucket_id, name) values ('homework-photos', '../x.jpg');
+  raise exception 'FAIL [학생1] 이상한 경로로 파일 올림';
+exception when insufficient_privilege then raise notice 'ok   [학생1] 이상한 경로 거부';
+end $$;
+select pg_temp.expect('학생1', '내 숙제 사진 파일', (select count(*) from storage.objects where bucket_id = 'homework-photos'), 1);
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.expect('선생님A', '담당 학생 사진 파일', (select count(*) from storage.objects where bucket_id = 'homework-photos'), 1);
+select pg_temp.expect('선생님A', '담당 학생 사진 줄', (select count(*) from public.submission_photos), 1);
+with d as (delete from storage.objects where bucket_id = 'homework-photos' returning 1) select pg_temp.expect('선생님A', '학생 사진 파일 지우기', (select count(*) from d), 0);
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+select pg_temp.expect('선생님B', '다른 반 학생 사진 파일', (select count(*) from storage.objects where bucket_id = 'homework-photos'), 0);
+select pg_temp.expect('선생님B', '다른 반 학생 사진 줄', (select count(*) from public.submission_photos), 0);
+select pg_temp.login('00000000-0000-0000-0000-0000000000d1');
+select pg_temp.expect('보호자', '자녀 숙제 사진 파일 (HW-08)', (select count(*) from storage.objects where bucket_id = 'homework-photos'), 1);
+select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
+select pg_temp.expect('키패드', '숙제 사진 파일', (select count(*) from storage.objects where bucket_id = 'homework-photos'), 0);
+
+-- 제출물이 있는 숙제는 지워지지 않는다 → 보관(HW-12). 보관된 숙제에는 새로 제출할 수 없다
+select pg_temp.login('00000000-0000-0000-0000-00000000000a');
+do $$ begin
+  delete from public.homework where id = '50000000-0000-0000-0000-000000000001';
+  raise exception 'FAIL 제출물이 있는 숙제가 지워짐';
+exception when restrict_violation then raise notice 'ok   제출물이 있는 숙제는 삭제 대신 보관'; -- 23001: 앱은 이 코드로 "삭제 대신 보관" 안내
+end $$;
+update public.homework set archived_at = now() where id = '50000000-0000-0000-0000-000000000003';
+select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
+do $$ begin
+  insert into public.submissions (homework_id, student_id, for_date) values ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '2026-10-02');
+  raise exception 'FAIL 보관된 숙제에 제출';
+exception when insufficient_privilege then raise notice 'ok   보관된 숙제에 새 제출 거부';
+end $$;
+-- 선생님A는 원장님 숙제는 못 지우고, 제출물이 없는 자기 숙제는 지울 수 있다
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+with d as (delete from public.homework where id = '50000000-0000-0000-0000-000000000003' returning 1) select pg_temp.expect('선생님A', '원장님이 만든 숙제 삭제', (select count(*) from d), 0);
+insert into public.homework (id, kind, title, created_by) values ('50000000-0000-0000-0000-000000000009', 'general', '지울 숙제', '00000000-0000-0000-0000-0000000000a1');
+with d as (delete from public.homework where id = '50000000-0000-0000-0000-000000000009' returning 1) select pg_temp.expect('선생님A', '제출물 없는 내 숙제 삭제', (select count(*) from d), 1);
+reset role;
+
+-- 비로그인은 숙제·사진에 접근 못 한다
+set role anon;
+do $$ begin
+  perform 1 from public.homework;
+  raise exception 'FAIL [비로그인] 숙제 읽기 가능';
+exception when insufficient_privilege then raise notice 'ok   [비로그인] 숙제 읽기 거부';
+end $$;
+reset role;
+
 -- security definer 함수는 모두 search_path가 비어 있게 고정 (다른 스키마의 같은 이름 함수·표로 바꿔치기 방지)
 select pg_temp.expect('구조', 'search_path 고정 안 된 security definer 함수', (
   select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
