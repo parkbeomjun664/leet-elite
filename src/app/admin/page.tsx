@@ -23,8 +23,18 @@ export const dynamic = "force-dynamic";
 const CARD = "rounded-[var(--radius-hcard)] bg-card p-6";
 const UNREAD_LIMIT = 5;
 
-// 색은 학원 색 한 계열만 (10/13 범준님: 색 종류가 많음 → 회색만은 너무 없음 → 파랑은 뜬금없음): 확인할 일 숫자는 버건디(로고·메뉴 선택과 같은 색), 결석 등은 빨강.
-// 줄 바탕·반 아바타는 회색(연한 버건디는 분홍 = 결석 색이라 쓰지 않음), 태그는 결석·조퇴·지각만 빨강. 숫자 칸 옆 점은 없앰
+// 10/13 범준님 명세: 숫자 칸·확인할 일 줄은 박스 없이 구분선만, 숫자 칸 라벨 앞 상태색 점(6px), 숫자는 결석만 빨강
+// 확인할 일 숫자는 학원 색 버건디, 용건 태그는 결석·조퇴·지각 빨강 · 일정 파랑 · 문의 회색
+const STAT_DOT: Record<string, string> = {
+  attendance: "bg-arrive",
+  absent: "bg-danger",
+  homework: "bg-live",
+  makeup: "bg-class-4-fg",
+  teachers: "bg-muted-soft",
+};
+// 숫자 칸 사이 세로선 1px (page). 휴대폰 2칸·태블릿 3칸은 줄이 바뀌면 위에 가로선
+const STAT_DIVIDER =
+  "max-sm:[&:nth-child(even)]:border-l max-sm:[&:nth-child(n+3)]:border-t sm:max-lg:[&:not(:nth-child(3n+1))]:border-l sm:max-lg:[&:nth-child(n+4)]:border-t lg:[&:not(:first-child)]:border-l";
 
 export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
   // 시연용: ?at=16:00 처럼 시각을 지정하면 그 시각 기준 (새로 고침도 멈춘다)
@@ -51,11 +61,12 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         </div>
         <h2 className="sr-only">오늘 학원</h2>
         {/* 휴대폰 2칸(마지막 칸은 가로로 꽉), 태블릿 3칸, PC 5칸 */}
-        <ul aria-label="오늘 학원" className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <ul aria-label="오늘 학원" className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           {stats.map((st, i) => (
-            <li key={st.key} data-stat={st.key} className={cn(i === stats.length - 1 && "max-sm:col-span-2")}>
-              <Link href={st.href} className="press-hcard flex h-full flex-col gap-1.5 rounded-[var(--radius-block)] bg-block px-4 py-3.5">
+            <li key={st.key} data-stat={st.key} className={cn("border-page", STAT_DIVIDER, i === stats.length - 1 && "max-sm:col-span-2")}>
+              <Link href={st.href} className="press-hcard flex h-full flex-col gap-1.5 px-4 py-3.5">
                 <span className="flex items-center gap-1.5 text-caption text-muted">
+                  <span aria-hidden data-dot className={cn("size-1.5 shrink-0 rounded-full", STAT_DOT[st.key])} />
                   {st.label}
                 </span>
                 <span className="tabular">
@@ -63,7 +74,7 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
                     data-value
                     className={cn(
                       "text-hero font-bold tracking-tight",
-                      st.value === 0 ? "text-muted" : st.key === "absent" ? "text-danger-text" : "text-strong",
+                      st.key === "absent" && st.value > 0 ? "text-danger-text" : "text-strong",
                     )}
                   >
                     <CountUp value={st.value} />
@@ -85,12 +96,12 @@ export default async function AdminHome({ searchParams }: PageProps<"/admin">) {
         {checks.length === 0 ? (
           <p className="mt-3 text-body text-muted">지금 처리할 일이 없어요.</p>
         ) : (
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-2 divide-y divide-page">
             {checks.map((c) => (
               <li key={c.key} data-check={c.key}>
                 <Link
                   href={c.href}
-                  className="group press-hcard flex items-center gap-3 rounded-[var(--radius-block)] bg-block px-4 py-3.5 transition-[filter] hover:brightness-[0.97] md:gap-4"
+                  className="group press-hcard flex items-center gap-3 py-4 md:gap-4"
                 >
                   <span className="w-[72px] shrink-0 leading-none whitespace-nowrap tabular md:w-28">
                     <span className="text-figure-md font-bold text-brand">
@@ -185,13 +196,13 @@ function MakeupRow({ m }: { m: SummaryMakeup }) {
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-baseline gap-x-2">
           <span className="text-body font-semibold whitespace-nowrap text-strong tabular">{m.time}</span>
+          <span data-state className={cn("text-caption whitespace-nowrap tabular", m.live ? "font-semibold text-live-text" : "text-muted")}>
+            {m.state}
+          </span>
           <span className="text-body font-semibold text-strong">{m.studentName}</span>
           {m.studentInfo && <span className="text-caption text-muted">{m.studentInfo}</span>}
         </span>
         <span className="mt-0.5 block truncate text-caption text-muted">{m.detail}</span>
-      </span>
-      <span data-state className={cn("shrink-0 text-note tabular", m.live ? "font-semibold text-live-text" : "text-muted")}>
-        {m.state}
       </span>
     </li>
   );

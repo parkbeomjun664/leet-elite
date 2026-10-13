@@ -1,7 +1,7 @@
 import { tagGroup, type MessageTag } from "@/lib/admin/message-tag";
 
 // 원장 홈 목록 줄 앞의 반 아바타와 메시지 용건 태그
-// 10/13 범준님 "색 종류가 많아 눈에 안 들어온다" → 반마다 다른 색 대신 회색, 태그는 오늘 수업에 영향(결석·조퇴·지각)만 빨강
+// 10/13 범준님 "색 종류가 많아 눈에 안 들어온다" → 반마다 다른 색 대신 회색, 태그는 결석·조퇴·지각 빨강 · 일정 파랑 · 문의 회색 (10/13 명세)
 
 /** 40px 아바타: 회색 원 + 반 약칭 (반 구분은 글자로) */
 export function ClassAvatar({ short }: { sortOrder?: number; short: string }) {
@@ -12,10 +12,10 @@ export function ClassAvatar({ short }: { sortOrder?: number; short: string }) {
   );
 }
 
-/** 용건 태그 색: 결석·조퇴·지각 = 빨강 계열 / 일정·문의 = 회색 */
+/** 용건 태그 색: 결석·조퇴·지각 = 빨강 계열 / 일정 = 연한 파랑 / 문의 = 회색 */
 export const TAG_CLASS: Record<ReturnType<typeof tagGroup>, string> = {
   today: "bg-class-5-bg text-class-5-text",
-  schedule: "bg-page text-base",
+  schedule: "bg-class-1-bg text-class-1-text", // 일정 = 연한 파랑 (글자는 대비 때문에 #3182F6 대신 짙은 파랑, 10/13)
   ask: "bg-page text-base",
 };
 

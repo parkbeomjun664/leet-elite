@@ -42,6 +42,20 @@ test.describe("원장님 홈 PC", () => {
     await expect(att).toHaveCSS("color", "rgb(25, 31, 40)");
     await expect(summary.locator('[data-stat="attendance"]')).toContainText(/\d+\s*\/ \d+/);
     await expect(summary.locator('[data-stat="absent"] [data-value]')).toHaveCSS("color", "rgb(217, 31, 47)");
+    // 10/13 명세: 칸 박스 없이 세로선 1px, 라벨 앞 상태색 점 6px (등원 초록·결석 빨강·숙제 파랑·보강 보라·선생님 회색)
+    const statLinks = stats.locator("a");
+    for (const bg of await statLinks.evaluateAll((as) => as.map((a) => getComputedStyle(a).backgroundColor))) expect(bg).toBe("rgba(0, 0, 0, 0)");
+    await expect(stats.nth(1)).toHaveCSS("border-left-width", "1px");
+    await expect(stats.nth(1)).toHaveCSS("border-left-color", "rgb(242, 244, 246)");
+    await expect(stats.first()).toHaveCSS("border-left-width", "0px");
+    const dots = await stats.locator("[data-dot]").evaluateAll((ds) => ds.map((d) => [getComputedStyle(d).width, getComputedStyle(d).backgroundColor]));
+    expect(dots).toEqual([
+      ["6px", "rgb(0, 196, 113)"],
+      ["6px", "rgb(240, 68, 82)"],
+      ["6px", "rgb(49, 130, 246)"],
+      ["6px", "rgb(123, 92, 250)"],
+      ["6px", "rgb(139, 149, 161)"],
+    ]);
 
     // 확인할 일: 제목의 개수 = 줄 수, 줄마다 "보기"
     const rows = checks.locator("li[data-check]");
@@ -50,20 +64,21 @@ test.describe("원장님 홈 PC", () => {
     // 제목에는 숫자를 붙이지 않는다 (종류 수가 건수와 헷갈려서, 10/12)
     await expect(checks.getByRole("heading", { name: "확인할 일", exact: true })).toBeVisible();
     await expect(rows.first().getByRole("link")).toContainText("보기");
-    // 줄은 회색 바탕 + 숫자는 학원 색 버건디 (10/13 범준님: 색 종류는 줄이되 학원 색으로)
+    // 줄은 박스 없이 구분선만 (10/13 명세), 숫자는 학원 색 버건디
     const bgs = await rows.locator("a").evaluateAll((as) => as.map((a) => getComputedStyle(a).backgroundColor));
-    for (const bg of bgs) expect(bg).toBe("rgb(249, 250, 251)");
+    for (const bg of bgs) expect(bg).toBe("rgba(0, 0, 0, 0)");
+    if (n > 1) await expect(rows.first()).toHaveCSS("border-bottom-width", "1px"); // 줄 사이 구분선 (Tailwind v4 divide-y = 마지막 줄 빼고 아래쪽 선)
     await expect(rows.first().locator(".text-figure-md")).toHaveCSS("color", "rgb(179, 38, 46)");
     // 카드 제목은 20px 굵게: 내용(15px)과 확실히 나뉘게 (10/13)
     const title = checks.getByRole("heading", { name: "확인할 일", exact: true });
     await expect(title).toHaveCSS("font-size", "20px");
     await expect(title).toHaveCSS("font-weight", "700");
-    // 아바타는 회색, 태그는 결석·조퇴·지각만 빨강 계열·나머지 회색
+    // 아바타는 회색, 태그는 결석·조퇴·지각 빨강 계열 · 일정 연한 파랑 (10/13 명세)
     const unread = page.locator("[data-message]");
     const avatarBgs = await unread.locator("[data-avatar]").evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
     expect(new Set(avatarBgs)).toEqual(new Set(["rgb(242, 244, 246)"]));
     await expect(unread.locator('[data-group="today"]').first()).toHaveCSS("background-color", "rgb(255, 239, 241)");
-    await expect(unread.locator('[data-group="schedule"]').first()).toHaveCSS("background-color", "rgb(242, 244, 246)");
+    await expect(unread.locator('[data-group="schedule"]').first()).toHaveCSS("background-color", "rgb(232, 243, 255)");
     // 바로가기는 없앴다 (10/13 범준님, 메뉴는 사이드바)
     await expect(page.getByRole("navigation", { name: "바로가기" })).toHaveCount(0);
     // 시간표 중심 구성은 없앴다 (원장님: "시간표는 루틴이라 중요하지 않다")
@@ -97,6 +112,13 @@ test.describe("원장님 홈 PC", () => {
     const first = card.locator("li[data-makeup]").first();
     await expect(first.locator("[data-avatar]")).toHaveCSS("width", "40px");
     await expect(first.locator("[data-state]")).toHaveText(/^\d+(분|시간) 후$/);
+    // 상태는 오른쪽 끝이 아니라 시각 바로 옆 작은 회색 글씨 (10/13 명세)
+    const state = first.locator("[data-state]");
+    await expect(state).toHaveCSS("font-size", "13px");
+    await expect(state).toHaveCSS("color", "rgb(100, 110, 124)");
+    const timeBox = (await first.getByText(/^\d{2}:\d{2}–\d{2}:\d{2}$/).boundingBox())!;
+    const stateBox = (await state.boundingBox())!;
+    expect(stateBox.x - (timeBox.x + timeBox.width)).toBeLessThan(16);
     await expect(card.getByRole("heading", { name: "다음 보강" })).toBeVisible();
     // 17:30: 17:00 보강이 진행 중
     await gotoReady(page, "/admin?at=17:30");
