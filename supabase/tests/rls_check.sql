@@ -283,7 +283,7 @@ reset role;
 set role authenticated;
 select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
 do $$ begin
-  insert into public.homework (kind, title, created_by) values ('general', '퇴사 뒤 숙제', '00000000-0000-0000-0000-0000000000b1');
+  insert into public.homework (kind, title, created_by, due_on) values ('general', '퇴사 뒤 숙제', '00000000-0000-0000-0000-0000000000b1', '2026-10-20');
   raise exception 'FAIL [선생님B 사용 중지] 숙제 등록이 허용됨';
 exception when insufficient_privilege then raise notice 'ok   [선생님B 사용 중지] 숙제 등록 거부';
 end $$;
@@ -291,7 +291,7 @@ reset role;
 update public.teachers set is_active = true where nickname = 'Ben';
 set role authenticated;
 select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
-insert into public.homework (id, kind, title, created_by) values ('50000000-0000-0000-0000-000000000001', 'general', 'H1 단어 시험', '00000000-0000-0000-0000-0000000000a1');
+insert into public.homework (id, kind, title, created_by, due_on) values ('50000000-0000-0000-0000-000000000001', 'general', 'H1 단어 시험', '00000000-0000-0000-0000-0000000000a1', '2026-10-20');
 insert into public.homework_targets values ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001'), ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002');
 -- 다른 반 학생은 대상에 넣을 수 없다
 do $$ begin
@@ -301,17 +301,17 @@ exception when insufficient_privilege then raise notice 'ok   [선생님A] 다�
 end $$;
 -- 남의 이름으로 숙제를 만들 수 없다
 do $$ begin
-  insert into public.homework (kind, title, created_by) values ('general', '가짜', '00000000-0000-0000-0000-0000000000b1');
+  insert into public.homework (kind, title, created_by, due_on) values ('general', '가짜', '00000000-0000-0000-0000-0000000000b1', '2026-10-20');
   raise exception 'FAIL [선생님A] 다른 사람 이름으로 숙제 등록';
 exception when insufficient_privilege then raise notice 'ok   [선생님A] 다른 사람 이름으로 숙제 등록 거부';
 end $$;
 select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
-insert into public.homework (id, kind, title, created_by) values ('50000000-0000-0000-0000-000000000002', 'general', 'H2 독해', '00000000-0000-0000-0000-0000000000b1');
+insert into public.homework (id, kind, title, created_by, due_on) values ('50000000-0000-0000-0000-000000000002', 'general', 'H2 독해', '00000000-0000-0000-0000-0000000000b1', '2026-10-20');
 insert into public.homework_targets values ('50000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000003');
 with u as (update public.homework set title = '바꿈' where id = '50000000-0000-0000-0000-000000000001' returning 1)
   select pg_temp.expect('선생님B', '다른 선생님 숙제 수정', (select count(*) from u), 0);
 select pg_temp.login('00000000-0000-0000-0000-00000000000a');
-insert into public.homework (id, kind, title, starts_on, ends_on, created_by) values ('50000000-0000-0000-0000-000000000003', 'daily', 'H3 매일 듣기', '2026-10-01', '2026-10-03', '00000000-0000-0000-0000-00000000000a');
+insert into public.homework (id, kind, title, starts_on, ends_on, weekdays, created_by) values ('50000000-0000-0000-0000-000000000003', 'daily', 'H3 매일 듣기', '2026-10-01', '2026-10-03', '{1,2,3,4,5}', '00000000-0000-0000-0000-00000000000a');
 insert into public.homework_targets values ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001');
 do $$ begin
   insert into public.homework (kind, title) values ('daily', '기간 없는 매일 숙제');
@@ -363,6 +363,12 @@ do $$ begin
   insert into public.submissions (homework_id, student_id) values ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001');
   raise exception 'FAIL 매일 숙제를 날짜 없이 제출';
 exception when check_violation then raise notice 'ok   매일 숙제는 날짜가 있어야 함';
+end $$;
+-- 매일 숙제는 정한 요일에만 (10/14 6차): H3는 월~금, 10/3은 토요일
+do $$ begin
+  insert into public.submissions (homework_id, student_id, for_date) values ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', '2026-10-03');
+  raise exception 'FAIL 매일 숙제 요일이 아닌 날 제출';
+exception when check_violation then raise notice 'ok   매일 숙제는 정한 요일에만 제출';
 end $$;
 -- 학생은 자기 글만 고친다
 with u as (update public.submissions set comment = '고쳤어요' where id = '60000000-0000-0000-0000-000000000001' returning 1)
@@ -459,8 +465,43 @@ end $$;
 -- 선생님A는 원장님 숙제는 못 지우고, 제출물이 없는 자기 숙제는 지울 수 있다
 select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
 with d as (delete from public.homework where id = '50000000-0000-0000-0000-000000000003' returning 1) select pg_temp.expect('선생님A', '원장님이 만든 숙제 삭제', (select count(*) from d), 0);
-insert into public.homework (id, kind, title, created_by) values ('50000000-0000-0000-0000-000000000009', 'general', '지울 숙제', '00000000-0000-0000-0000-0000000000a1');
+insert into public.homework (id, kind, title, created_by, due_on) values ('50000000-0000-0000-0000-000000000009', 'general', '지울 숙제', '00000000-0000-0000-0000-0000000000a1', '2026-10-20');
 with d as (delete from public.homework where id = '50000000-0000-0000-0000-000000000009' returning 1) select pg_temp.expect('선생님A', '제출물 없는 내 숙제 삭제', (select count(*) from d), 1);
+reset role;
+
+-- ── 6차 (10/14 오후): 마감일·요일·제출 방식, 넣으면서 돌려받기 ──
+set role authenticated;
+select pg_temp.login('00000000-0000-0000-0000-00000000000a');
+do $$ begin
+  insert into public.homework (kind, title) values ('general', '마감 없는 일반 숙제');
+  raise exception 'FAIL 마감일 없는 일반 숙제가 허용됨';
+exception when check_violation then raise notice 'ok   일반 숙제는 마감일이 있어야 함';
+end $$;
+do $$ begin
+  insert into public.homework (kind, title, starts_on, ends_on, weekdays) values ('daily', '요일 없음', '2026-10-01', '2026-10-03', '{}');
+  raise exception 'FAIL 요일 없는 매일 숙제가 허용됨';
+exception when check_violation then raise notice 'ok   매일 숙제는 요일이 하나 이상';
+end $$;
+do $$ begin
+  insert into public.homework (kind, title, starts_on, ends_on, weekdays) values ('daily', '이상한 요일', '2026-10-01', '2026-10-03', '{1,7}');
+  raise exception 'FAIL 0~6 밖의 요일이 허용됨';
+exception when check_violation then raise notice 'ok   요일은 0(일)~6(토)만';
+end $$;
+-- "체크만" 숙제: 제출은 되지만 사진은 못 붙인다
+insert into public.homework (id, kind, title, due_on, submit_mode, created_by) values ('50000000-0000-0000-0000-000000000004', 'general', 'H4 단어 외우기(체크만)', '2026-10-20', 'check', '00000000-0000-0000-0000-00000000000a');
+insert into public.homework_targets values ('50000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000001');
+select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
+insert into public.submissions (id, homework_id, student_id) values ('60000000-0000-0000-0000-000000000004', '50000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000001');
+do $$ begin
+  insert into public.submission_photos (submission_id, storage_path, sort_order) values
+    ('60000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000001/60000000-0000-0000-0000-000000000004/a.jpg', 0);
+  raise exception 'FAIL 체크만 숙제에 사진이 붙음';
+exception when insufficient_privilege then raise notice 'ok   체크만 숙제에는 사진을 못 붙임';
+end $$;
+-- 선생님이 숙제를 넣으면서 바로 돌려받기 (10/14 오전에 막히던 것)
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+with i as (insert into public.homework (kind, title, due_on, created_by) values ('general', '돌려받기', '2026-10-20', '00000000-0000-0000-0000-0000000000a1') returning id)
+  select pg_temp.expect('선생님A', '숙제 넣으면서 돌려받기', (select count(*) from i), 1);
 reset role;
 
 -- 비로그인은 숙제·사진에 접근 못 한다
