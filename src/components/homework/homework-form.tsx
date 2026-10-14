@@ -77,123 +77,125 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
   }
 
   return (
-    <form onSubmit={submit} noValidate className="max-w-3xl space-y-8">
+    <form onSubmit={submit} noValidate className="max-w-6xl space-y-8">
       <PageHeader title="숙제 등록" description="학생 앱에 바로 보여요" />
-
-      {/* 1. 종류 (HW-01·03) */}
-      <section aria-labelledby="hw-kind" className="space-y-3">
-        <h2 id="hw-kind" className="text-heading font-bold text-ink">
-          종류
-        </h2>
-        <div role="group" aria-label="숙제 종류" className="flex gap-1">
-          <Segment active={kind === "general"} onClick={() => setKind("general")}>
-            일반 숙제
-          </Segment>
-          <Segment active={kind === "daily"} onClick={() => setKind("daily")}>
-            매일 숙제
-          </Segment>
-        </div>
-        {kind === "daily" && (
-          <div className="space-y-3 rounded-[var(--radius-block)] bg-block p-4">
-            <Checkbox label="기간 설정 (기간 동안 날마다 제출)" checked={period} onChange={(e) => { setPeriod(e.target.checked); clearError("period"); }} />
-            {period ? (
-              <div className="flex flex-wrap items-end gap-3">
-                <Field label="시작일" htmlFor="hw-start">
-                  <Input id="hw-start" type="date" value={startsOn} min={today} onChange={(e) => { setRange((r) => ({ ...r, startsOn: e.target.value })); clearError("period"); }} />
-                </Field>
-                <span className="pb-2.5 text-sub">~</span>
-                <Field label="종료일" htmlFor="hw-end">
-                  <Input id="hw-end" type="date" value={endsOn} min={startsOn || today} onChange={(e) => { setRange((r) => ({ ...r, endsOn: e.target.value })); clearError("period"); }} />
-                </Field>
-              </div>
-            ) : (
-              <p className="text-caption text-sub">기간을 정하지 않으면 오늘({todayTitle(today).replace(" 숙제", "")}) 하루 숙제예요.</p>
-            )}
-            {errorOf("period") && <p className="text-caption text-brand">{errorOf("period")}</p>}
-          </div>
-        )}
-      </section>
-
-      {/* 2. 대상 (HW-01): 전체 · 반 · 학생 */}
-      <section aria-labelledby="hw-targets" className="space-y-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 id="hw-targets" className="text-heading font-bold text-ink">
-            대상 학생
+      {/* 1024 이상 2단(10/14 범준님: 오른쪽 여백이 너무 많음): 왼쪽 종류·제목·내용 / 오른쪽 대상 학생. 그보다 좁으면 종류 → 대상 → 제목·내용 순서로 쌓는다 */}
+      <div className="grid gap-8 lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-x-12">
+        {/* 1. 종류 (HW-01·03) */}
+        <section aria-labelledby="hw-kind" className="space-y-3 lg:col-start-1 lg:row-start-1">
+          <h2 id="hw-kind" className="text-heading font-bold text-ink">
+            종류
           </h2>
-          <p className="text-caption text-sub" aria-live="polite">
-            <b className="font-semibold text-ink tabular" data-testid="selected-count">{selected.size}</b>명 선택
-          </p>
-        </div>
-        {targets.students.length === 0 ? (
-          <p className="text-body text-sub">숙제를 낼 수 있는 학생이 없어요. 반에 학생이 있는지 확인해 주세요.</p>
-        ) : (
-          <>
-            <div role="group" aria-label="반으로 고르기" className="flex flex-wrap gap-2">
-              <ToggleChip on={allOn} onToggle={() => toggleIds(allIds, !allOn)}>
-                전체 {allIds.length}
-              </ToggleChip>
-              {targets.classes
-                .filter((c) => c.studentIds.length > 0)
-                .map((c) => {
-                  const on = c.studentIds.every((id) => selected.has(id));
-                  return (
-                    <ToggleChip key={c.id} on={on} onToggle={() => toggleIds(c.studentIds, !on)}>
-                      {c.name} {c.studentIds.length}
-                    </ToggleChip>
-                  );
-                })}
+          <div role="group" aria-label="숙제 종류" className="flex gap-1">
+            <Segment active={kind === "general"} onClick={() => setKind("general")}>
+              일반 숙제
+            </Segment>
+            <Segment active={kind === "daily"} onClick={() => setKind("daily")}>
+              매일 숙제
+            </Segment>
+          </div>
+          {kind === "daily" && (
+            <div className="space-y-3 rounded-[var(--radius-block)] bg-block p-4">
+              <Checkbox label="기간 설정 (기간 동안 날마다 제출)" checked={period} onChange={(e) => { setPeriod(e.target.checked); clearError("period"); }} />
+              {period ? (
+                <div className="flex flex-wrap items-end gap-3">
+                  <Field label="시작일" htmlFor="hw-start">
+                    <Input id="hw-start" type="date" value={startsOn} min={today} onChange={(e) => { setRange((r) => ({ ...r, startsOn: e.target.value })); clearError("period"); }} />
+                  </Field>
+                  <span className="pb-2.5 text-sub">~</span>
+                  <Field label="종료일" htmlFor="hw-end">
+                    <Input id="hw-end" type="date" value={endsOn} min={startsOn || today} onChange={(e) => { setRange((r) => ({ ...r, endsOn: e.target.value })); clearError("period"); }} />
+                  </Field>
+                </div>
+              ) : (
+                <p className="text-caption text-sub">기간을 정하지 않으면 오늘({todayTitle(today).replace(" 숙제", "")}) 하루 숙제예요.</p>
+              )}
+              {errorOf("period") && <p className="text-caption text-brand">{errorOf("period")}</p>}
             </div>
-            <div className="rounded-[var(--radius-block)] border border-line-soft">
-              <label className="flex items-center gap-2 border-b border-line-soft px-3">
-                <Search aria-hidden className="size-4 text-faint" />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="학생 이름 검색"
-                  aria-label="학생 이름 검색"
-                  className="h-11 min-w-0 flex-1 bg-transparent text-body outline-none md:h-10"
-                />
-              </label>
-              <ul aria-label="학생" className="max-h-72 overflow-y-auto py-1">
-                {shown.map((s) => (
-                  <li key={s.id}>
-                    <Checkbox
-                      className="flex min-h-11 w-full px-3 hover:bg-bg md:min-h-10"
-                      checked={selected.has(s.id)}
-                      onChange={(e) => toggleIds([s.id], e.target.checked)}
-                      label={
-                        <span>
-                          <span className="font-medium text-ink">{s.name}</span>
-                          {(s.school || s.grade) && <span className="ml-2 text-caption text-sub">{[s.school, s.grade].filter(Boolean).join(" ")}</span>}
-                        </span>
-                      }
-                    />
-                  </li>
-                ))}
-                {shown.length === 0 && <li className="px-3 py-3 text-caption text-sub">&quot;{query}&quot;에 맞는 학생이 없어요</li>}
-              </ul>
-            </div>
-          </>
-        )}
-        {errorOf("targets") && <p className="text-caption text-brand">{errorOf("targets")}</p>}
-      </section>
+          )}
+        </section>
 
-      {/* 3. 제목 (HW-02 오늘 날짜 사용) · 4. 내용 */}
-      <section className="space-y-4">
-        <Field label="제목" htmlFor="hw-title" required error={errorOf("title")}>
-          <Input
-            id="hw-title"
-            value={title}
-            maxLength={TITLE_MAX}
-            placeholder={useToday ? todayTitle(today) : "예: 3과 단어 외우기"}
-            onChange={(e) => { setTitle(e.target.value); clearError("title"); }}
-          />
-        </Field>
-        <Checkbox label="오늘 날짜 사용 (제목을 비우면 오늘 날짜가 제목)" checked={useToday} onChange={(e) => { setUseToday(e.target.checked); clearError("title"); }} />
-        <Field label="내용" htmlFor="hw-body" hint={`${body.length} / ${BODY_MAX}자`} error={errorOf("body")}>
-          <Textarea id="hw-body" rows={5} value={body} maxLength={BODY_MAX} placeholder="숙제 범위, 제출 방법 등" onChange={(e) => { setBody(e.target.value); clearError("body"); }} />
-        </Field>
-      </section>
+        {/* 2. 대상 (HW-01): 전체 · 반 · 학생 */}
+        <section aria-labelledby="hw-targets" className="space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 id="hw-targets" className="text-heading font-bold text-ink">
+              대상 학생
+            </h2>
+            <p className="text-caption text-sub" aria-live="polite">
+              <b className="font-semibold text-ink tabular" data-testid="selected-count">{selected.size}</b>명 선택
+            </p>
+          </div>
+          {targets.students.length === 0 ? (
+            <p className="text-body text-sub">숙제를 낼 수 있는 학생이 없어요. 반에 학생이 있는지 확인해 주세요.</p>
+          ) : (
+            <>
+              <div role="group" aria-label="반으로 고르기" className="flex flex-wrap gap-2">
+                <ToggleChip on={allOn} onToggle={() => toggleIds(allIds, !allOn)}>
+                  전체 {allIds.length}
+                </ToggleChip>
+                {targets.classes
+                  .filter((c) => c.studentIds.length > 0)
+                  .map((c) => {
+                    const on = c.studentIds.every((id) => selected.has(id));
+                    return (
+                      <ToggleChip key={c.id} on={on} onToggle={() => toggleIds(c.studentIds, !on)}>
+                        {c.name} {c.studentIds.length}
+                      </ToggleChip>
+                    );
+                  })}
+              </div>
+              <div className="rounded-[var(--radius-block)] border border-line-soft">
+                <label className="flex items-center gap-2 border-b border-line-soft px-3">
+                  <Search aria-hidden className="size-4 text-faint" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="학생 이름 검색"
+                    aria-label="학생 이름 검색"
+                    className="h-11 min-w-0 flex-1 bg-transparent text-body outline-none md:h-10"
+                  />
+                </label>
+                <ul aria-label="학생" className="max-h-72 overflow-y-auto py-1 lg:max-h-[26rem]">
+                  {shown.map((s) => (
+                    <li key={s.id}>
+                      <Checkbox
+                        className="flex min-h-11 w-full px-3 hover:bg-bg md:min-h-10"
+                        checked={selected.has(s.id)}
+                        onChange={(e) => toggleIds([s.id], e.target.checked)}
+                        label={
+                          <span>
+                            <span className="font-medium text-ink">{s.name}</span>
+                            {(s.school || s.grade) && <span className="ml-2 text-caption text-sub">{[s.school, s.grade].filter(Boolean).join(" ")}</span>}
+                          </span>
+                        }
+                      />
+                    </li>
+                  ))}
+                  {shown.length === 0 && <li className="px-3 py-3 text-caption text-sub">&quot;{query}&quot;에 맞는 학생이 없어요</li>}
+                </ul>
+              </div>
+            </>
+          )}
+          {errorOf("targets") && <p className="text-caption text-brand">{errorOf("targets")}</p>}
+        </section>
+
+        {/* 3. 제목 (HW-02 오늘 날짜 사용) · 4. 내용 */}
+        <section className="space-y-4 lg:col-start-1 lg:row-start-2">
+          <Field label="제목" htmlFor="hw-title" required error={errorOf("title")}>
+            <Input
+              id="hw-title"
+              value={title}
+              maxLength={TITLE_MAX}
+              placeholder={useToday ? todayTitle(today) : "예: 3과 단어 외우기"}
+              onChange={(e) => { setTitle(e.target.value); clearError("title"); }}
+            />
+          </Field>
+          <Checkbox label="오늘 날짜 사용 (제목을 비우면 오늘 날짜가 제목)" checked={useToday} onChange={(e) => { setUseToday(e.target.checked); clearError("title"); }} />
+          <Field label="내용" htmlFor="hw-body" hint={`${body.length} / ${BODY_MAX}자`} error={errorOf("body")}>
+            <Textarea id="hw-body" rows={5} className="lg:min-h-64" value={body} maxLength={BODY_MAX} placeholder="숙제 범위, 제출 방법 등" onChange={(e) => { setBody(e.target.value); clearError("body"); }} />
+          </Field>
+        </section>
+      </div>
 
       <div className="flex gap-2 border-t border-line-soft pt-5 md:justify-end">
         <ButtonLink href={listHref} className="max-md:h-12">

@@ -95,3 +95,13 @@ test("휴대폰 폭: 등록 화면이 가로로 넘치지 않고 [숙제 내기]
   const btn = (await page.getByRole("button", { name: "숙제 내기" }).boundingBox())!;
   expect(btn.width).toBeGreaterThan(200);
 });
+
+test("넓은 화면은 2단: 왼쪽 종류·제목·내용, 오른쪽 대상 학생 (10/14 오른쪽 여백)", async ({ page }) => {
+  await gotoReady(page, "/admin/homework/new");
+  const kind = (await page.getByRole("heading", { name: "종류" }).boundingBox())!;
+  const targets = (await page.getByRole("heading", { name: "대상 학생" }).boundingBox())!;
+  const title = (await page.getByRole("textbox", { name: /^제목/ }).boundingBox())!;
+  expect(targets.x).toBeGreaterThan(kind.x + 300); // 오른쪽 칸
+  expect(Math.abs(targets.y - kind.y)).toBeLessThan(4); // 같은 높이에서 시작
+  expect(title.y - (kind.y + kind.height)).toBeLessThan(160); // 종류 바로 아래 제목 (빈 틈 없이)
+});
