@@ -439,20 +439,3 @@ html[data-splash="done"] #splash {
     animation: none !important;
   }
 }
-
-/* 관리 화면 제목 뒤 빛 (10/14 범준님: 페이지가 밋밋함 → 로그인과 같은 계열을 제목 영역에만 옅게)
-   왼쪽 위 버건디 10% + 오른쪽 위 주황 6%, 아래로 갈수록 사라져 카드 영역은 평평하게 둔다. 움직이지 않는다 */
-@utility bg-title-glow {
-  background-image:
-    radial-gradient(60% 100% at 22% 0%, color-mix(in srgb, var(--color-brand) 10%, transparent) 0%, transparent 72%),
-    radial-gradient(45% 90% at 80% 0%, color-mix(in srgb, var(--color-warn) 6%, transparent) 0%, transparent 70%);
-  /* 상자 모양 경계가 보이지 않게 양옆·아래로 서서히 사라지게 */
-  mask-image: linear-gradient(to right, transparent, black 18%, black 82%, transparent), linear-gradient(to bottom, black 40%, transparent);
-  mask-composite: intersect;
-}
-/* 사이드바 로고 뒤 빛 (같은 날): 흰 사이드바 맨 위에만 버건디 6% */
-@utility bg-sidebar-glow {
-  background-color: var(--color-card);
-  background-image: radial-gradient(90% 140px at 0% 0%, color-mix(in srgb, var(--color-brand) 6%, transparent) 0%, transparent 100%);
-  background-repeat: no-repeat;
-}

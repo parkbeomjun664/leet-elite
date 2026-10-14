@@ -223,12 +223,13 @@ test("등록 시각: 흰 카드(모서리 20·안 24), 칸 이름 13px 600 #4E59
   // 학생 줄 44px, 상단 "0명 선택"은 없고 하단 바에 "선택 n명"
   await expect(page.getByRole("list", { name: "학생" }).getByRole("listitem").first().locator("label")).toHaveCSS("height", "44px");
   await expect(page.locator("[data-bottom-bar]")).toContainText(/선택\s*\d+명/);
-  // 사이드바는 흰색 + 오른쪽 #E5E8EB 선, 고른 메뉴는 연회색 바탕 (10/14 범준님: 회색 사이드바가 칙칙함). 제목 뒤 빛이 있다
+  // 사이드바는 흰색 + 오른쪽 #E5E8EB 선, 고른 메뉴는 연회색 바탕 (10/14 범준님: 회색 사이드바가 칙칙함)
   const aside = page.getByRole("complementary", { name: "원장님 메뉴" });
   await expect(aside).toHaveCSS("border-right-color", "rgb(229, 232, 235)");
   expect(await aside.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgb(255, 255, 255)");
   await expect(aside.getByRole("link", { name: "숙제", exact: true })).toHaveCSS("background-color", "rgb(242, 244, 246)");
-  await expect(page.locator("[data-title-glow]")).toHaveCount(1);
+  // 그라데이션(제목 뒤·사이드바 로고 뒤 빛)은 같은 날 뺐다 (범준님)
+  await expect(page.locator("[data-title-glow]")).toHaveCount(0);
 });
 
 test("목록 시각: 960px 가운데, 세그먼트 탭, 행 72px·구분선 #F2F4F6, 제출 현황 120px, chevron #B0B8C1", async ({ page }) => {
