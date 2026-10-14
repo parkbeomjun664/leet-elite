@@ -111,7 +111,7 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
 
   return (
     // 회색 바탕 + 흰 카드 두 장(왼쪽 기본 정보 : 오른쪽 대상 학생 = 1 : 1.2, 높이 같게), 아래 붙는 하단 바 (10/14 범준님 시각 정리)
-    <form data-tone="page" onSubmit={submit} noValidate className="mx-auto max-w-[1080px] space-y-5">
+    <form data-tone="page" onSubmit={submit} noValidate className="mx-auto max-w-[1280px] space-y-5">
       <PageHeader title="숙제 등록" description="학생 앱에 바로 보여요" />
       <div className="grid gap-4 md:grid-cols-[1fr_1.2fr] md:items-stretch">
         {/* 왼쪽 카드: 기본 정보 (종류·날짜 → 제출 방식 → 제목 → 내용) */}
