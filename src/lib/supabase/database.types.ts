@@ -1,4 +1,4 @@
-// 자동 생성: Supabase DB 구조 → TypeScript 타입 (10/7, dev 프로젝트, 마이그레이션 3차까지). 직접 고치지 않는다
+// 자동 생성: Supabase DB 구조 → TypeScript 타입 (10/14, dev 프로젝트, 마이그레이션 5차 숙제까지). 직접 고치지 않는다
 // 마이그레이션을 더하면 다시 만든다 (Supabase MCP generate_typescript_types 또는 `supabase gen types typescript`)
 // 주의: DB 함수의 인자는 null을 받아도 타입에는 string으로만 나온다 (login_attempt_begin의 p_ip 등)
 
@@ -14,7 +14,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -163,6 +163,83 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homework: {
+        Row: {
+          archived_at: string | null
+          body: string
+          created_at: string
+          created_by: string | null
+          ends_on: string | null
+          id: string
+          kind: Database["public"]["Enums"]["homework_kind"]
+          starts_on: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["homework_kind"]
+          starts_on?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["homework_kind"]
+          starts_on?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homework_targets: {
+        Row: {
+          homework_id: string
+          student_id: string
+        }
+        Insert: {
+          homework_id: string
+          student_id: string
+        }
+        Update: {
+          homework_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_targets_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "homework"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homework_targets_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -318,6 +395,98 @@ export type Database = {
           },
         ]
       }
+      submission_photos: {
+        Row: {
+          created_at: string
+          height: number | null
+          id: string
+          sort_order: number
+          storage_path: string
+          submission_id: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          sort_order: number
+          storage_path: string
+          submission_id: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          sort_order?: number
+          storage_path?: string
+          submission_id?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_photos_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      submissions: {
+        Row: {
+          comment: string
+          for_date: string | null
+          homework_id: string
+          id: string
+          student_id: string
+          submitted_at: string
+          teacher_comment: string | null
+          teacher_comment_at: string | null
+          teacher_comment_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          comment?: string
+          for_date?: string | null
+          homework_id: string
+          id?: string
+          student_id: string
+          submitted_at?: string
+          teacher_comment?: string | null
+          teacher_comment_at?: string | null
+          teacher_comment_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comment?: string
+          for_date?: string | null
+          homework_id?: string
+          id?: string
+          student_id?: string
+          submitted_at?: string
+          teacher_comment?: string | null
+          teacher_comment_at?: string | null
+          teacher_comment_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_homework_id_student_id_fkey"
+            columns: ["homework_id", "student_id"]
+            isOneToOne: false
+            referencedRelation: "homework_targets"
+            referencedColumns: ["homework_id", "student_id"]
+          },
+          {
+            foreignKeyName: "submissions_teacher_comment_by_fkey"
+            columns: ["teacher_comment_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teachers: {
         Row: {
           id: string
@@ -391,6 +560,7 @@ export type Database = {
     }
     Enums: {
       guardian_relation: "mother" | "father" | "other"
+      homework_kind: "general" | "daily"
       student_status: "enrolled" | "on_leave" | "withdrawn" | "pending"
       user_role: "admin" | "teacher" | "student" | "parent" | "kiosk"
     }
@@ -521,6 +691,7 @@ export const Constants = {
   public: {
     Enums: {
       guardian_relation: ["mother", "father", "other"],
+      homework_kind: ["general", "daily"],
       student_status: ["enrolled", "on_leave", "withdrawn", "pending"],
       user_role: ["admin", "teacher", "student", "parent", "kiosk"],
     },
