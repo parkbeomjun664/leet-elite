@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyMessage, compareTodos, messageTime, tagGroup } from "./message-tag";
+import { classifyMessage, compareTodos, messageTime, sortByAttendanceThenRecent, tagGroup } from "./message-tag";
 
 describe("용건 자동 분류 (10/12 v4)", () => {
   it("가상 학부모 메시지 8개", () => {
@@ -51,5 +51,26 @@ describe("처리할 일 정렬: 오늘 수업에 영향 → 읽지 않음 → �
       { id: "today-new", affectsToday: true, unread: true, at: "2026-10-12 09:30" },
     ];
     expect([...list].sort(compareTodos).map((x) => x.id)).toEqual(["today-new", "today-old", "new-unread", "old-unread", "read-new"]);
+  });
+});
+
+describe("원장 홈 학부모 메시지 정렬 (10/14): 출결 먼저 → 최신순", () => {
+  const list = [
+    { id: "ask-new", tag: "문의" as const, at: "2026-10-14 11:00" },
+    { id: "absent-old", tag: "결석" as const, at: "2026-10-13 20:00" },
+    { id: "plan-mid", tag: "일정" as const, at: "2026-10-14 09:00" },
+    { id: "late-new", tag: "지각" as const, at: "2026-10-14 10:30" },
+    { id: "early-mid", tag: "조퇴" as const, at: "2026-10-14 08:00" },
+  ];
+  it("결석·조퇴·지각이 먼저, 각 묶음 안은 최신순", () => {
+    const r = sortByAttendanceThenRecent(list);
+    expect(r.map((m) => m.id)).toEqual(["late-new", "early-mid", "absent-old", "ask-new", "plan-mid"]);
+    expect(r.map((m) => m.group)).toEqual(["attendance", "attendance", "attendance", "other", "other"]);
+  });
+  it("원래 배열은 그대로, 빈 목록도 된다", () => {
+    const copy = [...list];
+    sortByAttendanceThenRecent(list);
+    expect(list).toEqual(copy);
+    expect(sortByAttendanceThenRecent([])).toEqual([]);
   });
 });

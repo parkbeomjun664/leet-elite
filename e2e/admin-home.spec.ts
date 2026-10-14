@@ -1,117 +1,87 @@
 import { expect, test } from "@playwright/test";
 import { gotoReady } from "./ready";
 
-// 원장님 홈 (10/12 v5: 예전 구성 + 토스 스타일): 사이드바 · 오늘 학원 숫자 · 확인할 일 · 보강 · 학부모 메시지
+// 원장님 홈 (10/14 저녁 배치): 사이드바 · 날짜 · 오늘 학원 숫자 · 확인할 일 KPI 4칸 · 보강 · 학부모 메시지
 // 시험 날짜는 2026-10-05(월) 고정, 시각은 ?at=16:00
 test.describe("원장님 홈 PC", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("예전 구성(숫자 5칸 → 확인할 일 → 보강·메시지)을 선생님 홈과 같은 짜임으로 (10/14)", async ({ page }) => {
+  test("배치: 날짜 → 숫자 5칸 → 확인할 일 KPI 4칸 → 보강·학부모 메시지 2열 (10/14 저녁 명세)", async ({ page }) => {
     await gotoReady(page, "/admin?at=16:00");
-    // 카드 없이 흰 바탕 (10/14 범준님: 선생님 홈 디자인으로)
-    expect(await page.evaluate(() => getComputedStyle(document.querySelector("[data-collapsed]")!).backgroundColor)).toBe("rgb(255, 255, 255)");
-    const stats = page.getByRole("list", { name: "오늘 학원" }).locator("li[data-stat]");
-    const checks = page.locator("section", { has: page.getByRole("heading", { name: /^확인할 일/ }) });
-    const makeup = page.locator("section", { has: page.getByRole("heading", { name: /^오늘 보강/ }) });
+    // 옅은 회색 바탕(canvas) + 흰 카드(모서리 20·안 24·테두리 1px·그림자 없음)
+    expect(await page.evaluate(() => getComputedStyle(document.querySelector("[data-collapsed]")!).backgroundColor)).toBe("rgb(248, 249, 250)");
+    const statsList = page.getByRole("list", { name: "오늘 학원" });
+    const stats = statsList.locator("li[data-stat]");
+    const kpis = page.locator("li[data-check]");
+    const makeup = page.locator("section", { has: page.getByRole("heading", { name: "보강", exact: true }) });
     const msg = page.locator("section", { has: page.getByRole("heading", { name: /^읽지 않은 학부모 메시지/ }) });
-    // 큰 날짜 제목 (선생님 홈과 같은 크기·굵기)
-    const h1 = page.getByRole("heading", { level: 1 });
-    await expect(h1).toContainText("2026년 10월 5일 (월)");
-    await expect(h1).toHaveCSS("font-weight", "700");
+    for (const c of [makeup, msg, kpis.first().getByRole("link")]) {
+      await expect(c).toHaveCSS("border-radius", "20px");
+      await expect(c).toHaveCSS("padding-top", "24px");
+      await expect(c).toHaveCSS("box-shadow", "none");
+    }
+    await expect(statsList).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    // 날짜 제목·기준 시각
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("2026년 10월 5일 (월)");
     await expect(page.locator("[data-asof]")).toHaveText("16:00 기준");
-    // 순서·배치: 날짜 → 숫자 줄 → 아래 왼쪽 확인할 일(회색 면) / 오른쪽 보강 위·메시지 아래
+    // 순서와 칸: KPI 4칸 한 줄(카드 사이 16px), 아래 2열 높이 같게
     const box = async (l: import("@playwright/test").Locator) => (await l.boundingBox())!;
-    expect((await box(stats.first())).y).toBeLessThan((await box(checks)).y);
-    expect(Math.round((await box(checks)).y)).toBe(Math.round((await box(makeup)).y));
-    expect((await box(makeup)).x).toBeGreaterThan((await box(checks)).x + (await box(checks)).width - 2);
-    expect((await box(msg)).y).toBeGreaterThan((await box(makeup)).y);
-    await expect(checks).toHaveCSS("background-color", "rgb(247, 246, 244)");
-    for (const c of [checks, makeup, msg]) await expect(c).toHaveCSS("border-radius", "0px"); // 카드 없음
+    expect((await box(statsList)).y).toBeLessThan((await box(kpis.first())).y);
+    await expect(kpis).toHaveCount(4);
+    expect(await kpis.evaluateAll((ls) => ls.map((l) => l.getAttribute("data-check")))).toEqual(["unread", "teachers", "feedback", "makeupNeeded"]);
+    const kb = await kpis.evaluateAll((ls) => ls.map((l) => l.getBoundingClientRect()).map((r) => [Math.round(r.y), Math.round(r.x), Math.round(r.width)]));
+    expect(new Set(kb.map((k) => k[0])).size).toBe(1);
+    expect(kb[1][1] - (kb[0][1] + kb[0][2])).toBe(16);
+    expect((await box(makeup)).y).toBeGreaterThan((await box(kpis.first())).y);
+    expect(Math.round((await box(makeup)).y)).toBe(Math.round((await box(msg)).y));
+    expect(Math.round((await box(makeup)).height)).toBe(Math.round((await box(msg)).height));
 
-    // 오늘 학원 숫자 5칸: 위아래 선 사이 한 줄, 숫자 700, 결석(0보다 크면) 빨강
-    await expect(page.getByRole("list", { name: "오늘 학원" })).toHaveCSS("border-top-width", "1px");
+    // 숫자 5칸: 숫자 700, 결석(0보다 크면) 빨강, 이름 앞 상태색 점 6px
     await expect(stats).toHaveCount(5);
-    expect(await stats.evaluateAll((ls) => ls.map((l) => l.getAttribute("data-stat")))).toEqual(["attendance", "absent", "homework", "makeup", "teachers"]);
-    const ys = await stats.evaluateAll((ls) => ls.map((l) => Math.round(l.getBoundingClientRect().y)));
-    expect(new Set(ys).size).toBe(1);
-    const att = page.locator('[data-stat="attendance"] [data-value]');
-    await expect(att).toHaveCSS("font-weight", "700");
-    await expect(att).toHaveCSS("color", "rgb(25, 31, 40)");
-    await expect(page.locator('[data-stat="attendance"]')).toContainText(/\d+\s*\/\d+/);
+    await expect(page.locator('[data-stat="attendance"] [data-value]')).toHaveCSS("color", "rgb(25, 31, 40)");
     await expect(page.locator('[data-stat="absent"] [data-value]')).toHaveCSS("color", "rgb(217, 31, 47)");
-    // 이름 앞 상태색 점 6px (등원 초록·결석 빨강·숙제 파랑·보강 보라·선생님 회색)
-    const dots = await stats.locator("[data-dot]").evaluateAll((ds) => ds.map((d) => [getComputedStyle(d).width, getComputedStyle(d).backgroundColor]));
-    expect(dots).toEqual([
-      ["6px", "rgb(0, 196, 113)"],
-      ["6px", "rgb(240, 68, 82)"],
-      ["6px", "rgb(49, 130, 246)"],
-      ["6px", "rgb(123, 92, 250)"],
-      ["6px", "rgb(139, 149, 161)"],
-    ]);
+    const dots = await stats.locator("[data-dot]").evaluateAll((ds) => ds.map((d) => getComputedStyle(d).backgroundColor));
+    expect(dots).toEqual(["rgb(0, 196, 113)", "rgb(240, 68, 82)", "rgb(49, 130, 246)", "rgb(123, 92, 250)", "rgb(139, 149, 161)"]);
 
-    // 확인할 일: 제목의 개수 = 줄 수, 줄마다 "보기"
-    const rows = checks.locator("li[data-check]");
-    const n = await rows.count();
-    expect(n).toBeGreaterThan(0);
-    // 제목에는 숫자를 붙이지 않는다 (종류 수가 건수와 헷갈려서, 10/12)
-    await expect(checks.getByRole("heading", { name: "확인할 일", exact: true })).toBeVisible();
-    await expect(rows.first().getByRole("link")).toContainText("보기");
-    // 줄은 박스 없이 구분선만 (10/13 명세), 숫자는 학원 색 버건디
-    const bgs = await rows.locator("a").evaluateAll((as) => as.map((a) => getComputedStyle(a).backgroundColor));
-    for (const bg of bgs) expect(bg).toBe("rgba(0, 0, 0, 0)");
-    if (n > 1) await expect(rows.first()).toHaveCSS("border-bottom-width", "1px"); // 줄 사이 구분선 (Tailwind v4 divide-y = 마지막 줄 빼고 아래쪽 선)
-    await expect(rows.first().locator(".text-figure-md")).toHaveCSS("color", "rgb(179, 38, 46)");
-    // 구역 제목은 굵게 (10/14 선생님 홈 짜임: 15px 700)
-    const title = checks.getByRole("heading", { name: "확인할 일", exact: true });
-    await expect(title).toHaveCSS("font-size", "15px");
-    await expect(title).toHaveCSS("font-weight", "700");
-    // 아바타는 회색, 태그는 결석·조퇴·지각 빨강 계열 · 일정 연한 파랑 (10/13 명세)
-    const unread = page.locator("[data-message]");
-    const avatarBgs = await unread.locator("[data-avatar]").evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
-    expect(new Set(avatarBgs)).toEqual(new Set(["rgb(242, 244, 246)"]));
-    await expect(unread.locator('[data-group="today"]').first()).toHaveCSS("background-color", "rgb(255, 239, 241)");
-    await expect(unread.locator('[data-group="schedule"]').first()).toHaveCSS("background-color", "rgb(232, 243, 255)");
-    // 바로가기는 없앴다 (10/13 범준님, 메뉴는 사이드바)
+    // KPI: 칸 전체가 링크, 이름 13px base, 숫자 700 진한(빨강 없음), 이름 요약 한 줄 말줄임, 점 색, 첫 칸 연한 파랑, "보기" 없음
+    const first = kpis.first().getByRole("link");
+    await expect(first).toHaveAttribute("href", "/admin/messages");
+    await expect(first).toHaveCSS("background-color", "rgb(232, 243, 255)");
+    await expect(first.locator("[data-label]")).toHaveCSS("font-size", "13px");
+    await expect(first.locator("[data-label]")).toHaveCSS("color", "rgb(78, 89, 104)");
+    for (const v of await kpis.locator("[data-value]").evaluateAll((els) => els.map((e) => getComputedStyle(e).color))) expect(["rgb(25, 31, 40)", "rgb(139, 149, 161)"]).toContain(v);
+    await expect(first.locator(".truncate").last()).toHaveCSS("white-space", "nowrap");
+    const kdots = await kpis.locator("[data-dot]").evaluateAll((ds) => ds.map((d) => getComputedStyle(d).backgroundColor));
+    expect(kdots).toEqual(["rgb(49, 130, 246)", "rgb(255, 159, 10)", "rgb(255, 159, 10)", "rgb(240, 68, 82)"]);
+    await expect(page.locator("li[data-check]").getByText("보기")).toHaveCount(0);
+    // 바로가기·시간표는 없다
     await expect(page.getByRole("navigation", { name: "바로가기" })).toHaveCount(0);
-    // 시간표 중심 구성은 없앴다 (원장님: "시간표는 루틴이라 중요하지 않다")
     await expect(page.getByRole("list", { name: "오늘 시간표" })).toHaveCount(0);
   });
 
-  test("숙제 미제출은 그 반 수업 시작 뒤에만 확인할 일에 (14:00 없음 → 16:00 있음)", async ({ page }) => {
-    const hw = page.locator('li[data-check="homework"]');
-    await gotoReady(page, "/admin?at=14:00");
-    await expect(hw).toHaveCount(0);
-    await gotoReady(page, "/admin?at=16:00");
-    await expect(hw).toBeVisible();
-    await expect(hw).toContainText(/\d+\s*\/ \d+\s*명/);
-  });
-
-  test("아침(수업 전)에도 확인할 일이 비지 않는다: 피드백 안 한 숙제·보강 잡을 학생 (10/13)", async ({ page }) => {
+  test("KPI 숫자가 0이면 회색(#8B95A1), 이름 요약은 '없어요' (아침 08:50: 아직 아무도 출근 전)", async ({ page }) => {
     await gotoReady(page, "/admin?at=08:50");
-    const checks = page.locator("li[data-check]");
-    // 수업 전이라 미등원·숙제 미제출은 없다
-    await expect(page.locator('li[data-check="notArrived"], li[data-check="homework"]')).toHaveCount(0);
-    await expect(page.locator('li[data-check="feedback"]')).toContainText(/피드백 안 한 숙제/);
-    await expect(page.locator('li[data-check="feedback"]').getByRole("link")).toHaveAttribute("href", "/admin/homework");
-    await expect(page.locator('li[data-check="makeupNeeded"]')).toContainText(/보강 잡을 학생/);
-    await expect(page.locator('li[data-check="makeupNeeded"]').getByRole("link")).toHaveAttribute("href", "/admin/makeups");
-    expect(await checks.count()).toBeGreaterThanOrEqual(3);
+    const teachers = page.locator('li[data-check="teachers"]');
+    await expect(teachers.locator("[data-value]")).toHaveText("0");
+    await expect(teachers.locator("[data-value]")).toHaveCSS("color", "rgb(139, 149, 161)");
+    await expect(teachers).toContainText("없어요");
+    // 0이 아닌 칸은 진한 글씨
+    await expect(page.locator('li[data-check="feedback"] [data-value]')).toHaveCSS("color", "rgb(25, 31, 40)");
   });
 
-  test("보강: 반 색 아바타, 진행 중(파랑)·n시간 후·다음 보강", async ({ page }) => {
-    const card = page.locator("section", { has: page.getByRole("heading", { name: /^오늘 보강/ }) });
+  test("보강: 오늘 / 다음 구분선, 반 연한 색 아바타, 진행 중(파랑)·n시간 후", async ({ page }) => {
+    const card = page.locator("section", { has: page.getByRole("heading", { name: "보강", exact: true }) });
     await gotoReady(page, "/admin?at=16:00");
     const first = card.locator("li[data-makeup]").first();
     await expect(first.locator("[data-avatar]")).toHaveCSS("width", "40px");
+    expect(await first.locator("[data-avatar]").evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe("rgb(242, 244, 246)");
     await expect(first.locator("[data-state]")).toHaveText(/^\d+(분|시간) 후$/);
-    // 상태는 오른쪽 끝이 아니라 시각 바로 옆 작은 회색 글씨 (10/13 명세)
     const state = first.locator("[data-state]");
     await expect(state).toHaveCSS("font-size", "13px");
     await expect(state).toHaveCSS("color", "rgb(100, 110, 124)");
-    const timeBox = (await first.getByText(/^\d{2}:\d{2}–\d{2}:\d{2}$/).boundingBox())!;
-    const stateBox = (await state.boundingBox())!;
-    expect(stateBox.x - (timeBox.x + timeBox.width)).toBeLessThan(16);
-    await expect(card.getByRole("heading", { name: "다음 보강" })).toBeVisible();
+    await expect(card.getByRole("heading", { name: "오늘", exact: true })).toBeVisible();
+    await expect(card.getByRole("heading", { name: "다음", exact: true })).toBeVisible();
+    expect(await card.locator("li[data-makeup]").count()).toBeLessThanOrEqual(5);
     // 17:30: 17:00 보강이 진행 중
     await gotoReady(page, "/admin?at=17:30");
     const live = card.locator("li[data-makeup]").first().locator("[data-state]");
@@ -119,22 +89,33 @@ test.describe("원장님 홈 PC", () => {
     await expect(live).toHaveCSS("color", "rgb(27, 100, 218)");
   });
 
-  test("학부모 메시지: 반 색 아바타·이름 · 관계·용건 태그·시간, 오늘 수업에 영향 있는 연락이 먼저", async ({ page }) => {
+  test("학부모 메시지: 출결(결석·조퇴·지각) 먼저 → 기타, 묶음 이름, 태그 색, 시간 오른쪽 끝, '외 n건' 파란 링크", async ({ page }) => {
     await gotoReady(page, "/admin?at=16:00");
     const card = page.locator("section", { has: page.getByRole("heading", { name: /^읽지 않은 학부모 메시지/ }) });
     const rows = card.locator("li[data-message]");
-    await expect(rows).toHaveCount(5); // 최근 5건, 나머지는 "외 N건"
-    await expect(card).toContainText(/외 \d+건은 메시지 화면에서 확인/);
-    await expect(rows.first().locator("[data-avatar]")).toHaveText(/^(초저|초중|초고|브릿지|코어|마스터|포커스)$/);
-    await expect(rows.first()).toContainText(/· (어머님|아버님)/);
-    for (const t of await rows.locator("[data-time]").allInnerTexts()) expect(t).toMatch(/^(오전|오후) \d{1,2}:\d{2}$|^어제$|^\d{1,2}\/\d{1,2}$/);
+    await expect(rows).toHaveCount(5);
     const tags = await rows.locator("[data-tag]").evaluateAll((els) => els.map((e) => e.getAttribute("data-tag")!));
     const firstOther = tags.findIndex((t) => t === "일정" || t === "문의");
     expect(firstOther).toBeGreaterThan(0);
     expect(tags.slice(firstOther).some((t) => ["결석", "조퇴", "지각"].includes(t))).toBe(false);
-    // 자동 분류
+    await expect(card.locator("[data-group-label]")).toHaveText(["출결", "기타"]);
+    // 태그 색: 결석 빨강 / 지각·조퇴 주황 / 일정 파랑 (글자는 대비 기준에 맞춘 짙은 같은 계열)
     await expect(rows.filter({ hasText: "쉬게" }).locator("[data-tag]")).toHaveText("결석");
+    await expect(rows.filter({ hasText: "쉬게" }).locator("[data-tag]")).toHaveCSS("color", "rgb(217, 31, 47)");
     await expect(rows.filter({ hasText: "데리러" }).locator("[data-tag]")).toHaveText("조퇴");
+    await expect(rows.filter({ hasText: "데리러" }).locator("[data-tag]")).toHaveCSS("background-color", "rgb(255, 244, 229)");
+    await expect(card.locator('[data-tag="일정"]').first()).toHaveCSS("background-color", "rgb(232, 243, 255)");
+    // 반 아바타: 반별 연한 색 (모두 같은 회색이 아니다)
+    const avatarBgs = await rows.locator("[data-avatar]").evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
+    expect(new Set(avatarBgs).size).toBeGreaterThan(1);
+    // 시간은 이름 줄 오른쪽 끝, 카드 안
+    const cb = (await card.boundingBox())!;
+    for (const t of await rows.locator("[data-time]").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().right))) expect(t).toBeLessThanOrEqual(cb.x + cb.width);
+    for (const t of await rows.locator("[data-time]").allInnerTexts()) expect(t).toMatch(/^(오전|오후) \d{1,2}:\d{2}$|^어제$|^\d{1,2}\/\d{1,2}$/);
+    // 외 n건: 파란 링크
+    const more = card.getByRole("link", { name: /^외 \d+건 더 보기$/ });
+    await expect(more).toHaveCSS("color", "rgb(27, 100, 218)");
+    await expect(more).toHaveAttribute("href", "/admin/messages");
   });
 
   test("다른 원장님 화면도 같은 사이드바, 접으면 아이콘만 + 하위 메뉴 줄, 다시 열어도 기억", async ({ page }) => {
@@ -187,7 +168,7 @@ test.describe("원장님 홈 PC", () => {
     await expect(page).toHaveURL(/\/admin\?at=16/);
 
     // 바깥을 누르면 닫힌다
-    await page.getByRole("heading", { name: /^확인할 일/ }).click();
+    await page.getByRole("heading", { level: 1 }).click();
     await expect(page.getByRole("menu")).toHaveCount(0);
 
     // 접으면 아바타만, 눌러도 같은 메뉴
@@ -210,18 +191,22 @@ test.describe("원장님 홈 PC", () => {
 test.describe("원장님 홈 휴대폰 375", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test("구역이 위아래로 쌓이고(확인할 일은 화면 끝까지 회색 면), 숫자 5칸은 한 줄, 아래 탭 5개", async ({ page }) => {
+  test("휴대폰: KPI 2×2, 보강·메시지 위아래(카드 안 여백 16px), 숫자 5칸 한 줄, 아래 탭 5개", async ({ page }) => {
     await gotoReady(page, "/admin?at=16:00");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const tabs = page.getByRole("navigation", { name: "아래 메뉴" }).getByRole("link");
     await expect(tabs).toHaveCount(5);
     await expect(tabs.first()).toHaveAttribute("aria-current", "page");
-    // 구역: 확인할 일 → 오늘 보강 → 학부모 메시지, 위에서 아래로. 확인할 일 회색 면은 화면 폭 꽉
-    const sections = page.locator("main section");
-    const boxes = await sections.evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => ({ x: Math.round(r.x), w: Math.round(r.width), y: r.y })));
-    expect(boxes.length).toBe(3);
-    expect(boxes[0]).toMatchObject({ x: 0, w: 375 });
-    expect(boxes.map((b) => b.y)).toEqual([...boxes.map((b) => b.y)].sort((a, b) => a - b));
+    // KPI 2×2
+    const kb = await page.locator("li[data-check]").evaluateAll((ls) => ls.map((l) => l.getBoundingClientRect()).map((r) => [Math.round(r.y), Math.round(r.x)]));
+    expect(kb[0][0]).toBe(kb[1][0]);
+    expect(kb[2][0]).toBeGreaterThan(kb[0][0]);
+    expect(kb[2][1]).toBe(kb[0][1]);
+    // 보강 → 메시지 위아래, 카드 안 여백 16px
+    const makeup = page.locator("section", { has: page.getByRole("heading", { name: "보강", exact: true }) });
+    const msg = page.locator("section", { has: page.getByRole("heading", { name: /^읽지 않은 학부모 메시지/ }) });
+    expect((await msg.boundingBox())!.y).toBeGreaterThan((await makeup.boundingBox())!.y + (await makeup.boundingBox())!.height - 1);
+    await expect(makeup).toHaveCSS("padding-top", "16px");
     // 숫자 5칸: 한 줄, 같은 폭
     const st = await page.locator("li[data-stat]").evaluateAll((lis) => lis.map((li) => li.getBoundingClientRect()).map((r) => [Math.round(r.y), Math.round(r.width)]));
     expect(new Set(st.map((s) => s[0])).size).toBe(1);

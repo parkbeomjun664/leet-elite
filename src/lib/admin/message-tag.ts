@@ -45,3 +45,16 @@ export function compareTodos(a: SortableTodo, b: SortableTodo): number {
   if (a.unread !== b.unread) return a.unread ? -1 : 1;
   return b.at.localeCompare(a.at);
 }
+
+/** 출결 용건(결석·조퇴·지각)인가: 원장 홈 메시지 묶음 "출결" / "기타" (10/14 범준님) */
+export const isAttendanceTag = (tag: MessageTag) => tagGroup(tag) === "today";
+
+/**
+ * 원장 홈 학부모 메시지 정렬 (10/14 범준님): 출결 용건 먼저, 각 묶음 안에서는 최신순
+ * @returns 한 줄로 정렬한 목록 (화면은 group이 바뀌는 곳에 "출결"/"기타" 이름을 붙인다)
+ */
+export function sortByAttendanceThenRecent<T extends { tag: MessageTag; at: string }>(list: T[]): (T & { group: "attendance" | "other" })[] {
+  return list
+    .map((m) => ({ ...m, group: isAttendanceTag(m.tag) ? ("attendance" as const) : ("other" as const) }))
+    .sort((a, b) => (a.group === b.group ? b.at.localeCompare(a.at) : a.group === "attendance" ? -1 : 1));
+}

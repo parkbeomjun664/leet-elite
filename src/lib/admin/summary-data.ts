@@ -3,7 +3,7 @@ import { studentDay } from "@/lib/attendance";
 import { classShort } from "@/lib/admin/class-color";
 import { needsMakeup, waitingFeedback } from "@/lib/admin/checks";
 import { classStartsToday, isHomeworkDue } from "@/lib/admin/homework-due";
-import { classifyMessage, compareTodos, messageTime, tagGroup, type MessageTag } from "@/lib/admin/message-tag";
+import { classifyMessage, messageTime, sortByAttendanceThenRecent, type MessageTag } from "@/lib/admin/message-tag";
 import { untilLabel } from "@/lib/admin/timeline";
 import { addDays, addMinutes, WEEKDAY_KO, weekdayOf } from "@/lib/date";
 import { homework, makeups, messages, submissionOf, submissions } from "@/lib/mock/activity";
@@ -18,7 +18,7 @@ export type SummaryStat = { key: string; label: string; value: number; total?: n
 export type SummaryCheck = { key: string; title: string; value: number; unit: string; total?: number; detail: string; href: string };
 export type Avatar = { sortOrder?: number; short: string };
 export type SummaryMakeup = { id: string; time: string; studentName: string; studentInfo: string; detail: string; state: string; live: boolean; avatar: Avatar };
-export type SummaryMessage = { id: string; title: string; relation?: string; detail: string; time: string; tag: MessageTag; avatar: Avatar };
+export type SummaryMessage = { id: string; title: string; relation?: string; detail: string; time: string; tag: MessageTag; avatar: Avatar; at: string; group?: "attendance" | "other" };
 
 /** 이름 목록 → "김서준, 이하윤, 박도윤 외 2명" */
 export function namesPreview(names: string[], limit = 3): string {
@@ -99,8 +99,8 @@ export function loadAdminSummary(date: string, now: string) {
     { key: "teachers", label: "선생님 출근", value: inTeachers.length, total: teachers.length, href: "/admin/work-logs" },
   ];
 
-  // 확인할 일: 숫자가 있는 것만 (예전 그대로)
-  const checks: SummaryCheck[] = [
+  // 확인할 일 후보 전부 (0 포함). checks = 숫자가 있는 것만(예전), kpis = 원장 홈 KPI 4칸(아래)
+  const checksAll: SummaryCheck[] = [
     { key: "notArrived", title: "미등원 학생", value: notArrived.length, unit: "명", detail: namesPreview(notArrived.map((d) => d.student.name)), href: "/admin/attendance" },
     {
       key: "unread",
@@ -144,7 +144,8 @@ export function loadAdminSummary(date: string, now: string) {
       detail: namesPreview(makeupTodo.map((m) => studentById(m.studentId)?.name ?? "알 수 없음")),
       href: "/admin/makeups",
     },
-  ].filter((c) => c.value > 0);
+  ];
+  const checks = checksAll.filter((c) => c.value > 0);
 
   const makeupRow = (m: (typeof makeups)[number], time: string, isToday: boolean): SummaryMakeup => {
     const s = studentById(m.studentId);
@@ -171,27 +172,27 @@ export function loadAdminSummary(date: string, now: string) {
           .map((m) => makeupRow(m, `${shortDay(m.date)} ${m.start}`, false))
       : [];
 
-  // 읽지 않은 학부모 메시지: 오늘 수업에 영향(결석·조퇴·지각) → 최신순 (v4 정렬)
+  // 읽지 않은 학부모 메시지: 출결 용건(결석·조퇴·지각) 먼저, 각 묶음 안은 최신순 (10/14 범준님)
   const messageRows: SummaryMessage[] = unreadList
     .filter((m) => m.from === "parent")
     .map((m) => {
       const st = studentById(m.studentId);
-      const tag = classifyMessage(m.body);
       return {
-        row: {
-          id: m.id,
-          title: st?.name ?? m.senderName,
-          relation: st && m.senderName.startsWith(st.name) ? m.senderName.slice(st.name.length).trim() || undefined : undefined,
-          detail: m.body.split("\n")[0],
-          time: messageTime(m.sentAt, date),
-          tag,
-          avatar: avatarOfStudent(m.studentId),
-        },
-        sort: { affectsToday: tagGroup(tag) === "today" && m.sentAt.startsWith(date), unread: true, at: m.sentAt },
+        id: m.id,
+        title: st?.name ?? m.senderName,
+        relation: st && m.senderName.startsWith(st.name) ? m.senderName.slice(st.name.length).trim() || undefined : undefined,
+        detail: m.body.split("\n")[0],
+        time: messageTime(m.sentAt, date),
+        tag: classifyMessage(m.body),
+        avatar: avatarOfStudent(m.studentId),
+        at: m.sentAt,
       };
-    })
-    .sort((a, b) => compareTodos(a.sort, b.sort))
-    .map((x) => x.row);
+    });
+  const sortedMessages = sortByAttendanceThenRecent(messageRows);
 
-  return { stats, checks, todayMakeups: todayMakeupRows, nextMakeups: nextMakeupRows, messages: messageRows };
+  // 확인할 일 = 가로 KPI 4칸 (10/14 범준님): 0이어도 칸은 남긴다(회색). 미등원은 출결 보류(10/14)로, 숙제는 위 숫자 줄에 있어 뺐다
+  const byKey = (k: string) => checksAll.find((c) => c.key === k)!;
+  const kpis: SummaryCheck[] = ["unread", "teachers", "feedback", "makeupNeeded"].map(byKey);
+
+  return { stats, checks, kpis, todayMakeups: todayMakeupRows, nextMakeups: nextMakeupRows, messages: sortedMessages };
 }
