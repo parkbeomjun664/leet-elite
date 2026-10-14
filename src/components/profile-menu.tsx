@@ -109,7 +109,7 @@ export function ProfileMenu({
         }}
         className={cn(
           "press flex items-center rounded-[var(--radius-pcard)] text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink",
-          variant === "card" ? "w-full gap-3 bg-card p-3 hover:bg-card/80" : "rounded-full",
+          variant === "card" ? "w-full gap-3 bg-page p-3 hover:bg-hairline" : "rounded-full", // 흰 사이드바 위 연회색 카드 (10/14)
         )}
       >
         <Avatar name={name} size={variant === "header" ? 32 : 40} />

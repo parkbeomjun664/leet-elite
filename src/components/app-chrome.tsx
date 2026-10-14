@@ -95,7 +95,7 @@ export function AppChrome({
       <aside
         aria-label={`${role === "원장" ? "원장님" : "선생님"} 메뉴`}
         className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-line-soft bg-bg transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)] lg:flex",
+          "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-hairline bg-sidebar-glow transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)] lg:flex",
           collapsed ? "w-16" : "w-[220px]",
         )}
       >
@@ -136,10 +136,10 @@ export function AppChrome({
                     aria-label={collapsed ? item.label : undefined}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      // 고른 메뉴 = 흰 바탕 + 왼쪽 버건디 선 (선택 표시는 버건디, 10/9)
+                      // 고른 메뉴 = 연회색 바탕 + 굵게 + 왼쪽 버건디 선 (선택 표시는 버건디, 10/9). 10/14 사이드바를 흰색으로 바꾸며 바탕을 page 회색으로
                       "press flex h-10 items-center gap-3 rounded-[var(--radius-control)] text-body transition-colors duration-[var(--duration-fast)]",
                       collapsed ? "justify-center" : "px-3",
-                      on ? "bg-card font-semibold text-ink shadow-[inset_3px_0_0_var(--color-brand)]" : "text-sub hover:bg-line-soft hover:text-ink",
+                      on ? "bg-page font-semibold text-strong shadow-[inset_3px_0_0_var(--color-brand)]" : "text-base hover:bg-block hover:text-strong",
                     )}
                   >
                     <Icon aria-hidden className={cn("size-[18px] shrink-0", on && "text-brand")} strokeWidth={1.8} />
@@ -157,7 +157,7 @@ export function AppChrome({
                               aria-current={childOn ? "page" : undefined}
                               className={cn(
                                 "flex h-8 items-center rounded-[var(--radius-control)] px-2 text-caption transition-colors duration-[var(--duration-fast)]",
-                                childOn ? "font-semibold text-brand" : "text-sub hover:bg-line-soft hover:text-ink",
+                                childOn ? "font-semibold text-brand" : "text-muted hover:bg-block hover:text-strong",
                               )}
                             >
                               {child.label}

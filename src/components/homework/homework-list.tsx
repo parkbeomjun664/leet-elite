@@ -40,7 +40,9 @@ export function HomeworkList({ rows, newHref, baseHref, today }: { rows: Homewor
 
   return (
     // data-tone="page": 바탕을 원장 홈과 같은 회색으로 (app-chrome.tsx)
-    <div data-tone="page" className="mx-auto max-w-[960px] space-y-5">
+    <div data-tone="page" className="relative isolate mx-auto max-w-[960px] space-y-5">
+      {/* 제목 뒤 빛: 로그인과 같은 계열을 아주 옅게 (10/14 범준님, 카드 영역에는 닿지 않게 위쪽만) */}
+      <div aria-hidden data-title-glow className="pointer-events-none absolute inset-x-0 -top-6 -z-10 h-48 bg-title-glow" />
       <PageHeader
         title="숙제"
         actions={

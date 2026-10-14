@@ -20,7 +20,9 @@ export function HomeworkDetailView({ hw, listHref, today }: { hw: HomeworkDetail
   const days = hw.weekdays ? WEEKDAY_ORDER.filter((d) => hw.weekdays!.includes(d)).map((d) => WEEKDAY_KO[d]).join("·") : "";
   const md = (d: string) => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
   return (
-    <div data-tone="page" className="mx-auto max-w-[960px] space-y-4">
+    <div data-tone="page" className="relative isolate mx-auto max-w-[960px] space-y-4">
+      {/* 제목 뒤 빛: 로그인과 같은 계열을 아주 옅게 (10/14 범준님, 카드 영역에는 닿지 않게 위쪽만) */}
+      <div aria-hidden data-title-glow className="pointer-events-none absolute inset-x-0 -top-6 -z-10 h-48 bg-title-glow" />
       <Link href={listHref} className="-ml-1 inline-flex min-h-11 items-center gap-0.5 text-caption font-semibold text-base hover:underline">
         <ChevronLeft aria-hidden className="size-4" />
         숙제 목록
