@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  * 데이터는 src/lib/admin/summary-data.ts
  */
 
-const CARD = "rounded-[var(--radius-hcard)] bg-card p-6";
+const CARD = "rounded-[var(--radius-hcard)] border border-hairline bg-card p-6"; // 옅은 바탕(canvas) 위 경계는 1px 선 (10/14)
 const UNREAD_LIMIT = 5;
 
 // 10/13 범준님 명세: 숫자 칸·확인할 일 줄은 박스 없이 구분선만, 숫자 칸 라벨 앞 상태색 점(6px), 숫자는 결석만 빨강

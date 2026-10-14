@@ -51,6 +51,7 @@
   --color-muted-soft: #8b95a1; /* 명세의 보조 회색: 아이콘·점·⋯ 같은 장식만 (글씨로는 3.04) */
   --color-dim: #b0b8c1; /* 명세의 흐림: 빈 원·구분 점 같은 장식만 (글씨로는 2.0) */
   --color-hairline: #e5e8eb; /* 토스 회색 1px 선: 칩 테두리·하단 바 위 선 (10/14 숙제 화면) */
+  --color-canvas: #f8f9fa; /* 카드 화면 바탕 (10/14 범준님: page #F2F4F6 바탕이 너무 회색 → 거의 흰 회색, 카드는 hairline 테두리로 경계) */
   --color-block: #f9fafb; /* 시간표 반 블록 바탕 */
   --color-live-tint: #f2f7ff; /* 진행 중 반 블록 바탕 */
   --color-live-text: #1b64da; /* "진행 중" 글씨 (#3182F6은 글씨로 3.71) */

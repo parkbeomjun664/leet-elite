@@ -8,7 +8,7 @@ import { dueLabel, dueTone } from "@/lib/homework/display";
 import { WEEKDAY_ORDER } from "@/lib/homework/form";
 
 const DUE_CLASS = { past: "text-danger-text", today: "text-warn font-semibold", later: "text-muted" } as const;
-const CARD = "rounded-[var(--radius-hcard)] bg-card p-6";
+const CARD = "rounded-[var(--radius-hcard)] border border-hairline bg-card p-6"; // 옅은 바탕(canvas) 위 경계는 1px 선 (10/14)
 
 /**
  * 숙제 상세 (HW-05 학생별 제출 여부, 10/14 기본). 목록에서 줄을 누르면 온다

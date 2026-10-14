@@ -53,7 +53,7 @@ export function HomeworkList({ rows, newHref, baseHref, today }: { rows: Homewor
       />
 
       {rows.length === 0 ? (
-        <div className="rounded-[var(--radius-hcard)] bg-card">
+        <div className="rounded-[var(--radius-hcard)] border border-hairline bg-card">
           <EmptyState
             icon={BookOpen}
             title="아직 낸 숙제가 없어요"
@@ -77,7 +77,7 @@ export function HomeworkList({ rows, newHref, baseHref, today }: { rows: Homewor
               { value: "daily", label: "매일", count: count("daily") },
             ]}
           />
-          <ul aria-label="숙제 목록" className="divide-y divide-page overflow-hidden rounded-[var(--radius-hcard)] bg-card">
+          <ul aria-label="숙제 목록" className="divide-y divide-page overflow-hidden rounded-[var(--radius-hcard)] border border-hairline bg-card">
             {shown.map((r) => {
               const done = r.targetCount > 0 && r.submittedCount === r.targetCount;
               const pct = r.targetCount ? Math.round((r.submittedCount / r.targetCount) * 100) : 0;

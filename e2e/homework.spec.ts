@@ -11,7 +11,7 @@ test("목록: 회색 바탕 흰 카드, 줄 = [종류] 제목 / 대상 요약 ·
   await expect(page.getByText(/등록한 숙제/)).toHaveCount(0); // 부제 없앰
   const list = page.getByRole("list", { name: "숙제 목록" });
   await expect(list).toHaveCSS("background-color", "rgb(255, 255, 255)");
-  expect(await page.evaluate(() => getComputedStyle(document.querySelector("[data-collapsed]")!).backgroundColor)).toBe("rgb(242, 244, 246)");
+  expect(await page.evaluate(() => getComputedStyle(document.querySelector("[data-collapsed]")!).backgroundColor)).toBe("rgb(248, 249, 250)") // 10/14 바탕 canvas;
 
   const rows = list.getByRole("listitem");
   expect(await rows.count()).toBeGreaterThan(5);

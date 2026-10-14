@@ -89,7 +89,7 @@ export function AppChrome({
   return (
     <div
       data-collapsed={collapsed}
-      className="group/chrome min-h-dvh bg-card has-[[data-tone=page]]:bg-page lg:flex"
+      className="group/chrome min-h-dvh bg-card has-[[data-tone=page]]:bg-canvas lg:flex"
     >
       {/* ── PC: 왼쪽 사이드바 ── */}
       <aside

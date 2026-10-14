@@ -28,7 +28,7 @@ import {
 import { toast } from "@/lib/toast";
 
 // 시각 정리 (10/14 범준님): 흰 카드 모서리 20·안 여백 24, 카드 제목 15px 700, 칸 이름 13px 600 base
-const CARD = "rounded-[var(--radius-hcard)] bg-card p-6";
+const CARD = "rounded-[var(--radius-hcard)] border border-hairline bg-card p-6"; // 옅은 바탕(canvas) 위 경계는 1px 선 (10/14)
 const SECTION_TITLE = "text-body font-bold text-strong";
 const FIELD_LABEL = "text-caption font-semibold text-base";
 
@@ -307,7 +307,7 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
       {/* 하단 바: 화면 아래에 붙는다 (휴대폰·태블릿은 아래 메뉴 64px 위). 왼쪽 선택 n명, 오른쪽 취소 / 내기 */}
       <div
         data-bottom-bar
-        className="sticky bottom-[calc(64px+env(safe-area-inset-bottom,0px))] z-20 flex items-center gap-2 rounded-t-[var(--radius-hcard)] border-t border-hairline bg-card px-4 py-3 md:px-6 lg:bottom-0"
+        className="sticky bottom-[calc(64px+env(safe-area-inset-bottom,0px))] z-20 flex items-center gap-2 rounded-t-[var(--radius-hcard)] border border-b-0 border-hairline bg-card px-4 py-3 md:px-6 lg:bottom-0"
       >
         <p className="mr-auto min-w-0 flex-1 text-caption text-muted" aria-live="polite">
           선택{" "}

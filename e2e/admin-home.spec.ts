@@ -9,7 +9,7 @@ test.describe("원장님 홈 PC", () => {
   test("예전 구성(숫자 5칸 → 확인할 일 → 보강·메시지)을 토스 스타일 카드로", async ({ page }) => {
     await gotoReady(page, "/admin?at=16:00");
     // 회색 바탕 #F2F4F6 + 흰 카드(모서리 20, 안 여백 24, 그림자 없음)
-    expect(await page.evaluate(() => getComputedStyle(document.querySelector("[data-collapsed]")!).backgroundColor)).toBe("rgb(242, 244, 246)");
+    expect(await page.evaluate(() => getComputedStyle(document.querySelector("[data-collapsed]")!).backgroundColor)).toBe("rgb(248, 249, 250)") // 10/14 바탕 canvas;
     const summary = page.locator("section", { has: page.getByRole("heading", { level: 1 }) });
     const checks = page.locator("section", { has: page.getByRole("heading", { name: /^확인할 일/ }) });
     const makeupCard = page.locator("section", { has: page.getByRole("heading", { name: /^오늘 보강/ }) });
