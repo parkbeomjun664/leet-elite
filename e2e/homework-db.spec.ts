@@ -45,7 +45,11 @@ test("원장님: 반 하나에 숙제 → DB에 숙제·대상 줄, 목록에 �
   const row = page.getByRole("listitem").filter({ hasText: title });
   await expect(row.locator("[data-progress]")).toContainText(`0 / ${n}명`);
 
-  const { data } = await admin().from("homework").select("kind, created_by, homework_targets ( student_id )").eq("title", title).single();
+  const { data } = await admin().from("homework").select("kind, created_by, due_on, submit_mode, weekdays, homework_targets ( student_id )").eq("title", title).single();
+  // 6차: 마감일(기본 오늘+2일)·제출 방식(기본 사진)이 저장되고, 일반 숙제라 요일은 없다
+  expect(data!.due_on).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(data!.submit_mode).toBe("photo");
+  expect(data!.weekdays).toBeNull();
   expect(data!.kind).toBe("general");
   expect(data!.created_by).not.toBeNull();
   expect(data!.homework_targets).toHaveLength(n);
