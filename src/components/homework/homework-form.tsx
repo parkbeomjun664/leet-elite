@@ -8,24 +8,40 @@ import { Checkbox, Field, Input, Textarea } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/panel";
 import { Segment, ToggleChip } from "@/components/ui/segment";
 import type { HomeworkTargets } from "@/lib/data/homework";
+import { WEEKDAY_KO } from "@/lib/date";
 import { createHomework } from "@/lib/homework/actions";
-import { BODY_MAX, defaultPeriod, parseHomework, TITLE_MAX, todayTitle, type HomeworkField, type HomeworkKind } from "@/lib/homework/form";
+import {
+  autoDailyTitle,
+  BODY_MAX,
+  DEFAULT_WEEKDAYS,
+  defaultDates,
+  parseHomework,
+  readyToSubmit,
+  TITLE_MAX,
+  WEEKDAY_ORDER,
+  type HomeworkField,
+  type HomeworkKind,
+  type SubmitMode,
+} from "@/lib/homework/form";
 import { toast } from "@/lib/toast";
 
 /**
- * 숙제 등록 화면 (HW-01~03, 10/14). 원장님(/admin/homework/new)·선생님(/teacher/homework/new) 공통
- * 위에서 아래로: 종류(일반·매일, 매일은 오늘 하루 / 기간) → 대상(전체·반·학생) → 제목(오늘 날짜 사용) → 내용 → [등록]
- * 대상 목록은 서버가 권한대로 준 것만 (선생님은 담당 반 학생만)
+ * 숙제 등록 화면 (HW-01~03). 원장님(/admin/homework/new)·선생님(/teacher/homework/new) 공통
+ * 10/14 오후 범준님 개선: 일반 = 마감일(기본 오늘+2일) / 매일 = 기간 + 요일 칩(기본 월~금, 제목을 비우면 날짜가 제목) ·
+ *   제출 방식(체크만/사진 첨부) · "오늘 날짜 사용" 체크 없앰 · 반 칩 "선택수/전체수" · [전체]는 맨 뒤에서 한 번 묻고 ·
+ *   [n명에게 숙제 내기]는 필수값(제목·대상·마감)이 채워져야 켜진다
+ * 1024 이상 2단: 왼쪽 종류·날짜·제출 방식·제목·내용 / 오른쪽 대상 학생. 좁으면 종류 → 대상 → 나머지
  */
 export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTargets; today: string; listHref: string }) {
   const router = useRouter();
   const [kind, setKind] = useState<HomeworkKind>("general");
-  const [period, setPeriod] = useState(false);
-  const [{ startsOn, endsOn }, setRange] = useState(() => defaultPeriod(today));
+  const [dates, setDates] = useState(() => defaultDates(today));
+  const [weekdays, setWeekdays] = useState<number[]>(DEFAULT_WEEKDAYS);
+  const [submitMode, setSubmitMode] = useState<SubmitMode>("photo");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmAll, setConfirmAll] = useState(false);
   const [query, setQuery] = useState("");
   const [title, setTitle] = useState("");
-  const [useToday, setUseToday] = useState(false);
   const [body, setBody] = useState("");
   const [error, setError] = useState<{ field?: HomeworkField; error: string } | null>(null);
   const [saving, startSaving] = useTransition();
@@ -35,7 +51,10 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
   const errorOf = (f: HomeworkField) => (error?.field === f ? error.error : undefined);
   const clearError = (f: HomeworkField) => error?.field === f && setError(null);
 
-  // 반 알약: 그 반 학생이 모두 골라져 있으면 켜진 것으로. 누르면 그 반 전체를 넣거나 뺀다
+  const input = { kind, title, body, submitMode, ...dates, weekdays, studentIds: [...selected] };
+  const ready = readyToSubmit(input);
+
+  // 반 칩·전체: 그 학생들을 한꺼번에 넣거나 뺀다
   const toggleIds = (ids: string[], on: boolean) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -47,6 +66,14 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
     });
     clearError("targets");
   };
+  const toggleWeekday = (d: number) => {
+    setWeekdays((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+    clearError("period");
+  };
+  const setDate = (key: keyof typeof dates, value: string) => {
+    setDates((d) => ({ ...d, [key]: value }));
+    clearError(key === "dueOn" ? "due" : "period");
+  };
 
   const shown = useMemo(() => {
     const q = query.trim();
@@ -55,8 +82,7 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (saving) return;
-    const input = { kind, title, useToday, body, period, startsOn, endsOn, studentIds: [...selected] };
+    if (saving || !ready) return;
     // 서버와 같은 규칙으로 먼저 확인 (틀리면 그 칸 아래에 안내)
     const check = parseHomework(input, today);
     if (!check.ok) {
@@ -79,9 +105,8 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
   return (
     <form onSubmit={submit} noValidate className="max-w-6xl space-y-8">
       <PageHeader title="숙제 등록" description="학생 앱에 바로 보여요" />
-      {/* 1024 이상 2단(10/14 범준님: 오른쪽 여백이 너무 많음): 왼쪽 종류·제목·내용 / 오른쪽 대상 학생. 그보다 좁으면 종류 → 대상 → 제목·내용 순서로 쌓는다 */}
       <div className="grid gap-8 lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-x-12">
-        {/* 1. 종류 (HW-01·03) */}
+        {/* 1. 종류와 날짜 (HW-01·03) */}
         <section aria-labelledby="hw-kind" className="space-y-3 lg:col-start-1 lg:row-start-1">
           <h2 id="hw-kind" className="text-heading font-bold text-ink">
             종류
@@ -94,35 +119,44 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
               매일 숙제
             </Segment>
           </div>
-          {kind === "daily" && (
-            <div className="space-y-3 rounded-[var(--radius-block)] bg-block p-4">
-              <Checkbox label="기간 설정 (기간 동안 날마다 제출)" checked={period} onChange={(e) => { setPeriod(e.target.checked); clearError("period"); }} />
-              {period ? (
-                <div className="flex flex-wrap items-end gap-3">
-                  <Field label="시작일" htmlFor="hw-start">
-                    <Input id="hw-start" type="date" value={startsOn} min={today} onChange={(e) => { setRange((r) => ({ ...r, startsOn: e.target.value })); clearError("period"); }} />
-                  </Field>
-                  <span className="pb-2.5 text-sub">~</span>
-                  <Field label="종료일" htmlFor="hw-end">
-                    <Input id="hw-end" type="date" value={endsOn} min={startsOn || today} onChange={(e) => { setRange((r) => ({ ...r, endsOn: e.target.value })); clearError("period"); }} />
-                  </Field>
-                </div>
-              ) : (
-                <p className="text-caption text-sub">기간을 정하지 않으면 오늘({todayTitle(today).replace(" 숙제", "")}) 하루 숙제예요.</p>
-              )}
+          {kind === "general" ? (
+            <Field label="마감일" htmlFor="hw-due" required error={errorOf("due")} className="max-w-56">
+              <Input id="hw-due" type="date" value={dates.dueOn} min={today} onChange={(e) => setDate("dueOn", e.target.value)} />
+            </Field>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <Field label="시작일" htmlFor="hw-start" required>
+                  <Input id="hw-start" type="date" value={dates.startsOn} min={today} onChange={(e) => setDate("startsOn", e.target.value)} />
+                </Field>
+                <span className="pb-2.5 text-sub">~</span>
+                <Field label="종료일" htmlFor="hw-end" required>
+                  <Input id="hw-end" type="date" value={dates.endsOn} min={dates.startsOn || today} onChange={(e) => setDate("endsOn", e.target.value)} />
+                </Field>
+              </div>
+              <div role="group" aria-label="숙제 내는 요일" className="flex flex-wrap gap-1.5">
+                {WEEKDAY_ORDER.map((d) => (
+                  <ToggleChip key={d} on={weekdays.includes(d)} onToggle={() => toggleWeekday(d)}>
+                    {WEEKDAY_KO[d]}
+                  </ToggleChip>
+                ))}
+              </div>
               {errorOf("period") && <p className="text-caption text-brand">{errorOf("period")}</p>}
             </div>
           )}
         </section>
 
-        {/* 2. 대상 (HW-01): 전체 · 반 · 학생 */}
+        {/* 2. 대상 (HW-01): 반 · 학생 · 전체(맨 뒤, 한 번 묻기) */}
         <section aria-labelledby="hw-targets" className="space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <div className="flex items-baseline justify-between gap-3">
             <h2 id="hw-targets" className="text-heading font-bold text-ink">
               대상 학생
             </h2>
             <p className="text-caption text-sub" aria-live="polite">
-              <b className="font-semibold text-ink tabular" data-testid="selected-count">{selected.size}</b>명 선택
+              <b className="font-semibold text-ink tabular" data-testid="selected-count">
+                {selected.size}
+              </b>
+              명 선택
             </p>
           </div>
           {targets.students.length === 0 ? (
@@ -130,20 +164,44 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
           ) : (
             <>
               <div role="group" aria-label="반으로 고르기" className="flex flex-wrap gap-2">
-                <ToggleChip on={allOn} onToggle={() => toggleIds(allIds, !allOn)}>
-                  전체 {allIds.length}
-                </ToggleChip>
                 {targets.classes
                   .filter((c) => c.studentIds.length > 0)
                   .map((c) => {
-                    const on = c.studentIds.every((id) => selected.has(id));
+                    const picked = c.studentIds.filter((id) => selected.has(id)).length;
+                    const on = picked === c.studentIds.length;
                     return (
                       <ToggleChip key={c.id} on={on} onToggle={() => toggleIds(c.studentIds, !on)}>
-                        {c.name} {c.studentIds.length}
+                        {c.name}{" "}
+                        <span className="tabular">
+                          {picked}/{c.studentIds.length}
+                        </span>
                       </ToggleChip>
                     );
                   })}
+                <ToggleChip on={allOn} onToggle={() => (allOn ? toggleIds(allIds, false) : setConfirmAll(true))}>
+                  전체 <span className="tabular">{allIds.length}</span>
+                </ToggleChip>
               </div>
+              {confirmAll && (
+                <div role="group" aria-label="전체 선택 확인" className="flex flex-wrap items-center gap-2 rounded-[var(--radius-block)] bg-block px-4 py-3">
+                  <span className="mr-auto text-body text-ink">
+                    <b className="tabular">{allIds.length}</b>명 전체 선택할까요?
+                  </span>
+                  <Button size="sm" onClick={() => setConfirmAll(false)}>
+                    취소
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => {
+                      toggleIds(allIds, true);
+                      setConfirmAll(false);
+                    }}
+                  >
+                    전체 선택
+                  </Button>
+                </div>
+              )}
               <div className="rounded-[var(--radius-block)] border border-line-soft">
                 <label className="flex items-center gap-2 border-b border-line-soft px-3">
                   <Search aria-hidden className="size-4 text-faint" />
@@ -179,30 +237,66 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
           {errorOf("targets") && <p className="text-caption text-brand">{errorOf("targets")}</p>}
         </section>
 
-        {/* 3. 제목 (HW-02 오늘 날짜 사용) · 4. 내용 */}
+        {/* 3. 제출 방식 · 제목 · 내용 */}
         <section className="space-y-4 lg:col-start-1 lg:row-start-2">
-          <Field label="제목" htmlFor="hw-title" required error={errorOf("title")}>
+          <div className="space-y-1.5">
+            <p id="hw-mode" className="text-caption font-semibold text-sub">
+              제출 방식
+            </p>
+            <div role="group" aria-labelledby="hw-mode" className="flex gap-1">
+              <Segment active={submitMode === "check"} onClick={() => setSubmitMode("check")}>
+                체크만
+              </Segment>
+              <Segment active={submitMode === "photo"} onClick={() => setSubmitMode("photo")}>
+                사진 첨부
+              </Segment>
+            </div>
+          </div>
+          <Field label="제목" htmlFor="hw-title" required={kind === "general"} hint={kind === "daily" ? "비워 두면 날짜가 제목이 돼요" : undefined} error={errorOf("title")}>
             <Input
               id="hw-title"
               value={title}
               maxLength={TITLE_MAX}
-              placeholder={useToday ? todayTitle(today) : "예: 3과 단어 외우기"}
-              onChange={(e) => { setTitle(e.target.value); clearError("title"); }}
+              placeholder={kind === "daily" && dates.startsOn && dates.endsOn ? autoDailyTitle(dates.startsOn, dates.endsOn) : "예: 3과 단어 외우기"}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                clearError("title");
+              }}
             />
           </Field>
-          <Checkbox label="오늘 날짜 사용 (제목을 비우면 오늘 날짜가 제목)" checked={useToday} onChange={(e) => { setUseToday(e.target.checked); clearError("title"); }} />
           <Field label="내용" htmlFor="hw-body" hint={`${body.length} / ${BODY_MAX}자`} error={errorOf("body")}>
-            <Textarea id="hw-body" rows={5} className="lg:min-h-64" value={body} maxLength={BODY_MAX} placeholder="숙제 범위, 제출 방법 등" onChange={(e) => { setBody(e.target.value); clearError("body"); }} />
+            <Textarea
+              id="hw-body"
+              className="h-[140px] resize-none"
+              value={body}
+              maxLength={BODY_MAX}
+              placeholder="숙제 범위, 제출 방법 등"
+              onChange={(e) => {
+                setBody(e.target.value);
+                clearError("body");
+              }}
+            />
           </Field>
         </section>
       </div>
 
-      <div className="flex gap-2 border-t border-line-soft pt-5 md:justify-end">
+      <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-5 md:justify-end">
+        {!ready && (
+          <p className="w-full text-caption text-sub md:mr-auto md:w-auto" data-testid="submit-hint">
+            {kind === "general" ? "제목·대상·마감일을 채우면 낼 수 있어요" : "대상·기간·요일을 채우면 낼 수 있어요"}
+          </p>
+        )}
         <ButtonLink href={listHref} className="max-md:h-12">
           취소
         </ButtonLink>
-        <Button variant="primary" type="submit" state={saving ? "loading" : "idle"} className="flex-1 max-md:h-12 md:flex-none">
-          숙제 내기
+        <Button
+          variant="primary"
+          type="submit"
+          disabled={!ready}
+          state={saving ? "loading" : "idle"}
+          className="flex-1 disabled:cursor-not-allowed disabled:opacity-40 max-md:h-12 md:flex-none"
+        >
+          {selected.size > 0 ? `${selected.size}명에게 숙제 내기` : "숙제 내기"}
         </Button>
       </div>
     </form>

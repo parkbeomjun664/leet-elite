@@ -71,6 +71,13 @@ export type Homework = {
   body: string;
   createdOn: string; // YYYY-MM-DD
   createdBy: string; // teacher id
+  /** 일반 숙제 마감일 (10/14 오후) */
+  dueOn: string | null;
+  /** 매일 숙제 기간·요일 (하루짜리는 시작 = 종료) */
+  startsOn: string | null;
+  endsOn: string | null;
+  weekdays: number[] | null;
+  submitMode: "check" | "photo";
   studentIds: string[];
 };
 

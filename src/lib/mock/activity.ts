@@ -24,10 +24,17 @@ export const homework: Homework[] = classes.flatMap((c, ci) =>
   HW_TEMPLATES.slice(0, 3 + (ci % 3)).map((t, i) => ({
     id: `hw-${c.id}-${i}`,
     kind: t.kind,
-    title: t.kind === "daily" ? `${d(-i).slice(5).replace("-", "/")} ${t.title}` : t.title,
+    // 매일 숙제 제목의 날짜 = 그 숙제 날짜 (10/14: 제목과 기간이 어긋나 보이던 것 맞춤)
+    title: t.kind === "daily" ? `${d(-i * 2).slice(5).replace("-", "/")} ${t.title}` : t.title,
     body: t.body,
     createdOn: d(-i * 2),
     createdBy: c.teacherId ?? teachers[0].id,
+    // 일반 숙제 마감 = 등록 + 2일 (지난 것·오늘·앞으로가 섞이게), 매일 숙제 = 그날 하루, 월~금 (10/14 오후)
+    dueOn: t.kind === "general" ? d(-i * 2 + 2) : null,
+    startsOn: t.kind === "daily" ? d(-i * 2) : null,
+    endsOn: t.kind === "daily" ? d(-i * 2) : null,
+    weekdays: t.kind === "daily" ? [1, 2, 3, 4, 5] : null,
+    submitMode: t.title.startsWith("단어") ? ("check" as const) : ("photo" as const),
     studentIds: studentsOfClass(c.id),
   })),
 );

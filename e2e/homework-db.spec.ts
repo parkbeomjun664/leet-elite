@@ -31,7 +31,7 @@ async function fillAndSubmit(page: Page, title: string, classIndex: number) {
   const n = Number((await chip.textContent())!.match(/(\d+)$/)![1]);
   await chip.click();
   await page.getByRole("textbox", { name: /^제목/ }).fill(title);
-  await page.getByRole("button", { name: "숙제 내기" }).click();
+  await page.getByRole("button", { name: `${n}명에게 숙제 내기` }).click();
   await expect(page.getByTestId("toast")).toContainText(`${n}명에게 냈어요`);
   return n;
 }
@@ -40,7 +40,7 @@ test("원장님: 반 하나에 숙제 → DB에 숙제·대상 줄, 목록에 �
   const title = `e2e-원장-${RUN}`;
   await loginAs(page, "admin");
   await page.goto("/admin/homework/new");
-  const n = await fillAndSubmit(page, title, 1); // 전체 다음 첫 반
+  const n = await fillAndSubmit(page, title, 0); // 첫 반 ([전체]는 맨 뒤)
   await expect(page).toHaveURL(/\/admin\/homework$/);
   const row = page.getByRole("listitem").filter({ hasText: title });
   await expect(row.locator("[data-progress]")).toContainText(`0 / ${n}명`);
@@ -61,9 +61,9 @@ test("선생님: 담당 반만 고를 수 있고, 낸 숙제는 선생님 목록
   const { data: t } = await admin().from("teachers").select("id").eq("profile_id", me!.id).single();
   const { data: myClasses } = await admin().from("classes").select("id, class_members ( left_on, students ( status ) )").eq("teacher_id", t!.id).eq("is_active", true);
   const withStudents = myClasses!.filter((c) => c.class_members.some((m) => m.left_on === null && isEnrolled(m.students))).length;
-  await expect(chips).toHaveCount(withStudents + 1); // + 전체
+  await expect(chips).toHaveCount(withStudents + 1); // + 전체(맨 뒤)
 
-  await fillAndSubmit(page, title, 1);
+  await fillAndSubmit(page, title, 0);
   await expect(page).toHaveURL(/\/teacher\/homework$/);
   await expect(page.getByRole("listitem").filter({ hasText: title })).toBeVisible();
   const { data } = await admin().from("homework").select("created_by").eq("title", title).single();
@@ -82,7 +82,7 @@ test("원장님 목록에는 선생님이 낸 숙제도, 선생님 목록에는 
     .eq("is_active", true)
     .limit(5);
   const sid = otherClass!.flatMap((c) => c.class_members).find((m) => m.left_on === null && isEnrolled(m.students))!.student_id;
-  const { data: hw } = await admin().from("homework").insert({ kind: "general", title: other }).select("id").single();
+  const { data: hw } = await admin().from("homework").insert({ kind: "general", title: other, due_on: "2026-12-31" }).select("id").single();
   await admin().from("homework_targets").insert({ homework_id: hw!.id, student_id: sid });
 
   await loginAs(page, "admin");

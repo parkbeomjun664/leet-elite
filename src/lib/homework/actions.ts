@@ -27,11 +27,22 @@ export async function createHomework(input: unknown): Promise<CreateHomeworkResu
   if (!me) return { ok: false, error: "다시 로그인해 주세요." };
 
   // id는 여기서 만든다: 넣으면서 돌려받으면(insert…select) 읽기 권한 검사 함수가 같은 문장에서 방금 넣은 줄을 못 봐서
-  // 선생님 등록이 "권한 없음"으로 막힌다 (원장님은 그 검사를 건너뛰어 통과). 10/14 시험에서 발견
+  // 선생님 등록이 "권한 없음"으로 막혔다 (원장님은 그 검사를 건너뛰어 통과). 10/14 시험에서 발견, 6차 마이그레이션에서 정책도 고침
   const hw = { id: crypto.randomUUID() };
   const { error } = await supabase
     .from("homework")
-    .insert({ id: hw.id, kind: v.kind, title: v.title, body: v.body, starts_on: v.startsOn, ends_on: v.endsOn, created_by: me });
+    .insert({
+      id: hw.id,
+      kind: v.kind,
+      title: v.title,
+      body: v.body,
+      submit_mode: v.submitMode,
+      due_on: v.dueOn,
+      starts_on: v.startsOn,
+      ends_on: v.endsOn,
+      weekdays: v.weekdays,
+      created_by: me,
+    });
   if (error) {
     if (error?.code === "42501") return { ok: false, error: "숙제를 등록할 권한이 없어요." };
     console.error("[homework] 등록하지 못함", error?.code, error?.message);

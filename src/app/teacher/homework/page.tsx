@@ -10,5 +10,5 @@ export const dynamic = "force-dynamic";
 // 숙제 목록 (HW-04, 10/14). 선생님은 담당 학생 숙제만(RLS)
 export default async function TeacherHomework() {
   const rows = await loadHomeworkList("teacher");
-  return <HomeworkList rows={rows} newHref="/teacher/homework/new" today={todayKST()} />;
+  return <HomeworkList rows={rows} newHref="/teacher/homework/new" baseHref="/teacher/homework" today={todayKST()} />;
 }

@@ -1,4 +1,4 @@
-// 자동 생성: Supabase DB 구조 → TypeScript 타입 (10/14, dev 프로젝트, 마이그레이션 5차 숙제까지). 직접 고치지 않는다
+// 자동 생성: Supabase DB 구조 → TypeScript 타입 (10/14, dev 프로젝트, 마이그레이션 6차 숙제 마감·요일까지). 직접 고치지 않는다
 // 마이그레이션을 더하면 다시 만든다 (Supabase MCP generate_typescript_types 또는 `supabase gen types typescript`)
 // 주의: DB 함수의 인자는 null을 받아도 타입에는 string으로만 나온다 (login_attempt_begin의 p_ip 등)
 
@@ -173,36 +173,45 @@ export type Database = {
           body: string
           created_at: string
           created_by: string | null
+          due_on: string | null
           ends_on: string | null
           id: string
           kind: Database["public"]["Enums"]["homework_kind"]
           starts_on: string | null
+          submit_mode: Database["public"]["Enums"]["homework_submit_mode"]
           title: string
           updated_at: string
+          weekdays: number[] | null
         }
         Insert: {
           archived_at?: string | null
           body?: string
           created_at?: string
           created_by?: string | null
+          due_on?: string | null
           ends_on?: string | null
           id?: string
           kind: Database["public"]["Enums"]["homework_kind"]
           starts_on?: string | null
+          submit_mode?: Database["public"]["Enums"]["homework_submit_mode"]
           title: string
           updated_at?: string
+          weekdays?: number[] | null
         }
         Update: {
           archived_at?: string | null
           body?: string
           created_at?: string
           created_by?: string | null
+          due_on?: string | null
           ends_on?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["homework_kind"]
           starts_on?: string | null
+          submit_mode?: Database["public"]["Enums"]["homework_submit_mode"]
           title?: string
           updated_at?: string
+          weekdays?: number[] | null
         }
         Relationships: [
           {
@@ -561,6 +570,7 @@ export type Database = {
     Enums: {
       guardian_relation: "mother" | "father" | "other"
       homework_kind: "general" | "daily"
+      homework_submit_mode: "check" | "photo"
       student_status: "enrolled" | "on_leave" | "withdrawn" | "pending"
       user_role: "admin" | "teacher" | "student" | "parent" | "kiosk"
     }
@@ -692,6 +702,7 @@ export const Constants = {
     Enums: {
       guardian_relation: ["mother", "father", "other"],
       homework_kind: ["general", "daily"],
+      homework_submit_mode: ["check", "photo"],
       student_status: ["enrolled", "on_leave", "withdrawn", "pending"],
       user_role: ["admin", "teacher", "student", "parent", "kiosk"],
     },

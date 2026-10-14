@@ -10,5 +10,5 @@ export const dynamic = "force-dynamic";
 // 숙제 목록 (HW-04, 10/14). 원장님은 전체
 export default async function AdminHomework() {
   const rows = await loadHomeworkList("admin");
-  return <HomeworkList rows={rows} newHref="/admin/homework/new" today={todayKST()} />;
+  return <HomeworkList rows={rows} newHref="/admin/homework/new" baseHref="/admin/homework" today={todayKST()} />;
 }

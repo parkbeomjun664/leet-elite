@@ -15,6 +15,9 @@ const PAGES = [
   ["원장님 홈 수업 끝", "/admin?at=22:30"],
   ["재원생 목록", "/admin/students"],
   ["학생 정보 수정 창", "/admin/students?edit=s010"],
+  ["숙제 목록", "/admin/homework"],
+  ["숙제 등록", "/admin/homework/new"],
+  ["숙제 상세", "/admin/homework/hw-c1-1"],
   ["로그인", "/login"],
   ["개인정보 처리방침", "/privacy"],
 ] as const;
