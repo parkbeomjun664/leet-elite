@@ -14,7 +14,7 @@ import { isMockRequest } from "./source";
 export type HomeworkScope = "admin" | "teacher";
 
 export type TargetStudent = { id: string; name: string; school: string | null; grade: string | null };
-export type TargetClass = { id: string; name: string; studentIds: string[] };
+export type TargetClass = { id: string; name: string; studentIds: string[]; /** 반 색(classTone)용 순서 */ sortOrder: number };
 export type HomeworkTargets = { classes: TargetClass[]; students: TargetStudent[] };
 
 /** 숙제를 낼 수 있는 학생과 반 (재원생만, 반은 지금 소속 기준) */
@@ -25,7 +25,7 @@ export async function loadHomeworkTargets(scope: HomeworkScope): Promise<Homewor
       .filter((c) => scope === "admin" || c.teacherId === teacherId)
       .sort((a, b) => a.sortOrder - b.sortOrder);
     const enrolled = mockStudents.filter((s) => s.status === "enrolled");
-    const classes = cls.map((c) => ({ id: c.id, name: c.name, studentIds: enrolled.filter((s) => s.classIds.includes(c.id)).map((s) => s.id) }));
+    const classes = cls.map((c) => ({ id: c.id, name: c.name, sortOrder: c.sortOrder, studentIds: enrolled.filter((s) => s.classIds.includes(c.id)).map((s) => s.id) }));
     const allowed = new Set(scope === "admin" ? enrolled.map((s) => s.id) : classes.flatMap((c) => c.studentIds));
     const students = enrolled
       .filter((s) => allowed.has(s.id))
@@ -51,6 +51,7 @@ export async function loadHomeworkTargets(scope: HomeworkScope): Promise<Homewor
     classes: classesRes.data.map((c) => ({
       id: c.id,
       name: c.name,
+      sortOrder: c.sort_order,
       studentIds: c.class_members.filter((m) => m.left_on === null && enrolledIds.has(m.student_id)).map((m) => m.student_id),
     })),
   };

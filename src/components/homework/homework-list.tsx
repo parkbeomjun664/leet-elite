@@ -6,7 +6,7 @@ import { BookOpen, ChevronRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/panel";
-import { Segment } from "@/components/ui/segment";
+import { SegmentedControl } from "@/components/ui/segment";
 import type { HomeworkRow } from "@/lib/data/homework";
 import { cn } from "@/lib/cn";
 import { dueLabel, dueTone, type DueTone } from "@/lib/homework/display";
@@ -40,7 +40,7 @@ export function HomeworkList({ rows, newHref, baseHref, today }: { rows: Homewor
 
   return (
     // data-tone="page": 바탕을 원장 홈과 같은 회색으로 (app-chrome.tsx)
-    <div data-tone="page" className="space-y-5">
+    <div data-tone="page" className="mx-auto max-w-[960px] space-y-5">
       <PageHeader
         title="숙제"
         actions={
@@ -65,14 +65,17 @@ export function HomeworkList({ rows, newHref, baseHref, today }: { rows: Homewor
         </div>
       ) : (
         <>
-          <div role="group" aria-label="종류로 거르기" className="flex gap-1">
-            {(["all", "general", "daily"] as const).map((k) => (
-              <Segment key={k} active={filter === k} onClick={() => setFilter(k)} count={count(k)}>
-                {k === "all" ? "전체" : k === "general" ? "일반" : "매일"}
-              </Segment>
-            ))}
-          </div>
-          <ul aria-label="숙제 목록" className="divide-y divide-line-soft overflow-hidden rounded-[var(--radius-hcard)] bg-card">
+          <SegmentedControl
+            label="종류로 거르기"
+            value={filter}
+            onChange={setFilter}
+            items={[
+              { value: "all", label: "전체", count: count("all") },
+              { value: "general", label: "일반", count: count("general") },
+              { value: "daily", label: "매일", count: count("daily") },
+            ]}
+          />
+          <ul aria-label="숙제 목록" className="divide-y divide-page overflow-hidden rounded-[var(--radius-hcard)] bg-card">
             {shown.map((r) => {
               const done = r.targetCount > 0 && r.submittedCount === r.targetCount;
               const pct = r.targetCount ? Math.round((r.submittedCount / r.targetCount) * 100) : 0;
@@ -81,7 +84,7 @@ export function HomeworkList({ rows, newHref, baseHref, today }: { rows: Homewor
                 <li key={r.id} data-homework={r.id}>
                   <Link
                     href={`${baseHref}/${r.id}`}
-                    className={cn("group flex min-h-16 items-center gap-3 px-5 py-3.5 transition-colors duration-[var(--duration-fast)] hover:bg-block", r.archived && "opacity-60")}
+                    className={cn("group flex min-h-[72px] items-center gap-4 px-6 py-3 transition-colors duration-[var(--duration-fast)] hover:bg-block", r.archived && "opacity-60")}
                   >
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
@@ -89,7 +92,7 @@ export function HomeworkList({ rows, newHref, baseHref, today }: { rows: Homewor
                         <span
                           data-kind={r.kind}
                           className={cn(
-                            "inline-flex h-5 shrink-0 items-center rounded-[var(--radius-tag)] px-1.5 text-micro font-semibold",
+                            "inline-flex h-5 shrink-0 items-center rounded-full px-2 text-micro font-semibold",
                             r.kind === "daily" ? "bg-class-1-bg text-class-1-text" : "bg-page text-base",
                           )}
                         >
@@ -111,7 +114,7 @@ export function HomeworkList({ rows, newHref, baseHref, today }: { rows: Homewor
                       </span>
                     </span>
                     {/* 제출 현황 n / m명 + 4px 막대 (다 내면 초록, 아니면 파랑) */}
-                    <span className="w-24 shrink-0 text-right tabular" data-progress>
+                    <span className="w-[120px] shrink-0 text-right tabular" data-progress>
                       <span className="text-body font-bold text-strong">{r.submittedCount}</span>
                       <span className="text-caption text-muted"> / {r.targetCount}명</span>
                       <span aria-hidden className="mt-1.5 block h-1 overflow-hidden rounded-full bg-page">
@@ -119,7 +122,7 @@ export function HomeworkList({ rows, newHref, baseHref, today }: { rows: Homewor
                       </span>
                       <span className="mt-1 block text-micro text-muted">{progressLabel(r, today)}</span>
                     </span>
-                    <ChevronRight aria-hidden className="size-5 shrink-0 text-muted-soft transition-transform group-hover:translate-x-0.5" />
+                    <ChevronRight aria-hidden className="size-5 shrink-0 text-dim transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 </li>
               );

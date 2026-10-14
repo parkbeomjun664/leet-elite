@@ -17,6 +17,7 @@ export function Field({
   required,
   children,
   className,
+  labelClassName,
 }: {
   label: string;
   htmlFor?: string;
@@ -25,10 +26,12 @@ export function Field({
   required?: boolean;
   children: ReactNode;
   className?: string;
+  /** 칸 이름 글씨 색을 바꿀 때 (기본 text-sub 대신. 숙제 등록: text-base, 10/14) */
+  labelClassName?: string;
 }) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={htmlFor} className="block text-caption font-semibold text-sub">
+      <label htmlFor={htmlFor} className={cn("block text-caption font-semibold", labelClassName ?? "text-sub")}>
         {label}
         {required && <span className="ml-0.5 text-brand">*</span>}
       </label>

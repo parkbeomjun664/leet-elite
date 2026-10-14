@@ -152,20 +152,91 @@ test("선생님: 자기 반만 대상, 자기 숙제만 목록", async ({ page }
   await expect(page.getByRole("list", { name: "숙제 목록" }).getByRole("listitem").first()).toBeVisible();
 });
 
-test("넓은 화면은 2단: 왼쪽 종류·제목·내용, 오른쪽 대상 학생", async ({ page }) => {
-  await gotoReady(page, "/admin/homework/new");
-  const kind = (await page.getByRole("heading", { name: "종류" }).boundingBox())!;
-  const targets = (await page.getByRole("heading", { name: "대상 학생" }).boundingBox())!;
-  expect(targets.x).toBeGreaterThan(kind.x + 300);
-  expect(Math.abs(targets.y - kind.y)).toBeLessThan(4);
-});
 
-test("휴대폰 폭: 등록·목록이 가로로 넘치지 않고 [숙제 내기]가 넓다", async ({ page }) => {
+test("휴대폰 폭: 등록·목록이 가로로 넘치지 않고, 하단 바 버튼은 누르기 충분한 높이(44px)", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await gotoReady(page, "/teacher/homework/new");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
   const btn = (await page.getByRole("button", { name: /숙제 내기$/ }).boundingBox())!;
-  expect(btn.width).toBeGreaterThan(200);
+  expect(btn.height).toBeGreaterThanOrEqual(44);
   await gotoReady(page, "/admin/homework");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+});
+
+// ── 시각 정리 (10/14 범준님): 카드·세그먼트·칩·하단 바, 768px에서 배치 전환 ──
+const box = async (page: import("@playwright/test").Page, sel: string) => (await page.locator(sel).boundingBox())!;
+
+for (const [w, side] of [
+  [768, true],
+  [767, false],
+] as const) {
+  test(`등록 화면 ${w}px: ${side ? "카드 두 장 나란히(1 : 1.2, 높이 같게)" : "카드 세로로 쌓기"}`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: 900 });
+    await gotoReady(page, "/admin/homework/new");
+    const basic = await box(page, '[data-card="basic"]');
+    const targets = await box(page, '[data-card="targets"]');
+    if (side) {
+      expect(targets.x).toBeGreaterThan(basic.x + basic.width - 1);
+      expect(Math.abs(targets.y - basic.y)).toBeLessThan(2);
+      expect(Math.abs(targets.height - basic.height)).toBeLessThan(2); // 높이 같게
+      expect(targets.width / basic.width).toBeCloseTo(1.2, 1);
+    } else {
+      expect(Math.abs(targets.x - basic.x)).toBeLessThan(2);
+      expect(targets.y).toBeGreaterThan(basic.y + basic.height - 1);
+    }
+    // 하단 바는 어느 폭에서나 화면 아래에 붙어 있다 (휴대폰·태블릿은 아래 메뉴 위)
+    const bar = page.locator("[data-bottom-bar]");
+    await expect(bar).toHaveCSS("position", "sticky");
+    const b = (await bar.boundingBox())!;
+    expect(b.y + b.height).toBeLessThanOrEqual(900);
+    expect(b.y + b.height).toBeGreaterThan(900 - 64 - 20);
+  });
+}
+
+test("등록 시각: 흰 카드(모서리 20·안 24), 칸 이름 13px 600 #4E5968, 카드 제목 15px 700, 세그먼트·반 칩", async ({ page }) => {
+  await gotoReady(page, "/admin/homework/new");
+  const card = page.locator('[data-card="basic"]');
+  await expect(card).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(card).toHaveCSS("border-radius", "20px");
+  await expect(card).toHaveCSS("padding-top", "24px");
+  await expect(card).toHaveCSS("box-shadow", "none");
+  await expect(page.getByRole("heading", { name: "기본 정보" })).toHaveCSS("font-size", "15px");
+  await expect(page.getByRole("heading", { name: "기본 정보" })).toHaveCSS("font-weight", "700");
+  for (const el of [card.getByText("종류", { exact: true }), card.getByText("제출 방식", { exact: true }), card.locator('label[for="hw-title"]'), card.locator('label[for="hw-body"]')]) {
+    await expect(el).toHaveCSS("font-size", "13px");
+    await expect(el).toHaveCSS("font-weight", "600");
+    await expect(el).toHaveCSS("color", "rgb(78, 89, 104)");
+  }
+  // 세그먼트: 고른 칸 흰 바탕 + 진한 글씨 (빨강 없음)
+  const kind = page.getByRole("group", { name: "숙제 종류" });
+  await expect(kind).toHaveCSS("background-color", "rgb(242, 244, 246)");
+  await expect(kind.getByRole("button", { name: "일반 숙제" })).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(kind.getByRole("button", { name: "일반 숙제" })).toHaveCSS("color", "rgb(25, 31, 40)");
+  // 반 칩: 흰 바탕 + #E5E8EB 테두리 + 8px 반 색 점 → 고르면 연한 반 색 바탕, 테두리 투명
+  const chip = page.getByRole("group", { name: "반으로 고르기" }).getByRole("button").first();
+  await expect(chip).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(chip).toHaveCSS("border-top-color", "rgb(229, 232, 235)");
+  await expect(chip.locator("[data-dot]")).toHaveCSS("width", "8px");
+  await chip.click();
+  expect(await chip.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe("rgb(255, 255, 255)");
+  await expect(chip).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
+  // 학생 줄 44px, 상단 "0명 선택"은 없고 하단 바에 "선택 n명"
+  await expect(page.getByRole("list", { name: "학생" }).getByRole("listitem").first().locator("label")).toHaveCSS("height", "44px");
+  await expect(page.locator("[data-bottom-bar]")).toContainText(/선택\s*\d+명/);
+});
+
+test("목록 시각: 960px 가운데, 세그먼트 탭, 행 72px·구분선 #F2F4F6, 제출 현황 120px, chevron #B0B8C1", async ({ page }) => {
+  await gotoReady(page, "/admin/homework");
+  const list = page.getByRole("list", { name: "숙제 목록" });
+  const lb = (await list.boundingBox())!;
+  expect(Math.round(lb.width)).toBe(960);
+  const tabs = page.getByRole("group", { name: "종류로 거르기" });
+  await expect(tabs).toHaveCSS("background-color", "rgb(242, 244, 246)");
+  await expect(tabs.getByRole("button", { name: /^전체/ })).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  const row = list.getByRole("link").first();
+  expect(Math.round((await row.boundingBox())!.height)).toBeGreaterThanOrEqual(72);
+  await expect(list.getByRole("listitem").first()).toHaveCSS("border-bottom-color", "rgb(242, 244, 246)");
+  expect(Math.round((await row.locator("[data-progress]").boundingBox())!.width)).toBe(120);
+  await expect(row.locator("svg").last()).toHaveCSS("color", "rgb(176, 184, 193)");
+  await expect(row.locator('[data-kind]')).toHaveCSS("border-radius", /px/);
 });

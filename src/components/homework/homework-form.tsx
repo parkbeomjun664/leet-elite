@@ -6,7 +6,9 @@ import { Search } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/panel";
-import { Segment, ToggleChip } from "@/components/ui/segment";
+import { SegmentedControl, ToggleChip } from "@/components/ui/segment";
+import { classTone } from "@/lib/admin/class-color";
+import { cn } from "@/lib/cn";
 import type { HomeworkTargets } from "@/lib/data/homework";
 import { WEEKDAY_KO } from "@/lib/date";
 import { createHomework } from "@/lib/homework/actions";
@@ -24,6 +26,11 @@ import {
   type SubmitMode,
 } from "@/lib/homework/form";
 import { toast } from "@/lib/toast";
+
+// 시각 정리 (10/14 범준님): 흰 카드 모서리 20·안 여백 24, 카드 제목 15px 700, 칸 이름 13px 600 base
+const CARD = "rounded-[var(--radius-hcard)] bg-card p-6";
+const SECTION_TITLE = "text-body font-bold text-strong";
+const FIELD_LABEL = "text-caption font-semibold text-base";
 
 /**
  * 숙제 등록 화면 (HW-01~03). 원장님(/admin/homework/new)·선생님(/teacher/homework/new) 공통
@@ -103,34 +110,41 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
   }
 
   return (
-    <form onSubmit={submit} noValidate className="max-w-6xl space-y-8">
+    // 회색 바탕 + 흰 카드 두 장(왼쪽 기본 정보 : 오른쪽 대상 학생 = 1 : 1.2, 높이 같게), 아래 붙는 하단 바 (10/14 범준님 시각 정리)
+    <form data-tone="page" onSubmit={submit} noValidate className="mx-auto max-w-[1080px] space-y-5">
       <PageHeader title="숙제 등록" description="학생 앱에 바로 보여요" />
-      <div className="grid gap-8 lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-x-12">
-        {/* 1. 종류와 날짜 (HW-01·03) */}
-        <section aria-labelledby="hw-kind" className="space-y-3 lg:col-start-1 lg:row-start-1">
-          <h2 id="hw-kind" className="text-heading font-bold text-ink">
-            종류
+      <div className="grid gap-4 md:grid-cols-[1fr_1.2fr] md:items-stretch">
+        {/* 왼쪽 카드: 기본 정보 (종류·날짜 → 제출 방식 → 제목 → 내용) */}
+        <section aria-labelledby="hw-basic" data-card="basic" className={cn(CARD, "space-y-5")}>
+          <h2 id="hw-basic" className={SECTION_TITLE}>
+            기본 정보
           </h2>
-          <div role="group" aria-label="숙제 종류" className="flex gap-1">
-            <Segment active={kind === "general"} onClick={() => setKind("general")}>
-              일반 숙제
-            </Segment>
-            <Segment active={kind === "daily"} onClick={() => setKind("daily")}>
-              매일 숙제
-            </Segment>
+          <div className="space-y-2">
+            <p id="hw-kind" className={FIELD_LABEL}>
+              종류
+            </p>
+            <SegmentedControl
+              label="숙제 종류"
+              value={kind}
+              onChange={setKind}
+              items={[
+                { value: "general", label: "일반 숙제" },
+                { value: "daily", label: "매일 숙제" },
+              ]}
+            />
           </div>
           {kind === "general" ? (
-            <Field label="마감일" htmlFor="hw-due" required error={errorOf("due")} className="max-w-56">
+            <Field labelClassName="text-base" label="마감일" htmlFor="hw-due" required error={errorOf("due")} className="max-w-56">
               <Input id="hw-due" type="date" value={dates.dueOn} min={today} onChange={(e) => setDate("dueOn", e.target.value)} />
             </Field>
           ) : (
             <div className="space-y-3">
               <div className="flex flex-wrap items-end gap-3">
-                <Field label="시작일" htmlFor="hw-start" required>
+                <Field labelClassName="text-base" label="시작일" htmlFor="hw-start" required>
                   <Input id="hw-start" type="date" value={dates.startsOn} min={today} onChange={(e) => setDate("startsOn", e.target.value)} />
                 </Field>
-                <span className="pb-2.5 text-sub">~</span>
-                <Field label="종료일" htmlFor="hw-end" required>
+                <span className="pb-2.5 text-muted">~</span>
+                <Field labelClassName="text-base" label="종료일" htmlFor="hw-end" required>
                   <Input id="hw-end" type="date" value={dates.endsOn} min={dates.startsOn || today} onChange={(e) => setDate("endsOn", e.target.value)} />
                 </Field>
               </div>
@@ -144,23 +158,52 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
               {errorOf("period") && <p className="text-caption text-brand">{errorOf("period")}</p>}
             </div>
           )}
+          <div className="space-y-2">
+            <p className={FIELD_LABEL}>제출 방식</p>
+            <SegmentedControl
+              label="제출 방식"
+              value={submitMode}
+              onChange={setSubmitMode}
+              items={[
+                { value: "check", label: "체크만" },
+                { value: "photo", label: "사진 첨부" },
+              ]}
+            />
+          </div>
+          <Field labelClassName="text-base" label="제목" htmlFor="hw-title" required={kind === "general"} hint={kind === "daily" ? "비워 두면 날짜가 제목이 돼요" : undefined} error={errorOf("title")}>
+            <Input
+              id="hw-title"
+              value={title}
+              maxLength={TITLE_MAX}
+              placeholder={kind === "daily" && dates.startsOn && dates.endsOn ? autoDailyTitle(dates.startsOn, dates.endsOn) : "예: 3과 단어 외우기"}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                clearError("title");
+              }}
+            />
+          </Field>
+          <Field labelClassName="text-base" label="내용" htmlFor="hw-body" hint={`${body.length} / ${BODY_MAX}자`} error={errorOf("body")}>
+            <Textarea
+              id="hw-body"
+              className="h-[140px] resize-none"
+              value={body}
+              maxLength={BODY_MAX}
+              placeholder="숙제 범위, 제출 방법 등"
+              onChange={(e) => {
+                setBody(e.target.value);
+                clearError("body");
+              }}
+            />
+          </Field>
         </section>
 
-        {/* 2. 대상 (HW-01): 반 · 학생 · 전체(맨 뒤, 한 번 묻기) */}
-        <section aria-labelledby="hw-targets" className="space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 id="hw-targets" className="text-heading font-bold text-ink">
-              대상 학생
-            </h2>
-            <p className="text-caption text-sub" aria-live="polite">
-              <b className="font-semibold text-ink tabular" data-testid="selected-count">
-                {selected.size}
-              </b>
-              명 선택
-            </p>
-          </div>
+        {/* 오른쪽 카드: 대상 학생 (반 칩 → [전체] 확인 → 검색 + 학생 목록이 카드 높이를 채운다) */}
+        <section aria-labelledby="hw-targets" data-card="targets" className={cn(CARD, "flex min-h-0 flex-col gap-4")}>
+          <h2 id="hw-targets" className={SECTION_TITLE}>
+            대상 학생
+          </h2>
           {targets.students.length === 0 ? (
-            <p className="text-body text-sub">숙제를 낼 수 있는 학생이 없어요. 반에 학생이 있는지 확인해 주세요.</p>
+            <p className="text-body text-muted">숙제를 낼 수 있는 학생이 없어요. 반에 학생이 있는지 확인해 주세요.</p>
           ) : (
             <>
               <div role="group" aria-label="반으로 고르기" className="flex flex-wrap gap-2">
@@ -169,18 +212,38 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
                   .map((c) => {
                     const picked = c.studentIds.filter((id) => selected.has(id)).length;
                     const on = picked === c.studentIds.length;
+                    const tone = classTone(c.sortOrder);
                     return (
-                      <ToggleChip key={c.id} on={on} onToggle={() => toggleIds(c.studentIds, !on)}>
-                        {c.name}{" "}
-                        <span className="tabular">
+                      <button
+                        key={c.id}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggleIds(c.studentIds, !on)}
+                        className={cn(
+                          "press inline-flex h-11 items-center gap-1.5 rounded-full border px-3.5 text-body md:h-9",
+                          // 고르면 그 반 연한 색 바탕(테두리 없음), 아니면 흰 바탕 + 회색 테두리. 앞의 8px 점이 반 색
+                          on ? cn("border-transparent font-semibold", tone.bg, tone.text) : "border-hairline bg-card text-ink hover:bg-block",
+                        )}
+                      >
+                        <span aria-hidden data-dot className={cn("size-2 shrink-0 rounded-full", tone.dot)} />
+                        {c.name}
+                        <span className={cn("tabular", on ? "" : "text-muted")}>
                           {picked}/{c.studentIds.length}
                         </span>
-                      </ToggleChip>
+                      </button>
                     );
                   })}
-                <ToggleChip on={allOn} onToggle={() => (allOn ? toggleIds(allIds, false) : setConfirmAll(true))}>
+                <button
+                  type="button"
+                  aria-pressed={allOn}
+                  onClick={() => (allOn ? toggleIds(allIds, false) : setConfirmAll(true))}
+                  className={cn(
+                    "press inline-flex h-11 items-center gap-1.5 rounded-full border px-3.5 text-body md:h-9",
+                    allOn ? "border-transparent bg-strong font-semibold text-white" : "border-hairline bg-card text-ink hover:bg-block",
+                  )}
+                >
                   전체 <span className="tabular">{allIds.length}</span>
-                </ToggleChip>
+                </button>
               </div>
               {confirmAll && (
                 <div role="group" aria-label="전체 선택 확인" className="flex flex-wrap items-center gap-2 rounded-[var(--radius-block)] bg-block px-4 py-3">
@@ -202,100 +265,64 @@ export function HomeworkForm({ targets, today, listHref }: { targets: HomeworkTa
                   </Button>
                 </div>
               )}
-              <div className="rounded-[var(--radius-block)] border border-line-soft">
-                <label className="flex items-center gap-2 border-b border-line-soft px-3">
-                  <Search aria-hidden className="size-4 text-faint" />
+              {/* 학생 목록은 남은 높이를 채운다(flex-1). 쌓일 때(휴대폰)는 최소 18rem */}
+              <div className="flex min-h-72 flex-[1_1_0] flex-col overflow-hidden rounded-[var(--radius-block)] border border-hairline">
+                <label className="flex shrink-0 items-center gap-2 border-b border-hairline px-3">
+                  <Search aria-hidden className="size-4 text-muted-soft" />
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="학생 이름 검색"
                     aria-label="학생 이름 검색"
-                    className="h-11 min-w-0 flex-1 bg-transparent text-body outline-none md:h-10"
+                    className="h-11 min-w-0 flex-1 bg-transparent text-body outline-none"
                   />
                 </label>
-                <ul aria-label="학생" className="max-h-72 overflow-y-auto py-1 lg:max-h-[26rem]">
+                <ul aria-label="학생" className="min-h-0 flex-1 overflow-y-auto py-1">
                   {shown.map((s) => (
                     <li key={s.id}>
                       <Checkbox
-                        className="flex min-h-11 w-full px-3 hover:bg-bg md:min-h-10"
+                        className="flex h-11 w-full px-3 hover:bg-block"
                         checked={selected.has(s.id)}
                         onChange={(e) => toggleIds([s.id], e.target.checked)}
                         label={
                           <span>
-                            <span className="font-medium text-ink">{s.name}</span>
-                            {(s.school || s.grade) && <span className="ml-2 text-caption text-sub">{[s.school, s.grade].filter(Boolean).join(" ")}</span>}
+                            <span className="font-medium text-strong">{s.name}</span>
+                            {(s.school || s.grade) && <span className="ml-2 text-caption text-muted">{[s.school, s.grade].filter(Boolean).join(" ")}</span>}
                           </span>
                         }
                       />
                     </li>
                   ))}
-                  {shown.length === 0 && <li className="px-3 py-3 text-caption text-sub">&quot;{query}&quot;에 맞는 학생이 없어요</li>}
+                  {shown.length === 0 && <li className="px-3 py-3 text-caption text-muted">&quot;{query}&quot;에 맞는 학생이 없어요</li>}
                 </ul>
               </div>
             </>
           )}
           {errorOf("targets") && <p className="text-caption text-brand">{errorOf("targets")}</p>}
         </section>
-
-        {/* 3. 제출 방식 · 제목 · 내용 */}
-        <section className="space-y-4 lg:col-start-1 lg:row-start-2">
-          <div className="space-y-1.5">
-            <p id="hw-mode" className="text-caption font-semibold text-sub">
-              제출 방식
-            </p>
-            <div role="group" aria-labelledby="hw-mode" className="flex gap-1">
-              <Segment active={submitMode === "check"} onClick={() => setSubmitMode("check")}>
-                체크만
-              </Segment>
-              <Segment active={submitMode === "photo"} onClick={() => setSubmitMode("photo")}>
-                사진 첨부
-              </Segment>
-            </div>
-          </div>
-          <Field label="제목" htmlFor="hw-title" required={kind === "general"} hint={kind === "daily" ? "비워 두면 날짜가 제목이 돼요" : undefined} error={errorOf("title")}>
-            <Input
-              id="hw-title"
-              value={title}
-              maxLength={TITLE_MAX}
-              placeholder={kind === "daily" && dates.startsOn && dates.endsOn ? autoDailyTitle(dates.startsOn, dates.endsOn) : "예: 3과 단어 외우기"}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                clearError("title");
-              }}
-            />
-          </Field>
-          <Field label="내용" htmlFor="hw-body" hint={`${body.length} / ${BODY_MAX}자`} error={errorOf("body")}>
-            <Textarea
-              id="hw-body"
-              className="h-[140px] resize-none"
-              value={body}
-              maxLength={BODY_MAX}
-              placeholder="숙제 범위, 제출 방법 등"
-              onChange={(e) => {
-                setBody(e.target.value);
-                clearError("body");
-              }}
-            />
-          </Field>
-        </section>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-line-soft pt-5 md:justify-end">
-        {!ready && (
-          <p className="w-full text-caption text-sub md:mr-auto md:w-auto" data-testid="submit-hint">
-            {kind === "general" ? "제목·대상·마감일을 채우면 낼 수 있어요" : "대상·기간·요일을 채우면 낼 수 있어요"}
-          </p>
-        )}
-        <ButtonLink href={listHref} className="max-md:h-12">
+      {/* 하단 바: 화면 아래에 붙는다 (휴대폰·태블릿은 아래 메뉴 64px 위). 왼쪽 선택 n명, 오른쪽 취소 / 내기 */}
+      <div
+        data-bottom-bar
+        className="sticky bottom-[calc(64px+env(safe-area-inset-bottom,0px))] z-20 flex items-center gap-2 rounded-t-[var(--radius-hcard)] border-t border-hairline bg-card px-4 py-3 md:px-6 lg:bottom-0"
+      >
+        <p className="mr-auto min-w-0 flex-1 text-caption text-muted" aria-live="polite">
+          선택{" "}
+          <b className="text-body font-bold text-strong tabular" data-testid="selected-count">
+            {selected.size}
+          </b>
+          명
+          {!ready && (
+            <span className="block truncate md:ml-2 md:inline" data-testid="submit-hint">
+              {kind === "general" ? "제목·대상·마감일을 채우면 낼 수 있어요" : "대상·기간·요일을 채우면 낼 수 있어요"}
+            </span>
+          )}
+        </p>
+        <ButtonLink href={listHref} className="h-11 shrink-0 max-sm:px-3 md:h-10">
           취소
         </ButtonLink>
-        <Button
-          variant="primary"
-          type="submit"
-          disabled={!ready}
-          state={saving ? "loading" : "idle"}
-          className="flex-1 disabled:cursor-not-allowed disabled:opacity-40 max-md:h-12 md:flex-none"
-        >
+        <Button variant="primary" type="submit" disabled={!ready} state={saving ? "loading" : "idle"} className="h-11 shrink-0 disabled:cursor-not-allowed disabled:opacity-40 max-sm:px-3 md:h-10">
           {selected.size > 0 ? `${selected.size}명에게 숙제 내기` : "숙제 내기"}
         </Button>
       </div>

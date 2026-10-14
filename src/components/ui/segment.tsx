@@ -131,3 +131,44 @@ export function ToggleChip({ on, onToggle, children, disabled }: { on: boolean; 
     </button>
   );
 }
+
+/**
+ * 세그먼트(트랙 안에서 하나 고르기, 10/14 숙제 화면). 회색 트랙(page) 위에 고른 칸만 흰 바탕 + 진한 글씨
+ * 거르기 알약(Segment, 고르면 버건디)과 달리 색 없이 "어느 칸인지"만 보여 준다. 같은 화면의 두 가지 고르기(목록 거르기·숙제 종류)를 같은 모양으로
+ */
+export function SegmentedControl<T extends string>({
+  items,
+  value,
+  onChange,
+  label,
+  className,
+}: {
+  items: { value: T; label: ReactNode; count?: number }[];
+  value: T;
+  onChange: (v: T) => void;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <div role="group" aria-label={label} className={cn("inline-flex rounded-[12px] bg-page p-1", className)}>
+      {items.map((it) => {
+        const on = it.value === value;
+        return (
+          <button
+            key={it.value}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(it.value)}
+            className={cn(
+              "press h-10 min-w-16 rounded-[9px] px-3.5 text-body transition-[background-color,color,box-shadow] duration-[var(--duration-fast)] md:h-9",
+              on ? "bg-card font-semibold text-strong shadow-[0_1px_2px_rgb(0_0_0/0.06)]" : "text-muted hover:text-strong",
+            )}
+          >
+            {it.label}
+            {it.count !== undefined && <span className={cn("ml-1 text-caption tabular", on ? "text-muted" : "")}>{it.count}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
