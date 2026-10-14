@@ -95,7 +95,7 @@ export function AppChrome({
       <aside
         aria-label={`${role === "원장" ? "원장님" : "선생님"} 메뉴`}
         className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-hairline bg-card transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)] lg:flex",
+          "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-hairline bg-sidebar-glow transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)] lg:flex",
           collapsed ? "w-16" : "w-[220px]",
         )}
       >

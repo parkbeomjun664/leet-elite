@@ -439,3 +439,10 @@ html[data-splash="done"] #splash {
     animation: none !important;
   }
 }
+
+/* 사이드바 로고 뒤 빛 (10/14 범준님: 이건 예쁘다 → 남김. 제목 뒤 빛은 뺌): 흰 사이드바 맨 위에만 버건디 6% */
+@utility bg-sidebar-glow {
+  background-color: var(--color-card);
+  background-image: radial-gradient(90% 140px at 0% 0%, color-mix(in srgb, var(--color-brand) 6%, transparent) 0%, transparent 100%);
+  background-repeat: no-repeat;
+}

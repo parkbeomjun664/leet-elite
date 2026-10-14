@@ -228,7 +228,7 @@ test("등록 시각: 흰 카드(모서리 20·안 24), 칸 이름 13px 600 #4E59
   await expect(aside).toHaveCSS("border-right-color", "rgb(229, 232, 235)");
   expect(await aside.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgb(255, 255, 255)");
   await expect(aside.getByRole("link", { name: "숙제", exact: true })).toHaveCSS("background-color", "rgb(242, 244, 246)");
-  // 그라데이션(제목 뒤·사이드바 로고 뒤 빛)은 같은 날 뺐다 (범준님)
+  // 제목 뒤 빛은 같은 날 뺐다 (사이드바 로고 뒤 빛만 남김, 범준님)
   await expect(page.locator("[data-title-glow]")).toHaveCount(0);
 });
 
